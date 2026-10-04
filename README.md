@@ -1,36 +1,44 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="Stack: read it, keep it, build on it. News, PDF, music and notes." width="100%">
+  <img src="docs/assets/banner.png" alt="Stack makes you remember what you read. Save, highlight, remember." width="100%">
 </p>
 
-<h1 align="center">StackForge · Stack</h1>
+<h1 align="center">Stack</h1>
 
 <p align="center">
-  <b>Read it. Keep it. Build on it.</b><br>
-  Tech news, your PDFs, music and notes in one learning app for Android and the web.
+  <b>Stack makes you remember what you read.</b><br>
+  Save → Highlight → Remember. An open-source reading app for Android and the web.
 </p>
 
 <p align="center">
-  <img src="docs/screens/notes.jpg" width="200" alt="Notes">
-  <img src="docs/screens/focus.jpg" width="200" alt="Focus session">
-  <img src="docs/screens/review.jpg" width="200" alt="Daily review">
-  <img src="docs/screens/playlist.jpg" width="200" alt="Playlist">
+  <img src="docs/screens/welcome.png" width="230" alt="Welcome: Stack makes you remember what you read">
+  <img src="docs/screens/highlight.png" width="230" alt="Selecting a line in an article to highlight it">
+  <img src="docs/screens/review.png" width="230" alt="The daily review bringing a highlight back the next morning">
 </p>
 
-**StackForge** is the open-source home of **Stack**, built by StackForge Labs. Select a line in any
-article or PDF and it becomes a note that remembers where it came from. Stack
-brings those highlights back later, so what you read stays with you.
+<p align="center">
+  <a href="docs/assets/stack-demo.mp4"><b>Watch the 36-second demo</b></a>
+</p>
+
+Most of what we read is forgotten within a week. **Stack** is built around one loop:
+
+1. **Save** articles, PDFs and books from any app with the share sheet.
+2. **Highlight** a line, and it becomes a note that remembers where it came from.
+3. **Remember:** every morning, three of your past highlights come back on a spaced schedule.
+
+Stack is free, has no ads, works fully offline without an account, and is open source.
+It's built by StackForge Labs.
 
 ## Features
 
 | | |
 |---|---|
-| **Today** | Top story, swipeable rows of more stories, PDFs you're reading and recent notes, a focus card, the daily review and a **This week** card (time read, articles finished, PDF pages) |
-| **News** | **My feeds** (any RSS/Atom feed, or just a site like `css-tricks.com`) plus 12 topics (Top, Video, India, World, Tech, AI, Dev, Business, Science, Sports, Entertainment, Health) from BBC, The Hindu, Times of India, Indian Express, Al Jazeera, Mint, The Guardian, Hacker News and dev.to. **Video** plays news channels' latest reports (BBC, Al Jazeera, DW, Reuters, WION, NDTV, India Today) in YouTube's privacy-enhanced player. Flash cards or a list with the date and time on every story, pull to refresh (the Stack logo stacks itself while it loads), a clean reader mode, **offline reading** (download or save; top stories cached in the background) and **breaking-news alerts** per topic (Android, at most one an hour) |
 | **Highlights & notes** | Select text: Highlight, + Note or Share. A Keep-style editor with titles, checklists, colours, **fonts** (five built in, or add your own font file), pin, autosave, share, and delete with Undo. **Export to Markdown** (a `.md` file or straight into Obsidian, Notion…), grouped by source with links |
 | **Library & PDF reader** | Coloured shelves, pdf.js reader with highlights and page notes, reading time left, every PDF on the phone (Android). **Listen mode** reads articles and PDFs aloud (text-to-speech through the music player). **Import from Telegram**: connect your own bot, forward PDFs, pick which to add |
-| **Focus session** | Pick a PDF or article, 15–60 min timer or **Pomodoro** (4 × 25 min with 5-minute breaks and a 15-minute long break), music, quick notes, then a summary (pages, highlights, notes) with a streak |
-| **Daily review** | 3 old highlights a day on a spaced schedule (Got it / Show again soon / Stop), also in the morning notification |
 | **Share to Stack** | Share from Chrome, WhatsApp, YouTube or Files: a small "Saved to Stack" card pops up over the app you're in. Links go to the Library, PDFs to a shelf, text to notes |
+| **Daily review** | 3 old highlights a day on a spaced schedule (Got it / Show again soon / Stop), also in the morning notification |
+| **Focus session** | Pick a PDF or article, 15–60 min timer or **Pomodoro** (4 × 25 min with 5-minute breaks and a 15-minute long break), music, quick notes, then a summary (pages, highlights, notes) with a streak |
+| **Today** | Top story, swipeable rows of more stories, PDFs you're reading and recent notes, a focus card, the daily review and a **This week** card (time read, articles finished, PDF pages) |
+| **News** | **My feeds** (any RSS/Atom feed, or just a site like `css-tricks.com`) plus 12 topics (Top, Video, India, World, Tech, AI, Dev, Business, Science, Sports, Entertainment, Health) from BBC, The Hindu, Times of India, Indian Express, Al Jazeera, Mint, The Guardian, Hacker News and dev.to. **Video** plays news channels' latest reports (BBC, Al Jazeera, DW, Reuters, WION, NDTV, India Today) in YouTube's privacy-enhanced player. Flash cards or a list with the date and time on every story, pull to refresh (the Stack logo stacks itself while it loads), a clean reader mode, **offline reading** (download or save; top stories cached in the background) and **breaking-news alerts** per topic (Android, at most one an hour) |
 | **Music** | Songs on the phone on a spinning record with the title on its label: background play, Stack-styled notification and lock screen, shuffle, repeat, speed, sleep timer, ±10 s, Up next queue, Play next / Add to queue; your own playlists with cover images, or Spotify |
 | **Search** | One search across notes, checklists, highlights, saved articles, PDFs and playlists, with filters and recent searches |
 | **Profile** | Photo, bio, status, profile colour, interests (News shows them first) and a daily focus goal. Reader type, streaks, an activity heatmap and 12 badges |
@@ -38,6 +46,9 @@ brings those highlights back later, so what you read stays with you.
 | **Account & sync** | Continue with Google (or email). Notes, saved articles, PDFs, playlists, focus history and profile sync across devices (Supabase). Works fully offline without an account |
 | **Backup & restore** | Everything in one file (with or without the PDF files), no account needed |
 | **Everything else** | Light/dark theme, tablet layout, animated splash, daily digest notification, 148-icon set (`src/components/icons.tsx` + `stack-icons.tsx`) |
+
+**Coming in the next update:** EPUB books, the whole app in Hindi, "Explain this" on selected text,
+a home-screen widget, word meanings and translation, and a new first-run tour with a sample article.
 
 ## Run it
 
