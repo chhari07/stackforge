@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home screen widget: the app's paper, ink and accent colours. -->
+<resources>
+    <string name="stack_widget_label">Stack: today</string>
+    <string name="stack_widget_description">Today\'s highlight, your streak and the book you\'re reading.</string>
+    <color name="stack_widget_bg">#F7F5F0</color>
+    <color name="stack_widget_row">#FFFFFF</color>
+    <color name="stack_widget_ink">#111111</color>
+    <color name="stack_widget_muted">#6B6862</color>
+    <color name="stack_widget_accent">#087A33</color>
+</resources>

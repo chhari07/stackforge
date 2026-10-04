@@ -219,6 +219,24 @@ manifest = manifest.replace(/\n\s*<data android:scheme="com\.chhari\.stack" andr
 // Orientation is set in MainActivity (phones portrait, tablets rotate), so
 // drop the old manifest lock if an earlier build added it.
 manifest = manifest.replace(/\n\s*android:screenOrientation="portrait"/, "");
+// Home screen widget (StackWidget; layout and colours come from resources/android).
+if (!manifest.includes(".StackWidget")) {
+  manifest = manifest.replace(
+    "</application>",
+    `    <receiver
+            android:name=".StackWidget"
+            android:exported="false"
+            android:label="@string/stack_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stack_widget_info" />
+        </receiver>
+    </application>`,
+  );
+}
 // Background music service with its media notification.
 if (!manifest.includes(".PlaybackService")) {
   manifest = manifest.replace(

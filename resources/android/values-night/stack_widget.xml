@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="stack_widget_bg">#1F1F1D</color>
+    <color name="stack_widget_row">#2B2B28</color>
+    <color name="stack_widget_ink">#F1EFE9</color>
+    <color name="stack_widget_muted">#A39F97</color>
+    <color name="stack_widget_accent">#4FC07A</color>
+</resources>

@@ -40,6 +40,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(GoogleSignInPlugin.class);
         registerPlugin(BackupPlugin.class);
         registerPlugin(NewsAlertsPlugin.class);
+        registerPlugin(WidgetPlugin.class);
         super.onCreate(savedInstanceState);
         // Opened by the share card's "Open in Stack" (not on a rotation/recreate).
         if (savedInstanceState == null) ShareInPlugin.handleOpen(getIntent());
