@@ -6,6 +6,8 @@ import { aiAvailable, answerText, blobBase64, runAi, type Answer } from "@/lib/a
 import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
 import { Sheet } from "./sheet";
 import { SparkleIcon } from "./stack-icons";
+import { useT } from "@/lib/i18n";
+import { Rich } from "./rich";
 
 type Turn = { q: string; answer: Answer | null; streaming: string; error?: unknown };
 
@@ -13,6 +15,7 @@ const STARTERS = ["Summarize this document", "What are the key ideas?", "Explain
 
 // "Ask this PDF": a chat about the open PDF. Answers cite pages; tapping one jumps there.
 export function AiPdfButton({ id, title, page, onPage }: { id: string; title: string; page: number; onPage: (p: number) => void }) {
+  const tt = useT();
   const [open, setOpen] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
@@ -32,7 +35,7 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
   const ask = async (raw: string) => {
     const question = raw.replace("this page", `page ${page}`).trim();
     if (!question || busy) return;
-    if (!(await confirm("pdf", "this PDF file and your questions"))) return;
+    if (!(await confirm("pdf", tt("this PDF file and your questions")))) return;
     setQ("");
     setBusy(true);
     const history = turns.filter((t) => t.answer).map((t) => ({ q: t.q, a: answerText(t.answer!) }));
@@ -54,14 +57,14 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
 
   return (
     <>
-      <button aria-label="Ask this PDF" onClick={() => setOpen(true)} className="flex size-11 items-center justify-center">
+      <button aria-label={tt("Ask this PDF")} onClick={() => setOpen(true)} className="flex size-11 items-center justify-center">
         <SparkleIcon size={21} />
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Ask this PDF">
         <div className="-mt-2 flex max-h-[55dvh] flex-col gap-4 overflow-y-auto">
           {turns.length === 0 && (
             <p className="text-[14px] leading-relaxed text-muted">
-              Ask anything about <b className="text-ink">{title}</b>. Answers point to the pages they come from.
+              <Rich bold="text-ink" text={tt("Ask anything about **{title}**. Answers point to the pages they come from.", { title })} />
             </p>
           )}
           {turns.map((t, i) => (
@@ -88,8 +91,8 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
         {turns.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {STARTERS.map((s) => (
-              <button key={s} onClick={() => ask(s)} className="h-9 rounded-full border border-ink/20 px-3 text-[13px] font-medium">
-                {s}
+              <button key={s} onClick={() => ask(tt(s))} className="h-9 rounded-full border border-ink/20 px-3 text-[13px] font-medium">
+                {tt(s)}
               </button>
             ))}
           </div>
@@ -104,8 +107,8 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Ask a question…"
-            aria-label="Question about this PDF"
+            placeholder={tt("Ask a question…")}
+            aria-label={tt("Question about this PDF")}
             enterKeyHint="send"
             className="h-12 min-w-0 grow rounded-full border border-ink/15 bg-card px-4 text-[15px] outline-none focus:border-ink"
           />
@@ -113,10 +116,10 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
             disabled={!q.trim() || busy}
             className="h-12 shrink-0 rounded-full bg-ink px-5 text-[15px] font-semibold text-on-ink disabled:opacity-40"
           >
-            {busy ? "…" : "Ask"}
+            {busy ? "…" : tt("Ask")}
           </button>
         </form>
-        <AiLabel>The AI reads the whole PDF · answers can be wrong</AiLabel>
+        <AiLabel>{tt("The AI reads the whole PDF · answers can be wrong")}</AiLabel>
       </Sheet>
       {consentSheet}
     </>

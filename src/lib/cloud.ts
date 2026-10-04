@@ -7,6 +7,7 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { registerPlugin } from "@capacitor/core";
 import { isNative } from "./platform";
+import { tr } from "./i18n";
 
 const PROJECT_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/+$/, "");
 // The "publishable" (older projects: "anon") key: meant to be public (it ships
@@ -102,11 +103,11 @@ const CODES: Record<string, string> = {
 
 export function explainAuth(e: unknown) {
   const err = e as { code?: string; name?: string; message?: string } | null;
-  if (err?.name === "AuthRetryableFetchError") return "No connection. Check your internet and try again.";
+  if (err?.name === "AuthRetryableFetchError") return tr("No connection. Check your internet and try again.");
   // Google's token was made for another client ID than the ones Supabase knows.
   if (/audience/i.test(err?.message ?? ""))
-    return "Google sign-in isn’t set up in Supabase yet (add the Web client ID under Authentication → Providers → Google).";
-  return CODES[err?.code ?? ""] ?? err?.message ?? String(e);
+    return tr("Google sign-in isn’t set up in Supabase yet (add the Web client ID under Authentication → Providers → Google).");
+  return tr(CODES[err?.code ?? ""] ?? err?.message ?? String(e));
 }
 
 // Supabase answers { data, error } instead of throwing.

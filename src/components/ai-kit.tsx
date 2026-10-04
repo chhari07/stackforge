@@ -5,9 +5,12 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import { AI_ENGINE, AiError, aiConsented, setAiConsent, type Answer, type Cite } from "@/lib/ai";
 import { Sheet } from "./sheet";
 import { SparkleIcon } from "./stack-icons";
+import { useT } from "@/lib/i18n";
+import { Rich } from "./rich";
 
 // Asks once per kind of AI feature before anything is sent to Claude.
 export function useAiConsent() {
+  const t = useT();
   const [ask, setAsk] = useState<{ kind: string; what: string } | null>(null);
   const done = useRef<(ok: boolean) => void>(() => {});
   const confirm = useCallback((kind: string, what: string) => {
@@ -23,20 +26,24 @@ export function useAiConsent() {
   const sheet = (
     <Sheet open={!!ask} onClose={() => close(false)} title="Use Stack AI?">
       <p className="text-[15px] leading-relaxed">
-        To do this, Stack sends <b>{ask?.what}</b> to <b>{AI_ENGINE}</b> through Stack’s server. It’s used
-        only to write your answer.
+        <Rich
+          text={t("To do this, Stack sends **{what}** to **{engine}** through Stack’s server. It’s used only to write your answer.", {
+            what: ask?.what ?? "",
+            engine: AI_ENGINE,
+          })}
+        />
       </p>
       <p className="text-[13px] leading-relaxed text-muted">
-        AI answers can be wrong: check anything important. You’ll only be asked once for this feature.
+        {t("AI answers can be wrong: check anything important. You’ll only be asked once for this feature.")}
       </p>
       <button
         onClick={() => close(true)}
         className="flex h-12 items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-semibold text-on-ink"
       >
-        <SparkleIcon size={17} /> Continue
+        <SparkleIcon size={17} /> {t("Continue")}
       </button>
       <button onClick={() => close(false)} className="h-11 text-[14px] font-semibold text-muted">
-        Not now
+        {t("Not now")}
       </button>
     </Sheet>
   );
@@ -53,13 +60,14 @@ export function AiLabel({ children = "Stack AI" }: { children?: ReactNode }) {
 }
 
 export function AiErrorNote({ error }: { error: unknown }) {
-  const e = error instanceof AiError ? error : new AiError("api", "Something went wrong. Try again.");
+  const t = useT();
+  const e = error instanceof AiError ? error : new AiError("api", t("Something went wrong. Try again."));
   return (
     <p className="text-[14px] leading-relaxed text-music-text">
-      {e.message}{" "}
+      {t(e.message)}{" "}
       {e.code === "signin" && (
         <Link href="/account" className="underline">
-          Sign in
+          {t("Sign in")}
         </Link>
       )}
     </p>
@@ -80,10 +88,11 @@ export function AnswerView({
   hrefOf?: (source: string) => string | undefined;
   className?: string;
 }) {
+  const t = useT();
   if (!answer)
     return (
       <p className={`text-[15px] leading-relaxed whitespace-pre-wrap ${className}`}>
-        {streaming || <span className="animate-pulse text-muted">Thinking…</span>}
+        {streaming || <span className="animate-pulse text-muted">{t("Thinking…")}</span>}
       </p>
     );
   return (
@@ -108,13 +117,13 @@ export function AnswerView({
                 title={c.cited}
                 className="label mx-0.5 inline-flex h-5 max-w-[160px] items-center truncate rounded-full bg-news-tint px-1.5 align-middle text-[9px] text-news-deep"
               >
-                {c.title ?? "note"}
+                {c.title ?? t("note")}
               </Link>
             ) : null,
           )}
         </span>
       ))}
-      {answer.cut && <span className="text-muted"> …(cut short)</span>}
+      {answer.cut && <span className="text-muted"> …({t("cut short")})</span>}
     </div>
   );
 }

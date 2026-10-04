@@ -10,6 +10,7 @@ import { getSaved } from "@/lib/db";
 import { isNative } from "@/lib/platform";
 import { useStore } from "@/lib/use-store";
 import { RESULT_KEY, type ShareResult } from "@/lib/share-in";
+import { useT } from "@/lib/i18n";
 
 // "Saved" screen, shown when the share card's "Open in Stack" is tapped. The
 // item was already imported (components/native-boot.tsx); this shows it.
@@ -23,6 +24,7 @@ export default function Page() {
 }
 
 function Share() {
+  const tt = useT();
   const params = useSearchParams();
   const router = useRouter();
   const [result, setResult] = useState<ShareResult | null>(null);
@@ -32,8 +34,8 @@ function Share() {
   useEffect(() => {
     const last = sessionStorage.getItem(RESULT_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setResult(last ? JSON.parse(last) : { kind: "error", message: "Nothing was shared." });
-  }, [params]);
+    setResult(last ? JSON.parse(last) : { kind: "error", message: tt("Nothing was shared.") });
+  }, [params, tt]);
 
   const entry = result?.kind === "link" ? saved.find((a) => a.id === result.id) : undefined;
   const title = entry?.title ?? (result?.kind === "link" || result?.kind === "pdf" ? result.title : "");
@@ -46,19 +48,19 @@ function Share() {
   };
 
   return (
-    <main className="screen flex flex-col px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)] md:px-10 md:pt-8">
+    <main className="screen flex flex-col px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)]">
       <div className="flex h-8 items-center">
         <Logo size={28} className="-ml-1" />
       </div>
       <div className="mx-auto flex w-full max-w-[560px] grow flex-col">
         {result && result.kind !== "error" && (
           <>
-            <h1 className="display -ml-1.5 mt-4 text-[clamp(88px,30vw,150px)]">SAVED</h1>
+            <h1 className="display -ml-1.5 mt-4 text-[clamp(88px,30vw,150px)]">{tt("SAVED")}</h1>
             <p className="mt-3 flex items-center gap-2 text-[15px] text-muted">
               <CheckIcon size={18} className="text-news-text" />
-              {result.kind === "link" && (result.video ? "Video saved to your Library" : "Saved to your Library to read later")}
-              {result.kind === "pdf" && "Added to the “Shared” shelf"}
-              {result.kind === "note" && "Saved as a note"}
+              {result.kind === "link" && (result.video ? tt("Video saved to your Library") : tt("Stacked for later in your Library"))}
+              {result.kind === "pdf" && tt("Added to the “Shared” shelf")}
+              {result.kind === "note" && tt("Saved as a note")}
             </p>
           </>
         )}
@@ -77,7 +79,7 @@ function Share() {
         {result?.kind === "pdf" && (
           <div className="mt-6 rounded-2xl bg-card p-5">
             <p className="font-serif text-[22px] leading-tight font-semibold">{result.title}</p>
-            <p className="label mt-2 text-[10px] text-muted">PDF · {result.pages} pages</p>
+            <p className="label mt-2 text-[10px] text-muted">PDF · {tt("{n} pages", { n: result.pages })}</p>
           </div>
         )}
         {result?.kind === "note" && (
@@ -87,8 +89,8 @@ function Share() {
         )}
         {result?.kind === "error" && (
           <div className="mt-16 flex flex-col items-center gap-3 text-center">
-            <p className="font-serif text-[24px] italic">{result.message}</p>
-            <Link href="/" className="label text-[11px] underline">Go to Today</Link>
+            <p className="font-serif text-[24px] italic">{tt(result.message)}</p>
+            <Link href="/" className="label text-[11px] underline">{tt("Go to Today")}</Link>
           </div>
         )}
 
@@ -101,7 +103,7 @@ function Share() {
                 rel="noopener noreferrer"
                 className="flex h-14 items-center justify-center gap-2 rounded-full bg-ink text-[16px] font-semibold text-on-ink"
               >
-                Watch now <ExternalIcon size={16} />
+                {tt("Watch now")} <ExternalIcon size={16} />
               </a>
             )}
             {(result.kind === "pdf" || (result.kind === "link" && !result.video)) && (
@@ -109,7 +111,7 @@ function Share() {
                 href={result.kind === "pdf" ? `/library/read?id=${result.pdfId}` : `/read?id=${result.id}`}
                 className="flex h-14 items-center justify-center rounded-full bg-ink text-[16px] font-semibold text-on-ink"
               >
-                Read now
+                {tt("Read now")}
               </Link>
             )}
             {result.kind !== "note" && !(result.kind === "link" && result.video) && (
@@ -121,7 +123,7 @@ function Share() {
                 }
                 className="flex h-12 items-center justify-center gap-2 rounded-full bg-card text-[15px] font-semibold"
               >
-                <ClockIcon size={18} /> Focus on it
+                <ClockIcon size={18} /> {tt("Focus on it")}
               </Link>
             )}
             {result.kind === "note" && (
@@ -129,11 +131,11 @@ function Share() {
                 href={`/notes/edit?id=${result.noteId}`}
                 className="flex h-14 items-center justify-center rounded-full bg-ink text-[16px] font-semibold text-on-ink"
               >
-                Open note
+                {tt("Open note")}
               </Link>
             )}
             <button onClick={done} className="h-12 rounded-full border border-ink/20 text-[15px] font-semibold">
-              Done
+              {tt("Done")}
             </button>
           </div>
         )}

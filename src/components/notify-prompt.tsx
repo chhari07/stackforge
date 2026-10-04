@@ -5,6 +5,7 @@ import { useIsNative } from "@/lib/platform";
 import { getReminder, notificationsAllowed, setReminder } from "@/lib/reminders";
 import { useToast } from "./toast";
 import { CloseIcon } from "./icons";
+import { useT } from "@/lib/i18n";
 
 const DISMISSED = "stack.notify-prompt-dismissed";
 
@@ -13,6 +14,7 @@ const DISMISSED = "stack.notify-prompt-dismissed";
 export function NotifyPrompt() {
   const native = useIsNative();
   const toast = useToast();
+  const t = useT();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -34,12 +36,12 @@ export function NotifyPrompt() {
     <div className="mt-[22px] flex flex-col gap-3 rounded-2xl bg-ink p-4 text-on-ink">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="label text-[10px] text-on-ink/65">Daily digest</span>
+          <span className="label text-[10px] text-on-ink/65">{t("Daily digest")}</span>
           <span className="text-[16px] leading-snug font-semibold">
-            Get the top story and your reading every morning at 9:00?
+            {t("One story. One highlight. Every morning at 9.")}
           </span>
         </div>
-        <button aria-label="Not now" onClick={dismiss} className="-mt-2 -mr-2 flex size-11 shrink-0 items-center justify-center">
+        <button aria-label={t("Not now")} onClick={dismiss} className="-mt-2 -mr-2 flex size-11 shrink-0 items-center justify-center">
           <CloseIcon size={18} />
         </button>
       </div>
@@ -49,13 +51,13 @@ export function NotifyPrompt() {
           dismiss();
           toast(
             ok
-              ? { text: "Daily digest on · change the time in Settings", href: "/settings", action: "Settings" }
-              : { text: "Notifications blocked. You can allow them in Settings." },
+              ? { text: t("Daily digest on · change the time in Settings"), href: "/settings", action: t("Settings") }
+              : { text: t("Notifications blocked. You can allow them in Settings.") },
           );
         }}
         className="h-11 rounded-full bg-music text-[14px] font-semibold"
       >
-        Allow notifications
+        {t("I’m in")}
       </button>
     </div>
   );

@@ -1,16 +1,17 @@
+import { dateLocale, tr } from "./i18n";
 export function ago(ts: number | string) {
   const t = typeof ts === "string" ? Date.parse(ts) : ts;
   const s = Math.max(0, (Date.now() - t) / 1000);
-  if (s < 60) return "now";
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
+  if (s < 60) return tr("now");
+  if (s < 3600) return tr("{n}m", { n: Math.floor(s / 60) });
+  if (s < 86400) return tr("{n}h", { n: Math.floor(s / 3600) });
+  return tr("{n}d", { n: Math.floor(s / 86400) });
 }
 
 // When a story was published: "30 Sep, 7:44 pm" (with the year if it isn't this year).
 export function newsTime(ts: number | string) {
   const d = new Date(ts);
-  const date = d.toLocaleDateString("en-GB", {
+  const date = d.toLocaleDateString(dateLocale(), {
     day: "numeric",
     month: "short",
     ...(d.getFullYear() !== new Date().getFullYear() && { year: "numeric" }),
@@ -20,18 +21,24 @@ export function newsTime(ts: number | string) {
 
 // "7:44 pm"
 export function time12(ts: number | string) {
-  return new Date(ts).toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", hour12: true });
+  return new Date(ts).toLocaleTimeString(dateLocale(), { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+// "Good morning" before noon, "Good afternoon" until 5 pm, then "Good evening".
+export function greeting(d = new Date()) {
+  const h = d.getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
 export function dayStamp(d = new Date()) {
-  const day = d.toLocaleDateString("en-GB", { weekday: "short" });
+  const day = d.toLocaleDateString(dateLocale(), { weekday: "short" });
   const dd = String(d.getDate()).padStart(2, "0");
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   return { day, date: `${dd}.${mm}.${d.getFullYear()}` };
 }
 
 export function clock(ts: number) {
-  return new Date(ts).toLocaleTimeString("en-GB", {
+  return new Date(ts).toLocaleTimeString(dateLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -43,12 +50,12 @@ export function noteTime(ts: number) {
   if (d.toDateString() === today.toDateString()) return clock(ts);
   const y = new Date(today);
   y.setDate(today.getDate() - 1);
-  if (d.toDateString() === y.toDateString()) return "Yesterday";
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  if (d.toDateString() === y.toDateString()) return tr("Yesterday");
+  return d.toLocaleDateString(dateLocale(), { weekday: "short", day: "numeric", month: "short" });
 }
 
 // "1 song", "3 songs"
-export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${tr(n === 1 ? one : many)}`;
 
 export function mmss(ms: number) {
   const s = Math.floor(ms / 1000);

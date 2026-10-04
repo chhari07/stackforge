@@ -8,6 +8,7 @@ import { useSpotify } from "@/components/spotify-provider";
 import { mmss } from "@/lib/format";
 import { api, art, artists, SpotifyError, type SpImage, type SpTrack } from "@/lib/spotify";
 import { HeartFilledIcon } from "@/components/stack-icons";
+import { useT } from "@/lib/i18n";
 
 type Meta = { name: string; owner?: string; total: number; image?: string; uri?: string; web: string };
 type Row = { track?: SpTrack | null; item?: SpTrack | null };
@@ -37,6 +38,7 @@ export default function Page() {
 }
 
 function Playlist() {
+  const tt = useT();
   const id = useSearchParams().get("id") ?? "";
   const sp = useSpotify();
   const liked = id === LIKED;
@@ -61,14 +63,14 @@ function Playlist() {
       } catch (e) {
         setError(
           e instanceof SpotifyError && (e.status === 403 || e.status === 404)
-            ? "Spotify doesn’t let apps read this playlist’s tracks (Spotify-made playlists are blocked). You can still open it in Spotify."
+            ? tt("Spotify doesn’t let apps read this playlist’s tracks (Spotify-made playlists are blocked). You can still open it in Spotify.")
             : (e as Error).message,
         );
       } finally {
         setLoading(false);
       }
     },
-    [id, liked],
+    [id, liked, tt],
   );
 
   useEffect(() => {
@@ -104,16 +106,20 @@ function Playlist() {
   const playing = sp.player?.item?.id;
 
   return (
-    <main className="px-5 pt-5 pb-16 md:mx-auto md:max-w-[900px] md:px-10 md:pt-8">
+    <main className="px-5 pt-5 pb-16">
       <div className="flex h-11 items-center">
-        <Link href="/music" aria-label="Back to music" className="-ml-2 flex size-11 items-center justify-center">
+        <Link href="/music" aria-label={tt("Back to music")} className="-ml-2 flex size-11 items-center justify-center">
           <BackIcon size={22} />
         </Link>
       </div>
 
       {!sp.connected ? (
         <p className="mt-6 text-[15px] text-muted">
-          Log in to Spotify in <Link href="/music" className="underline">Music</Link> first.
+          {tt("Log in to Spotify in")}{" "}
+          <Link href="/music" className="underline">
+            {tt("Music")}
+          </Link>{" "}
+          {tt("first.")}
         </p>
       ) : (
         <>
@@ -130,7 +136,7 @@ function Playlist() {
               )}
             </div>
             <div className="flex min-w-0 flex-col gap-1">
-              <span className="label text-[10px] text-muted">{liked ? "Your library" : "Playlist"}</span>
+              <span className="label text-[10px] text-muted">{liked ? tt("Your library") : tt("Playlist")}</span>
               <h1 className="display line-clamp-3 text-[40px] leading-[0.9] tracking-[-0.03em] uppercase">
                 {meta?.name ?? "…"}
               </h1>
@@ -147,7 +153,7 @@ function Playlist() {
               disabled={tracks.length === 0}
               className="flex h-12 grow items-center justify-center gap-2 rounded-full bg-music text-[15px] font-semibold text-white disabled:opacity-40"
             >
-              <PlayIcon size={16} /> Play
+              <PlayIcon size={16} /> {tt("Play")}
             </button>
             {meta && (
               <a
@@ -156,7 +162,7 @@ function Playlist() {
                 rel="noopener noreferrer"
                 className="flex h-12 grow items-center justify-center gap-2 rounded-full border border-ink/15 text-[15px] font-semibold"
               >
-                Open in Spotify <ExternalIcon size={14} />
+                {tt("Open in Spotify")} <ExternalIcon size={14} />
               </a>
             )}
           </div>
@@ -204,10 +210,10 @@ function Playlist() {
               disabled={loading}
               className="label mt-3 h-11 w-full rounded-full border border-ink/15 text-[10px]"
             >
-              {loading ? "Loading…" : `Load more (${total - tracks.length})`}
+              {loading ? tt("Loading…") : tt("Load more ({n})", { n: total - tracks.length })}
             </button>
           )}
-          {loading && tracks.length === 0 && <p className="label mt-6 text-center text-[10px] text-muted">Loading tracks…</p>}
+          {loading && tracks.length === 0 && <p className="label mt-6 text-center text-[10px] text-muted">{tt("Loading tracks…")}</p>}
         </>
       )}
     </main>

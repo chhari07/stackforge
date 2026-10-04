@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { fileSize, PhoneFiles, readPhoneFile, useAllFiles, type PhoneFile } from "@/lib/phone-files";
 import { PLAY_BUILD, useIsNative } from "@/lib/platform";
 import { PlusIcon, SearchIcon } from "./icons";
+import { useT } from "@/lib/i18n";
 
 // "On this phone": PDFs that aren't in the Library yet, from the whole phone
 // (All files access) or from one picked folder. Android app only.
@@ -15,6 +16,7 @@ export function PhoneShelf({
   added: Set<string>; // source URIs/paths already in the Library
   onPick: (file: File, uri: string) => void;
 }) {
+  const t = useT();
   const native = useIsNative();
   const all = useAllFiles();
   const [folder, setFolder] = useState<string | null | undefined>(undefined);
@@ -50,16 +52,15 @@ export function PhoneShelf({
   if (!all.granted && folder === null && PLAY_BUILD) {
     return (
       <section className="mt-5 flex flex-col gap-3 rounded-2xl bg-card p-4">
-        <h2 className="text-[16px] font-semibold">PDFs on your phone</h2>
+        <h2 className="text-[16px] font-semibold">{t("PDFs on your phone")}</h2>
         <p className="text-[14px] leading-relaxed text-muted">
-          Pick a folder, like <b className="text-ink">Download</b> or <b className="text-ink">Documents</b>, and Stack
-          will list the PDFs in it. You can also share any PDF to Stack from another app.
+          {t("Pick a folder, like Download or Documents, and Stack will list the PDFs in it. You can also share any PDF to Stack from another app.")}
         </p>
         <button
           onClick={() => PhoneFiles.pickFolder().then(scan).catch(() => {})}
           className="h-11 rounded-full bg-ink text-[14px] font-semibold text-on-ink"
         >
-          Pick a folder
+          {t("Pick a folder")}
         </button>
       </section>
     );
@@ -68,19 +69,18 @@ export function PhoneShelf({
   if (!all.granted && folder === null) {
     return (
       <section className="mt-5 flex flex-col gap-3 rounded-2xl bg-card p-4">
-        <h2 className="text-[16px] font-semibold">PDFs on your phone</h2>
+        <h2 className="text-[16px] font-semibold">{t("PDFs on your phone")}</h2>
         <p className="text-[14px] leading-relaxed text-muted">
-          Turn on <b className="text-ink">All files access</b> and Stack will find every PDF on this phone, including
-          Download, and your music too. Android shows a switch for Stack; turn it on and come back.
+          {t("Turn on All files access and Stack will find every PDF on this phone, including Download, and your music too. Android shows a switch for Stack; turn it on and come back.")}
         </p>
         <button onClick={all.request} className="h-11 rounded-full bg-ink text-[14px] font-semibold text-on-ink">
-          Allow access to all files
+          {t("Allow access to all files")}
         </button>
         <button
           onClick={() => PhoneFiles.pickFolder().then(scan).catch(() => {})}
           className="text-[13px] text-muted underline"
         >
-          Or pick just one folder
+          {t("Or pick just one folder")}
         </button>
       </section>
     );
@@ -98,31 +98,31 @@ export function PhoneShelf({
   return (
     <section className="mt-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-[16px] font-semibold">On this phone</h2>
+        <h2 className="text-[16px] font-semibold">{t("On this phone")}</h2>
         <Link href="/settings" className="label text-[10px] text-muted underline">
-          {all.granted ? "All folders" : folder}
+          {all.granted ? t("All folders") : folder}
         </Link>
       </div>
       {files && files.length > 8 && (
         <label className="mt-2 flex h-10 items-center gap-2 rounded-full border border-ink/12 bg-card px-3.5">
           <SearchIcon size={16} className="text-muted" />
           <input
-            aria-label="Search PDFs on this phone"
+            aria-label={t("Search PDFs on this phone")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Search ${files.length} PDFs`}
+            placeholder={t("Search {n} PDFs", { n: files.length })}
             className="grow bg-transparent text-[13px] outline-none"
           />
         </label>
       )}
       {error && <p className="mt-2 text-[13px] text-music-deep">{error}</p>}
-      {files === null && !error && <p className="label mt-2 text-[10px] text-muted">Looking for PDFs…</p>}
+      {files === null && !error && <p className="label mt-2 text-[10px] text-muted">{t("Looking for PDFs…")}</p>}
       {files && !error && fresh.length === 0 && (
         <p className="mt-2 text-[13px] text-muted">
-          {q ? "No PDFs match." : files.length ? "Every PDF found is already in your Library." : "No PDFs found."}
+          {q ? t("No PDFs match.") : files.length ? t("Every PDF found is already in your Library.") : t("No PDFs found.")}
         </p>
       )}
-      <ul className="mt-1 md:grid md:grid-cols-2 md:gap-x-10">
+      <ul className="mt-1">
         {shown.map((f) => (
           <li key={f.uri} className="flex items-center gap-3 border-b border-line py-2.5">
             <span className="label flex h-11 w-8 shrink-0 items-center justify-center bg-card text-[7px] text-music-deep shadow-[0_2px_6px_rgba(0,0,0,.12)]">
@@ -136,7 +136,7 @@ export function PhoneShelf({
               </span>
             </span>
             <button
-              aria-label={`Add ${f.name}`}
+              aria-label={t("Add {name}", { name: f.name })}
               disabled={loading !== null}
               onClick={async () => {
                 setLoading(f.uri);
@@ -154,7 +154,7 @@ export function PhoneShelf({
                 "…"
               ) : (
                 <>
-                  <PlusIcon size={12} /> Add
+                  <PlusIcon size={12} /> {t("Add")}
                 </>
               )}
             </button>
@@ -163,7 +163,7 @@ export function PhoneShelf({
       </ul>
       {fresh.length > 8 && (
         <button onClick={() => setShowAll((a) => !a)} className="label mt-2 h-8 text-[10px] underline">
-          {showAll ? "Show fewer" : `Show all ${fresh.length}`}
+          {showAll ? t("Show fewer") : t("Show all {n}", { n: fresh.length })}
         </button>
       )}
     </section>

@@ -6,7 +6,7 @@ import { Logo } from "./logo";
 // to. No tab bar: people arrive here from a browser, not from inside Stack.
 export function PolicyPage({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16 md:px-10 md:pt-8">
+    <main className="min-h-dvh px-5 pt-5 pb-16">
       <div className="mx-auto max-w-[680px]">
         <Link href="/" aria-label="Stack home" className="inline-block">
           <Logo size={28} />

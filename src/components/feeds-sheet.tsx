@@ -7,9 +7,11 @@ import { PlusIcon, TrashIcon } from "./icons";
 import { Sheet } from "./sheet";
 import { RssIcon } from "./stack-icons";
 import { useToast } from "./toast";
+import { useT } from "@/lib/i18n";
 
 // Add and remove your own feeds. `onChange` runs after a change so News can reload.
 export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose: () => void; onChange: () => void }) {
+  const t = useT();
   const [feeds] = useStore(getFeeds, []);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState<string | null>(null); // the address being added
@@ -24,13 +26,13 @@ export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose
     setBusy(null);
     if (error) return setError(error);
     setUrl("");
-    toast({ text: `Added ${feed!.title}` });
+    toast({ text: t("Added {name}", { name: feed!.title }) });
     onChange();
   };
 
   const remove = async (id: string, title: string) => {
     await removeFeed(id);
-    toast({ text: `Removed ${title}` });
+    toast({ text: t("Removed {name}", { name: title }) });
     onChange();
   };
 
@@ -56,21 +58,21 @@ export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose
           autoCorrect="off"
           spellCheck={false}
           autoCapitalize="none"
-          placeholder="Feed or website address"
-          aria-label="Feed or website address"
+          placeholder={t("Feed or website address")}
+          aria-label={t("Feed or website address")}
           className="h-12 min-w-0 grow rounded-full border border-ink/15 bg-card px-4 text-[15px] outline-none focus:border-ink"
         />
         <button
           disabled={!url.trim() || !!busy}
           className="h-12 shrink-0 rounded-full bg-ink px-5 text-[15px] font-semibold text-on-ink disabled:opacity-40"
         >
-          {busy === url && url ? "Checking…" : "Add"}
+          {busy === url && url ? t("Checking…") : t("Add")}
         </button>
       </form>
       {error ? (
         <p className="-mt-2 text-[13px] text-music-text">{error}</p>
       ) : (
-        <p className="-mt-2 text-[13px] text-muted">Paste an RSS or Atom link, or just a site like theverge.com.</p>
+        <p className="-mt-2 text-[13px] text-muted">{t("Paste an RSS or Atom link, or just a site like theverge.com.")}</p>
       )}
 
       {feeds.length > 0 && (
@@ -85,7 +87,7 @@ export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose
                 <span className="label truncate text-[9px] text-muted">{f.url.replace(/^https?:\/\//, "")}</span>
               </span>
               <button
-                aria-label={`Remove ${f.title}`}
+                aria-label={t("Remove {name}", { name: f.title })}
                 onClick={() => remove(f.id, f.title)}
                 className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
               >
@@ -98,7 +100,7 @@ export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose
 
       {suggestions.length > 0 && (
         <>
-          <h3 className="label mt-1 text-[10px] text-muted">Suggestions</h3>
+          <h3 className="label mt-1 text-[10px] text-muted">{t("Suggestions")}</h3>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((s) => (
               <button
@@ -108,7 +110,7 @@ export function FeedsSheet({ open, onClose, onChange }: { open: boolean; onClose
                 className="flex h-10 items-center gap-1.5 rounded-full border border-ink/20 pr-3.5 pl-2.5 text-[13px] font-medium disabled:opacity-50"
               >
                 <PlusIcon size={14} />
-                {busy === s.url ? "Adding…" : s.title}
+                {busy === s.url ? t("Adding…") : s.title}
                 <span className="text-muted">· {s.note}</span>
               </button>
             ))}

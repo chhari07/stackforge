@@ -21,6 +21,12 @@ import { BookmarkIcon, TrashIcon } from "./icons";
 import { Chips, Sheet } from "./sheet";
 import { FlagIcon, HelpIcon, NoteAddIcon } from "./stack-icons";
 import { useToast } from "./toast";
+import { InkLayer, InkPad, InkToolbar, useInk, usePen } from "./ink";
+import type { Stroke } from "@/lib/ink";
+import { useT } from "@/lib/i18n";
+
+// Ink on a sticky is thicker than on the page: the sticky is much smaller.
+const STICKY_INK = 2.7;
 
 // ---- Page view ----
 const PLAIN: PdfView = { mode: "normal", contrast: 100, brightness: 100 };
@@ -71,13 +77,14 @@ export function ViewSheet({
   canvas: RefObject<HTMLCanvasElement | null>;
   page: number;
 }) {
+  const t = useT();
   const toast = useToast();
   const photo = useRef<HTMLInputElement>(null);
   const view = meta.view ?? PLAIN;
   const set = (patch: Partial<PdfView>) => onMeta({ view: { ...view, ...patch } });
   const slider = (label: string, key: "contrast" | "brightness", min: number, max: number) => (
     <label className="flex items-center gap-3">
-      <span className="label w-[76px] text-[10px] text-muted">{label}</span>
+      <span className="label w-[76px] text-[10px] text-muted">{t(label)}</span>
       <input
         type="range"
         min={min}
@@ -109,43 +116,43 @@ export function ViewSheet({
           { value: "grey", label: "Grey" },
         ]}
       />
-      {view.mode === "dark" && <p className="-mt-2 text-[12px] text-muted">Dark also turns pictures inside the PDF.</p>}
+      {view.mode === "dark" && <p className="-mt-2 text-[12px] text-muted">{t("Dark also turns pictures inside the PDF.")}</p>}
       <div className="flex flex-col">
         {slider("Contrast", "contrast", 60, 220)}
         {slider("Brightness", "brightness", 60, 140)}
       </div>
       <div className="flex flex-wrap gap-2">
         <button onClick={() => onZoom(zoom === 1 ? 1.6 : 1)} aria-pressed={zoom !== 1} className={pill}>
-          {zoom === 1 ? "Zoom in" : "Fit to width"}
+          {zoom === 1 ? t("Zoom in") : t("Fit to width")}
         </button>
         <button onClick={() => onShowStickies(!showStickies)} aria-pressed={!showStickies} className={pill}>
-          {showStickies ? "Hide sticky notes" : "Show sticky notes"}
+          {showStickies ? t("Hide sticky notes") : t("Show sticky notes")}
         </button>
         <button onClick={() => onMeta({ view: undefined })} disabled={!meta.view} className={`${pill} disabled:opacity-30`}>
-          Reset
+          {t("Reset")}
         </button>
       </div>
 
-      <span className="label text-[10px] text-muted">Cover on the shelf</span>
+      <span className="label text-[10px] text-muted">{t("Cover on the shelf")}</span>
       <div className="-mt-2 flex flex-wrap gap-2">
         <button
-          onClick={() => canvas.current && cover(shrink(canvas.current, canvas.current.width, canvas.current.height), `Page ${page} is the cover`)}
+          onClick={() => canvas.current && cover(shrink(canvas.current, canvas.current.width, canvas.current.height), t("Page {n} is the cover", { n: page }))}
           className={pill}
         >
-          Use this page
+          {t("Use this page")}
         </button>
         <button onClick={() => photo.current?.click()} className={pill}>
-          Photo
+          {t("Photo")}
         </button>
         <button
           onClick={() => {
             onMeta({ coverStyle: "stack" });
-            toast({ text: "Stack cover set" });
+            toast({ text: t("Stack cover set") });
           }}
           aria-pressed={meta.coverStyle === "stack"}
           className={`${pill} ${meta.coverStyle === "stack" ? "bg-ink text-on-ink" : ""}`}
         >
-          Stack cover
+          {t("Stack cover")}
         </button>
         <input
           ref={photo}
@@ -158,7 +165,7 @@ export function ViewSheet({
             if (!file) return;
             const img = new Image();
             img.onload = () => {
-              cover(shrink(img, img.naturalWidth, img.naturalHeight), "Cover changed");
+              cover(shrink(img, img.naturalWidth, img.naturalHeight), t("Cover changed"));
               URL.revokeObjectURL(img.src);
             };
             img.src = URL.createObjectURL(file);
@@ -172,9 +179,10 @@ export function ViewSheet({
 // ---- Bookmarks ----
 // The ribbon that hangs from the top of a bookmarked page.
 export function Ribbon({ onClick }: { onClick: () => void }) {
+  const t = useT();
   return (
     <button
-      aria-label="Bookmarks"
+      aria-label={t("Bookmarks")}
       onClick={onClick}
       className="ribbon ribbon-drop absolute -top-1 right-4 z-[3] flex h-12 w-6 justify-center bg-music pt-1.5 text-white shadow-[0_2px_4px_rgba(0,0,0,.25)]"
     >
@@ -195,6 +203,7 @@ export function BookmarkSheet({
   onChange,
   page,
   onPage,
+  unit = "p.",
 }: {
   open: boolean;
   onClose: () => void;
@@ -202,7 +211,11 @@ export function BookmarkSheet({
   onChange: (next: Bookmark[]) => void;
   page: number;
   onPage: (page: number) => void;
+  unit?: "p." | "ch."; // an EPUB's bookmarks are on chapters
 }) {
+  const t = useT();
+  const noun = unit === "ch." ? t("Chapter") : t("Page");
+  const u = t(unit);
   const here = bookmarks.find((b) => b.page === page);
   const [label, setLabel] = useState("");
   const sorted = [...bookmarks].sort((a, b) => a.page - b.page);
@@ -211,7 +224,7 @@ export function BookmarkSheet({
     <Sheet open={open} onClose={onClose} title="Bookmarks">
       {here ? (
         <button onClick={() => onChange(bookmarks.filter((b) => b.page !== page))} className="h-12 rounded-full border border-ink/15 text-[15px] font-semibold">
-          Remove the bookmark on p. {page}
+          {t("Remove the bookmark on {where}", { where: `${u} ${page}` })}
         </button>
       ) : (
         <form
@@ -225,18 +238,18 @@ export function BookmarkSheet({
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Label (optional)"
-            aria-label="Bookmark label"
+            placeholder={t("Label (optional)")}
+            aria-label={t("Bookmark label")}
             maxLength={40}
             className="h-12 min-w-0 grow rounded-full border border-ink/15 bg-card px-4 text-[15px] outline-none focus:border-ink"
           />
           <button className="flex h-12 shrink-0 items-center gap-2 rounded-full bg-ink px-5 text-[15px] font-semibold text-on-ink">
-            <BookmarkIcon size={16} filled /> p. {page}
+            <BookmarkIcon size={16} filled /> {u} {page}
           </button>
         </form>
       )}
       {sorted.length === 0 ? (
-        <p className="text-[14px] text-muted">No bookmarks in this PDF yet.</p>
+        <p className="text-[14px] text-muted">{unit === "ch." ? t("No bookmarks in this book yet.") : t("No bookmarks in this PDF yet.")}</p>
       ) : (
         <ul className="-mt-1 flex max-h-[40dvh] flex-col overflow-y-auto">
           {sorted.map((b) => (
@@ -249,11 +262,13 @@ export function BookmarkSheet({
                 className="flex h-12 min-w-0 grow items-center gap-3 text-left"
               >
                 <span className="ribbon h-6 w-3 shrink-0 bg-music" />
-                <span className="truncate text-[15px] font-semibold">{b.label || `Page ${b.page}`}</span>
-                <span className="label ml-auto shrink-0 text-[10px] text-muted">p. {b.page}</span>
+                <span className="truncate text-[15px] font-semibold">{b.label || `${noun} ${b.page}`}</span>
+                <span className="label ml-auto shrink-0 text-[10px] text-muted">
+                  {u} {b.page}
+                </span>
               </button>
               <button
-                aria-label={`Remove the bookmark on page ${b.page}`}
+                aria-label={t("Remove the bookmark on {where}", { where: `${noun} ${b.page}` })}
                 onClick={() => onChange(bookmarks.filter((x) => x.page !== b.page))}
                 className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
               >
@@ -280,6 +295,7 @@ const WIDTH: Record<Sticky["size"], number> = { s: 0.11, m: 0.3, l: 0.44 }; // o
 const TYPE_ICON = { note: NoteAddIcon, flag: FlagIcon, question: HelpIcon };
 
 function StickyNote({ note, pageW, pageH, onEdit }: { note: Note; pageW: number; pageH: number; onEdit: (n: Note) => void }) {
+  const t = useT();
   const s = note.sticky!;
   const [up, setUp] = useState(false);
   const [at, setAt] = useState<{ x: number; y: number } | null>(null); // while dragging
@@ -330,7 +346,7 @@ function StickyNote({ note, pageW, pageH, onEdit }: { note: Note; pageW: number;
       data-sticky
       role="button"
       tabIndex={0}
-      aria-label={`Sticky note: ${note.body ?? ""}`}
+      aria-label={`${t("Sticky note")}: ${note.body || (note.ink?.length ? t("handwritten") : "")}`}
       onPointerDown={onDown}
       onPointerMove={onMove}
       onPointerUp={onUp}
@@ -342,11 +358,11 @@ function StickyNote({ note, pageW, pageH, onEdit }: { note: Note; pageW: number;
       <div className={`sticky-paper relative size-full ${up ? "up" : ""}`}>
         <div className={`${face} ${flag || small ? "" : "sticky-curl"}`} style={{ background: front, ...shape }}>
           {!flag && !small && <div className="h-[14%] bg-black/[0.06]" />}
-          {small ? (
+          {small && !note.ink?.length ? (
             <span className="flex size-full items-center justify-center">
               <Icon size={Math.round(w * 0.55)} />
             </span>
-          ) : (
+          ) : small ? null : (
             <p
               className={`flex gap-1 px-[8%] font-medium ${flag ? "h-full items-center truncate pr-[14px]" : "pt-[5%] leading-[1.25] whitespace-pre-wrap"}`}
               style={{ fontSize: font }}
@@ -355,6 +371,7 @@ function StickyNote({ note, pageW, pageH, onEdit }: { note: Note; pageW: number;
               <span className={flag ? "truncate" : ""}>{note.body}</span>
             </p>
           )}
+          <InkLayer strokes={note.ink} w={w} h={h} />
         </div>
         <div className={`${face} sticky-back flex flex-col items-center justify-center gap-1`} style={{ background: back, ...shape }}>
           {!flag && <span className="label text-[8px] opacity-70">{clock(note.updatedAt ?? note.createdAt)}</span>}
@@ -377,8 +394,8 @@ export function Stickies({ notes, pageW, pageH, onEdit }: { notes: Note[]; pageW
   return notes.map((n) => <StickyNote key={n.id} note={n} pageW={pageW} pageH={pageH} onEdit={onEdit} />);
 }
 
-type Draft = { text: string; type: Sticky["type"]; size: Sticky["size"]; color: NoteColor };
-const NEW: Draft = { text: "", type: "note", size: "m", color: "orange" };
+type Draft = { text: string; type: Sticky["type"]; size: Sticky["size"]; color: NoteColor; hand: boolean };
+const NEW: Draft = { text: "", type: "note", size: "m", color: "orange", hand: false };
 
 // Write a new sticky, or change one. `editing` is the note being changed.
 export function StickySheet({
@@ -394,51 +411,123 @@ export function StickySheet({
   pdf: PdfMeta;
   page: number;
 }) {
+  const t = useT();
   const toast = useToast();
   const [d, setD] = useState<Draft>(NEW);
+  const [pen, setPen] = usePen();
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const ink = useInk(editing?.ink ?? [], setStrokes, `${open}:${editing?.id ?? "new"}`);
+  const pad = useRef<HTMLDivElement>(null);
+  const [padW, setPadW] = useState(0);
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setD(
       editing?.sticky
-        ? { text: editing.body ?? "", type: editing.sticky.type, size: editing.sticky.size, color: editing.color ?? "orange" }
+        ? {
+            text: editing.body ?? "",
+            type: editing.sticky.type,
+            size: editing.sticky.size,
+            color: editing.color ?? "orange",
+            hand: !!editing.ink?.length && !editing.body,
+          }
         : NEW,
     );
+    setStrokes(editing?.ink ?? []);
   }, [open, editing]);
+  // Flags are a thin strip: handwriting is for notes and questions.
+  const canHand = d.type !== "flag";
+  const stickyPen = pen.tool === "hl" ? { ...pen, tool: "pen" as const } : pen;
+  const hand = d.hand && canHand;
+  useEffect(() => {
+    if (!hand || !pad.current) return;
+    const el = pad.current;
+    const ro = new ResizeObserver(() => setPadW(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [hand, open]);
 
   const save = async () => {
-    const body = d.text.trim() || (d.type === "flag" ? "Come back here" : "");
-    if (!body) return;
-    if (editing?.sticky) await updateNote(editing.id, { body, color: d.color, sticky: { ...editing.sticky, type: d.type, size: d.size } });
+    const lines = canHand ? strokes : [];
+    const body = d.text.trim() || (d.type === "flag" ? t("Come back here") : "");
+    if (!body && !lines.length) return;
+    // Handwriting needs room: a small sticky with ink becomes medium.
+    const size = lines.length && d.size === "s" ? "m" : d.size;
+    if (editing?.sticky)
+      await updateNote(editing.id, {
+        body,
+        color: d.color,
+        ink: lines.length ? lines : undefined,
+        sticky: { ...editing.sticky, type: d.type, size },
+      });
     else {
       await addNote({
         kind: "pdf",
         body,
+        ...(lines.length ? { ink: lines } : {}),
         color: d.color,
-        sticky: { x: 0.34, y: 0.22, type: d.type, size: d.size },
+        sticky: { x: 0.34, y: 0.22, type: d.type, size },
         sourceTitle: pdf.title,
         sourceLabel: "PDF",
         pdfId: pdf.id,
         page,
         href: `/library/read?id=${pdf.id}&page=${page}`,
       });
-      toast({ text: "Sticky added · drag it into place" });
+      toast({ text: t("Sticky added · drag it into place") });
     }
     onClose();
   };
 
   return (
     <Sheet open={open} onClose={onClose} title={editing ? "Sticky note" : "New sticky note"}>
+      {canHand && (
+        <Chips
+          label="How to write"
+          value={hand ? "hand" : "type"}
+          onChange={(m) => setD({ ...d, hand: m === "hand" })}
+          options={[
+            { value: "type", label: "Type" },
+            { value: "hand", label: "Handwrite" },
+          ]}
+        />
+      )}
+      {hand ? (
+        <>
+          <div
+            ref={pad}
+            className="relative mx-auto aspect-square w-full max-w-[320px] overflow-hidden rounded-2xl shadow-[inset_0_0_0_1px_rgba(0,0,0,.06)]"
+            style={{ background: (PAPER[d.color] ?? PAPER.orange!)[0] }}
+          >
+            <div className="h-[14%] bg-black/[0.06]" />
+            {!strokes.length && (
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[14px] text-black/35">
+                {t("Write here with your pen or finger")}
+              </span>
+            )}
+            {padW > 0 && (
+              <InkPad strokes={ink.strokes} onChange={ink.change} w={padW} h={padW} pen={stickyPen} widthScale={STICKY_INK} />
+            )}
+          </div>
+          <InkToolbar
+            pen={stickyPen}
+            onPen={setPen}
+            ink={ink}
+            onClear={() => ink.strokes.length && ink.change([])}
+            highlighter={false}
+          />
+        </>
+      ) : (
       <textarea
         value={d.text}
         onChange={(e) => setD({ ...d, text: e.target.value })}
-        placeholder={d.type === "question" ? "What do you want to ask?" : d.type === "flag" ? "Come back here" : "Write a note…"}
-        aria-label="Sticky note text"
+        placeholder={d.type === "question" ? t("What do you want to ask?") : d.type === "flag" ? t("Come back here") : t("Write a note…")}
+        aria-label={t("Sticky note text")}
         rows={3}
         maxLength={400}
         className="resize-none rounded-2xl p-3.5 text-[15px] leading-snug text-[#111] outline-none placeholder:text-black/40"
         style={{ background: (PAPER[d.color] ?? PAPER.orange!)[0] }}
       />
+      )}
       <Chips
         label="Kind of sticky"
         value={d.type}
@@ -459,13 +548,13 @@ export function StickySheet({
           { value: "l", label: "Large" },
         ]}
       />
-      <div role="radiogroup" aria-label="Colour" className="flex gap-3">
+      <div role="radiogroup" aria-label={t("Colour")} className="flex gap-3">
         {(Object.keys(PAPER) as NoteColor[]).map((c) => (
           <button
             key={c}
             role="radio"
             aria-checked={d.color === c}
-            aria-label={c === "orange" ? "yellow" : c}
+            aria-label={t(c === "orange" ? "yellow" : c)}
             onClick={() => setD({ ...d, color: c })}
             className={`size-10 rounded-[6px] shadow-[0_2px_4px_rgba(0,0,0,.18)] ${d.color === c ? "outline-2 outline-offset-2 outline-ink" : ""}`}
             style={{ background: PAPER[c]![0] }}
@@ -474,11 +563,11 @@ export function StickySheet({
       </div>
       <div className="flex gap-2">
         <button onClick={save} className="h-12 grow rounded-full bg-ink text-[15px] font-semibold text-on-ink">
-          {editing ? "Save" : "Stick it on the page"}
+          {editing ? t("Save") : t("Stick it on the page")}
         </button>
         {editing && (
           <button
-            aria-label="Delete this sticky note"
+            aria-label={t("Delete this sticky note")}
             onClick={() => {
               deleteNote(editing.id);
               onClose();

@@ -7,7 +7,8 @@
 
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
-function findRange(root: Node, quote: string): Range | null {
+/** Where `quote` is in the text under `root`, or null. */
+export function findRange(root: Node, quote: string): Range | null {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: { node: Text; start: number }[] = [];
   let text = "";

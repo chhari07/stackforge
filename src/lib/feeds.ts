@@ -8,6 +8,7 @@ import { emit, uid } from "./db";
 import type { FeedInfo, Story } from "./news";
 import { isNative } from "./platform";
 import { track } from "./sync-state";
+import { tr } from "./i18n";
 
 export type UserFeed = FeedInfo & { id: string; addedAt: number; updatedAt: number };
 
@@ -42,9 +43,9 @@ async function read(url: string, fresh = false): Promise<Read | null> {
 // Checks the address is a feed (or a page with one) before adding it.
 export async function addFeed(input: string): Promise<{ feed?: UserFeed; error?: string }> {
   const found = await read(input).catch(() => null);
-  if (!found) return { error: "Couldn’t find a feed there. Try the site’s RSS link." };
+  if (!found) return { error: tr("Couldn’t find a feed there. Try the site’s RSS link.") };
   const all = await getFeeds();
-  if (all.some((f) => sameFeed(f.url, found.info.url))) return { error: `${found.info.title} is already in your feeds.` };
+  if (all.some((f) => sameFeed(f.url, found.info.url))) return { error: tr("{name} is already in your feeds.", { name: found.info.title }) };
   const now = Date.now();
   const feed: UserFeed = { ...found.info, id: uid(), addedAt: now, updatedAt: now };
   await update<UserFeed[]>("feeds", (list) => [...(list ?? []), feed]);

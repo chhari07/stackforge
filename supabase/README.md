@@ -107,14 +107,24 @@ key is ever inside the app.
    itself, which also works with Supabase's newer signing keys.)
 2. Give it its secrets: **Edge Functions → Secrets**, or
    ```
-   npx supabase secrets set AI_PROVIDER=openai OPENAI_API_KEY=sk-... AI_DAILY_LIMIT=20
+   npx supabase secrets set SARVAM_API_KEY=sk_... GEMINI_API_KEY=AIza... AI_DAILY_LIMIT=20
    ```
-   `AI_PROVIDER` is `openai` or `anthropic` (then `ANTHROPIC_API_KEY`). Models
-   and the per-feature overrides are listed in [`.env.example`](../.env.example).
+   Any mix of engines works; each feature tries the ones that have a key, in
+   order, and falls back to the next when one is out of credit or busy. Text
+   jobs go Sarvam → Gemini → Groq → OpenAI → Claude; PDF chat goes Gemini →
+   Claude → OpenAI (Sarvam and Groq can't read PDF files). Free to start:
+   Sarvam gives ₹100 credit on sign-up (dashboard.sarvam.ai), Gemini
+   (aistudio.google.com/apikey) and Groq (console.groq.com/keys) have free
+   tiers. Every setting is listed in [`.env.example`](../.env.example).
+   **Hosting it in a different Supabase project** (e.g. a separate `stack-ai`
+   project) also works: add the secrets `STACK_SUPABASE_URL` (Stack's project
+   URL) and `STACK_SUPABASE_KEY` (Stack's publishable key). Sign-ins and the
+   daily counter still use Stack's project, and the app leaves out its own
+   `apikey` header, which the other project's gateway would reject.
 3. Tell the app where it is, in `.env.local`, and rebuild:
    ```
    NEXT_PUBLIC_AI_URL=https://abcdefgh.supabase.co/functions/v1/ai
-   NEXT_PUBLIC_AI_ENGINE=OpenAI
+   NEXT_PUBLIC_AI_ENGINE=Sarvam AI and Google Gemini
    ```
    Leave `NEXT_PUBLIC_AI_URL` empty to hide AI in the app.
 

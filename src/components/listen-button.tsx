@@ -5,6 +5,7 @@ import { HeadphonesIcon } from "./stack-icons";
 import { useToast } from "./toast";
 import { canListen, listen, stopListening } from "@/lib/listen";
 import { isNative } from "@/lib/platform";
+import { useT } from "@/lib/i18n";
 
 // "Listen": reads the article or PDF aloud (lib/listen.ts).
 export function ListenButton({
@@ -18,6 +19,7 @@ export function ListenButton({
   source: string;
   label?: string;
 }) {
+  const t = useT();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState(false); // website only
@@ -32,13 +34,13 @@ export function ListenButton({
     setBusy(true);
     try {
       const text = (await getText()).trim();
-      if (!text) throw new Error("Nothing to read here");
+      if (!text) throw new Error(t("Nothing to read here"));
       await listen({ title, source, text });
       if (isNative()) {
-        toast({ text: "Reading aloud · controls are in the player and notification", href: "/music" });
+        toast({ text: t("Reading aloud · controls are in the player and notification"), href: "/music" });
       } else setSpeaking(true);
     } catch (e) {
-      toast({ text: (e as Error).message || "Couldn't read this aloud" });
+      toast({ text: (e as Error).message || t("Couldn't read this aloud") });
     } finally {
       setBusy(false);
     }
@@ -46,7 +48,7 @@ export function ListenButton({
 
   return (
     <button
-      aria-label={speaking ? "Stop reading aloud" : label}
+      aria-label={speaking ? t("Stop reading aloud") : t(label)}
       aria-pressed={speaking}
       aria-busy={busy}
       onClick={start}

@@ -7,6 +7,7 @@ import { get, update } from "idb-keyval";
 import { emit, uid } from "./db";
 import type { LocalTrack } from "./local-music";
 import { track } from "./sync-state";
+import { tr } from "./i18n";
 
 export type Playlist = {
   id: string;
@@ -28,7 +29,7 @@ export async function getPlaylist(id: string) {
 }
 
 export async function createPlaylist(name: string, tracks: LocalTrack[] = []) {
-  const p: Playlist = { id: uid(), name: name.trim() || "New playlist", tracks, createdAt: Date.now(), updatedAt: Date.now() };
+  const p: Playlist = { id: uid(), name: name.trim() || tr("New playlist"), tracks, createdAt: Date.now(), updatedAt: Date.now() };
   await update<Playlist[]>("playlists", (all) => [...(all ?? []), p]);
   await track("playlists", p.id);
   emit();

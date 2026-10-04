@@ -6,14 +6,17 @@ import { TabBar } from "@/components/tab-bar";
 import { PdfCover } from "@/components/pdf-cover";
 import { Sheet } from "@/components/sheet";
 import { useToast } from "@/components/toast";
-import { ChevronLeft, ChevronRight, CloseIcon, PlusIcon } from "@/components/icons";
+import { ChevronLeft, ChevronRight, CloseIcon } from "@/components/icons";
 import { addPdf, deletePdf, getPdfs, getSaved, toggleSaved, type PdfMeta } from "@/lib/db";
 import { useStore } from "@/lib/use-store";
+import { SAMPLE_HREF } from "@/lib/sample";
 import { inspectPdf } from "@/lib/pdf";
+import { inspectEpub, isEpub } from "@/lib/epub";
 import { safeImage } from "@/lib/use-news";
 import { PhoneShelf } from "@/components/phone-shelf";
 import { TelegramImport } from "@/components/telegram-import";
 import { getOfflineIndex } from "@/lib/offline";
+import { useT } from "@/lib/i18n";
 
 // Translucent acrylic shelves from the Books reference, one colour per shelf.
 const SHELVES = [
@@ -24,28 +27,29 @@ const SHELVES = [
 ];
 
 function Shelf({ index, children }: { index: number; children: React.ReactNode }) {
+  const t = useT();
   const scroller = useRef<HTMLDivElement>(null);
   const tone = SHELVES[index % SHELVES.length];
   const scroll = (dir: number) => scroller.current?.scrollBy({ left: dir * 224, behavior: "smooth" });
   return (
     <div className="relative mt-2.5">
       <div className="absolute -top-[42px] right-0 flex items-center text-muted">
-        <button aria-label="Scroll left" onClick={() => scroll(-1)} className="flex h-8 w-7 items-center justify-center">
+        <button aria-label={t("Scroll left")} onClick={() => scroll(-1)} className="flex h-8 w-7 items-center justify-center">
           <ChevronLeft size={14} />
         </button>
-        <button aria-label="Scroll right" onClick={() => scroll(1)} className="flex h-8 w-7 items-center justify-center">
+        <button aria-label={t("Scroll right")} onClick={() => scroll(1)} className="flex h-8 w-7 items-center justify-center">
           <ChevronRight size={14} />
         </button>
       </div>
       <div
         aria-hidden
-        className="absolute inset-x-0 top-[92px] h-16 rounded-lg border border-white/45 md:top-[136px] md:h-20"
+        className="absolute inset-x-0 top-[92px] h-16 rounded-lg border border-white/45"
         style={{ background: tone.bar, boxShadow: `0 6px 14px ${tone.glow}` }}
       >
         <span className="absolute top-[26px] left-3 size-3 rounded-full border border-[#A9A69E] bg-[#D8D6D0]" />
         <span className="absolute top-[26px] right-3 size-3 rounded-full border border-[#A9A69E] bg-[#D8D6D0]" />
       </div>
-      <div ref={scroller} className="no-scrollbar relative flex h-[160px] gap-3.5 overflow-x-auto px-1 md:h-[216px] md:gap-6 md:px-8">
+      <div ref={scroller} className="no-scrollbar relative flex h-[160px] gap-3.5 overflow-x-auto px-1">
         {children}
       </div>
     </div>
@@ -53,6 +57,7 @@ function Shelf({ index, children }: { index: number; children: React.ReactNode }
 }
 
 export default function Library() {
+  const t = useT();
   const toast = useToast();
   const [pdfs] = useStore(getPdfs, []);
   const [saved] = useStore(getSaved, []);
@@ -81,42 +86,60 @@ export default function Library() {
     if (!pending) return;
     setBusy(true);
     try {
-      const { title, pages, cover } = await inspectPdf(pending);
-      await addPdf(pending, { title, pages, shelf: shelf.trim() || "Reading", sourceUri: pendingUri }, cover);
-      toast({ text: `Added “${title}”` });
+      const epub = isEpub(pending);
+      const { title, pages, cover } = epub ? await inspectEpub(pending) : await inspectPdf(pending);
+      await addPdf(
+        pending,
+        {
+          title,
+          pages,
+          shelf: shelf.trim() || "Reading",
+          sourceUri: pendingUri,
+          // An EPUB with no cover picture gets the Stack cover.
+          ...(epub && { format: "epub" as const, coverStyle: cover ? undefined : ("stack" as const) }),
+        },
+        cover,
+      );
+      toast({ text: t("“{title}” is on the shelf.", { title }) });
       setPending(null);
     } catch (e) {
       console.error("add pdf", e);
-      toast({ text: "That file couldn’t be opened as a PDF" });
+      toast({ text: isEpub(pending) ? t("That EPUB couldn’t be opened") : t("That file couldn’t be opened as a PDF") });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <main className="min-h-dvh bg-paper-2 px-5 pt-7 pb-[190px] md:px-10 md:pb-28">
+    <main className="min-h-dvh bg-paper-2 px-5 pt-7 pb-[190px]">
       <div className="flex flex-col items-center">
-        <span className="text-[15px] font-semibold">My Library</span>
-        <h1 className="font-serif text-[66px] leading-none font-medium tracking-[-0.01em]">BOOKS</h1>
+        <span className="text-[15px] font-semibold">{t("My Library")}</span>
+        <h1 className="font-serif text-[66px] leading-none font-medium tracking-[-0.01em]">{t("BOOKS")}</h1>
         <span className="label mt-1 text-[10px] text-muted">
-          {pdfs.length} PDFs · {saved.length} saved articles
+          {t(pdfs.length === 1 ? "{n} book" : "{n} books", { n: pdfs.length })} · {t("{n} saved articles", { n: saved.length })}
         </span>
       </div>
 
       {pdfs.length > 0 && (
         <div className="mt-3 flex justify-end">
           <button onClick={() => setEditing((e) => !e)} className="label h-8 text-[10px] underline">
-            {editing ? "Done" : "Edit"}
+            {editing ? t("Done") : t("Edit")}
           </button>
         </div>
       )}
 
       {pdfs.length === 0 && (
         <div className="mt-10 flex flex-col items-center gap-2 text-center">
-          <p className="font-serif text-[22px] italic">Your shelves are empty.</p>
-          <p className="max-w-[260px] text-[14px] text-muted">
-            Add a PDF — a book, a paper, lecture notes. It stays on this device.
+          <p className="font-serif text-[22px] italic">{t("Every shelf starts with one book.")}</p>
+          <p className="max-w-[280px] text-[14px] text-muted">
+            {t("Add a PDF or an EPUB — a book, a paper, lecture notes. Select a line to highlight it, and Stack brings it back tomorrow. It all stays on this device.")}
           </p>
+          <Link
+            href={SAMPLE_HREF}
+            className="mx-auto mt-3 flex h-12 items-center rounded-full bg-ink px-6 text-[15px] font-semibold text-on-ink"
+          >
+            {t("Try it on a sample article")}
+          </Link>
         </div>
       )}
 
@@ -127,20 +150,20 @@ export default function Library() {
             <div className="flex items-center justify-between pr-[64px]">
               <h2 className="text-[16px] font-semibold">{name}</h2>
               <span className="text-[13px] text-muted">
-                {items.length} {items.length === 1 ? "PDF" : "PDFs"}
+                {t(items.length === 1 ? "{n} book" : "{n} books", { n: items.length })}
               </span>
             </div>
             <Shelf index={i}>
               {items.map((p) => (
                 <div key={p.id} className="relative shrink-0">
-                  <Link href={`/library/read?id=${p.id}`} aria-label={`Read ${p.title}`}>
-                    <PdfCover id={p.id} title={p.title} plain={p.coverStyle === "stack"} marked={!!p.bookmarks?.length} progress={p.lastPage > 1 ? p.lastPage / p.pages : 0} className="h-[142px] w-[98px] md:h-[196px] md:w-[136px]" />
+                  <Link href={`/library/read?id=${p.id}`} aria-label={t("Read {title}", { title: p.title })}>
+                    <PdfCover id={p.id} title={p.title} plain={p.coverStyle === "stack"} marked={!!p.bookmarks?.length} progress={p.lastPage > 1 ? p.lastPage / p.pages : 0} className="h-[142px] w-[98px]" />
                   </Link>
                   {editing && (
                     <button
-                      aria-label={`Delete ${p.title}`}
+                      aria-label={t("Delete {title}", { title: p.title })}
                       onClick={() => {
-                        if (confirm(`Delete “${p.title}” and its notes from this device?`)) deletePdf(p.id);
+                        if (confirm(t("Delete “{title}” and its notes from this device?", { title: p.title }))) deletePdf(p.id);
                       }}
                       className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full bg-ink text-on-ink"
                     >
@@ -159,11 +182,11 @@ export default function Library() {
 
       <section className="mt-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-[16px] font-semibold">Saved articles</h2>
-          <span className="text-[13px] text-muted">{saved.length} saved</span>
+          <h2 className="text-[16px] font-semibold">{t("Saved articles")}</h2>
+          <span className="text-[13px] text-muted">{t("{n} saved", { n: saved.length })}</span>
         </div>
         {saved.length === 0 ? (
-          <p className="mt-2 text-[13px] text-muted">Tap the bookmark on any article to keep it here.</p>
+          <p className="mt-2 text-[13px] text-muted">{t("Bookmark a story. It waits here for you.")}</p>
         ) : (
           <div className="rail -mx-5 mt-2.5 gap-3.5 px-5">
             {saved.map((a) => {
@@ -179,12 +202,12 @@ export default function Library() {
                     <span className="relative line-clamp-4 text-[11px] leading-tight font-semibold">{a.title}</span>
                     <span className="label relative mt-1 text-[7px] text-[#BDBAB2]">
                       {a.source}
-                      {offline[a.id]?.keep ? " · offline" : ""}
+                      {offline[a.id]?.keep ? ` · ${t("offline")}` : ""}
                     </span>
                   </Link>
                   {editing && (
                     <button
-                      aria-label={`Remove ${a.title}`}
+                      aria-label={t("Remove {name}", { name: a.title })}
                       onClick={() => toggleSaved(a)}
                       className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full bg-ink text-on-ink"
                     >
@@ -201,7 +224,7 @@ export default function Library() {
       <input
         ref={input}
         type="file"
-        accept="application/pdf,.pdf"
+        accept="application/pdf,.pdf,application/epub+zip,.epub"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -209,23 +232,16 @@ export default function Library() {
           if (f) choose(f);
         }}
       />
-      <button
-        onClick={() => input.current?.click()}
-        className="fixed inset-x-0 bottom-[calc(var(--above-tabs)+10px)] z-30 mx-auto flex h-14 w-[200px] md:inset-x-auto md:right-8 md:mx-0 items-center justify-center gap-2 rounded-full bg-ink text-[16px] font-semibold text-on-ink shadow-[0_10px_24px_rgba(0,0,0,.25)]"
-      >
-        <PlusIcon size={18} />
-        Add PDF
-      </button>
 
       <Sheet open={pending !== null} onClose={() => !busy && setPending(null)} title="Add to a shelf">
         <p className="truncate text-[14px] text-muted">{pending?.name}</p>
         <label className="flex flex-col gap-2">
-          <span className="label text-[10px] text-muted">Shelf</span>
+          <span className="label text-[10px] text-muted">{t("Shelf")}</span>
           <input
             list="shelf-names"
             value={shelf}
             onChange={(e) => setShelf(e.target.value)}
-            placeholder="e.g. Design, Research papers"
+            placeholder={t("e.g. Design, Research papers")}
             className="h-12 rounded-xl border border-ink/15 bg-card px-3.5 text-[15px] outline-none focus:border-ink"
           />
           <datalist id="shelf-names">
@@ -239,11 +255,11 @@ export default function Library() {
           disabled={busy}
           className="h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-50"
         >
-          {busy ? "Reading PDF…" : "Add to Library"}
+          {busy ? t("Opening…") : t("Add to Library")}
         </button>
       </Sheet>
 
-      <TabBar tone="bg-paper-2" />
+      <TabBar add={{ label: "Add PDF or EPUB", onClick: () => input.current?.click() }} />
     </main>
   );
 }

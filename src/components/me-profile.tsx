@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { HEAT_WEEKS, EMPTY_STATS, getMeStats, type Badge, type MeStats } from "@/lib/me-stats";
+import {
+  EMPTY_STATS,
+  EMPTY_YEAR,
+  HEAT_WEEKS,
+  getMeStats,
+  getYearStats,
+  yearFigures,
+  type Badge,
+  type MeStats,
+} from "@/lib/me-stats";
 import { TOPICS } from "@/lib/news";
 import { DEFAULT_GOAL, accentOf, getProfile, moodIcon, type Profile } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
@@ -11,10 +20,14 @@ import { NamedIcon } from "./profile-icons";
 import { TopicIcon } from "./topic-icon";
 import { ProfileSheet } from "./profile-sheet";
 import { Sheet } from "./sheet";
+import { ShareIcon } from "./icons";
+import { QuoteCardSheet } from "./quote-card-sheet";
+import { dateLocale, useT } from "@/lib/i18n";
 
 // The top of the YOU page: a cover in your colour, photo, name, status, bio,
 // interests and your reader type, with "Edit profile".
 export function ProfileHero() {
+  const t = useT();
   const [profile] = useStore(getProfile, { id: "me", updatedAt: 0 } as Profile);
   const [stats] = useStore(getMeStats, EMPTY_STATS);
   const [editing, setEditing] = useState(false);
@@ -37,19 +50,19 @@ export function ProfileHero() {
           onClick={() => setEditing(true)}
           className="absolute top-3 right-3 h-9 rounded-full bg-paper/90 px-4 text-[13px] font-semibold text-ink"
         >
-          Edit profile
+          {t("Edit profile")}
         </button>
       </div>
       <div className="relative -mt-10 flex flex-col gap-2 px-5 pb-5">
-        <button onClick={() => setEditing(true)} aria-label="Edit profile" className="self-start rounded-full ring-4 ring-card">
+        <button onClick={() => setEditing(true)} aria-label={t("Edit profile")} className="self-start rounded-full ring-4 ring-card">
           <Avatar size={84} />
         </button>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <h2 className="text-[24px] leading-tight font-bold">{profile.name || "Your name"}</h2>
+          <h2 className="text-[24px] leading-tight font-bold">{profile.name || t("Your name")}</h2>
           {profile.mood && (
             <span className="flex items-center gap-1.5 rounded-full bg-paper-2 py-1 pr-2.5 pl-2 text-[12px] font-medium">
               <NamedIcon name={moodIcon(profile.mood)} size={15} />
-              {profile.mood.text}
+              {t(profile.mood.text)}
             </span>
           )}
         </div>
@@ -57,15 +70,15 @@ export function ProfileHero() {
           <p className="text-[15px] leading-snug text-prose">{profile.bio}</p>
         ) : (
           <button onClick={() => setEditing(true)} className="self-start text-[14px] text-muted underline">
-            {profile.mood || profile.interests?.length ? "Add a bio" : "Add a bio, a status and your interests"}
+            {profile.mood || profile.interests?.length ? t("Add a bio") : t("Add a bio, a status and your interests")}
           </button>
         )}
         {!!profile.interests?.length && (
           <div className="flex flex-wrap gap-1.5">
-            {profile.interests.map((t) => (
-              <span key={t} className="label flex items-center gap-1 rounded-full bg-news-tint py-1 pr-2.5 pl-2 text-[9px] text-news-deep">
-                <TopicIcon topic={t} size={12} />
-                {TOPICS.find((x) => x.value === t)?.label ?? t}
+            {profile.interests.map((topic) => (
+              <span key={topic} className="label flex items-center gap-1 rounded-full bg-news-tint py-1 pr-2.5 pl-2 text-[9px] text-news-deep">
+                <TopicIcon topic={topic} size={12} />
+                {t(TOPICS.find((x) => x.value === topic)?.label ?? topic)}
               </span>
             ))}
           </div>
@@ -76,10 +89,11 @@ export function ProfileHero() {
           </span>
           <div className="min-w-0">
             <p className="label text-[9px] text-muted">
-              Reader type{stats.timeOfDay === "night" ? " · night owl" : stats.timeOfDay === "early" ? " · early bird" : ""}
+              {t("Reader type")}
+              {stats.timeOfDay === "night" ? ` · ${t("night owl")}` : stats.timeOfDay === "early" ? ` · ${t("early bird")}` : ""}
             </p>
-            <p className="text-[16px] font-bold">{stats.type.title}</p>
-            <p className="text-[13px] leading-snug text-muted">{stats.type.line}</p>
+            <p className="text-[16px] font-bold">{t(stats.type.title)}</p>
+            <p className="text-[13px] leading-snug text-muted">{t(stats.type.line)}</p>
           </div>
         </div>
       </div>
@@ -90,6 +104,7 @@ export function ProfileHero() {
 
 // Totals, the daily goal ring, streaks, the activity heatmap and badges.
 export function MeStatsView() {
+  const t = useT();
   const [stats, ready] = useStore(getMeStats, EMPTY_STATS);
   const [profile] = useStore(getProfile, { id: "me", updatedAt: 0 } as Profile);
   if (!ready) return null;
@@ -100,16 +115,16 @@ export function MeStatsView() {
       <div className="mt-4 grid grid-cols-[auto_1fr] items-center gap-4 rounded-[22px] bg-card p-4">
         <GoalRing minutes={stats.todayMinutes} goal={goal} />
         <div className="flex flex-col gap-1">
-          <p className="label text-[9px] text-muted">Today’s focus</p>
+          <p className="label text-[9px] text-muted">{t("Today’s focus")}</p>
           <p className="text-[17px] leading-snug font-bold">
             {stats.todayMinutes >= goal
-              ? "Goal done. Nice work!"
+              ? t("Goal hit. Nice stacking.")
               : stats.todayMinutes > 0
-                ? `${goal - stats.todayMinutes} min to go`
-                : `Your goal is ${goal} min`}
+                ? t("{n} min to go", { n: goal - stats.todayMinutes })
+                : t("Your goal is {n} min", { n: goal })}
           </p>
           <Link href="/focus" className="label self-start text-[10px] text-music-text underline">
-            Start a focus session
+            {t("Start a focus session")}
           </Link>
         </div>
       </div>
@@ -120,7 +135,7 @@ export function MeStatsView() {
         <Streak icon="brain" tint="text-blue-deep" value={stats.reviewStreak} label="Review streak" />
       </div>
 
-      <h2 className="label mt-8 text-[11px] font-medium">Your Stack in numbers</h2>
+      <h2 className="label mt-8 text-[11px] font-medium">{t("Your stack so far")}</h2>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Stat value={stats.notes} label="Notes" tint="bg-card" />
         <Stat value={stats.highlights} label="Highlights" tint="bg-pdf-tint" />
@@ -129,21 +144,60 @@ export function MeStatsView() {
         <Stat value={stats.pagesRead} label="Pages read" tint="bg-blue-tint" />
         <Stat
           value={stats.focusMinutes >= 120 ? Math.round(stats.focusMinutes / 6) / 10 : stats.focusMinutes}
-          unit={stats.focusMinutes >= 120 ? "h" : "min"}
+          unit={stats.focusMinutes >= 120 ? t("h") : t("min")}
           label="Focused"
           tint="bg-music-tint"
         />
       </div>
 
-      <h2 className="label mt-8 text-[11px] font-medium">Activity</h2>
+      <h2 className="label mt-8 text-[11px] font-medium">{t("Activity")}</h2>
       <Heatmap stats={stats} />
 
       <Badges badges={stats.badges} />
+      <YearView />
+    </>
+  );
+}
+
+// "Your 2026 in Stack": the year's numbers, and a card of them to share.
+function YearView() {
+  const t = useT();
+  const [year, ready] = useStore(getYearStats, EMPTY_YEAR);
+  const [sharing, setSharing] = useState(false);
+  if (!ready || year.empty) return null;
+  const figures = yearFigures(year);
+  const until = new Date().toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
+  const jan1 = new Date(year.year, 0, 1).toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
+  return (
+    <>
+      <div className="mt-8 flex items-baseline justify-between">
+        <h2 className="label text-[11px] font-medium">{t("Your {year} in Stack", { year: year.year })}</h2>
+        <button onClick={() => setSharing(true)} className="label flex items-center gap-1.5 text-[10px] underline">
+          <ShareIcon size={13} /> {t("Share as a card")}
+        </button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3.5 rounded-[22px] bg-ink p-4 text-on-ink sm:grid-cols-3">
+        {figures.map((f, i) => (
+          <div key={f.label} className="flex flex-col">
+            <span className={`text-[26px] leading-none font-bold ${i === 0 ? "text-pdf" : ""}`}>{f.value}</span>
+            <span className="label mt-1 text-[9px] text-on-ink/65">{f.label}</span>
+          </div>
+        ))}
+      </div>
+      <QuoteCardSheet
+        card={
+          sharing
+            ? { text: t("My {year} in Stack", { year: year.year }), quoted: false, headline: true, stats: figures, label: `${jan1} – ${until} ${year.year}` }
+            : null
+        }
+        onClose={() => setSharing(false)}
+      />
     </>
   );
 }
 
 function GoalRing({ minutes, goal }: { minutes: number; goal: number }) {
+  const t = useT();
   const r = 30;
   const c = 2 * Math.PI * r;
   const done = Math.min(1, minutes / goal);
@@ -165,30 +219,32 @@ function GoalRing({ minutes, goal }: { minutes: number; goal: number }) {
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-[18px] leading-none font-bold">{minutes}</span>
-        <span className="label text-[8px] text-muted">/{goal} min</span>
+        <span className="label text-[8px] text-muted">/{t("{n} min", { n: goal })}</span>
       </span>
     </div>
   );
 }
 
 function Streak({ icon, tint, value, label }: { icon: string; tint: string; value: number; label: string }) {
+  const t = useT();
   return (
     <div className={`flex flex-col items-center gap-0.5 rounded-2xl p-3 ${value > 0 ? "bg-card" : "bg-card/60"}`}>
       <NamedIcon name={icon} size={22} className={value > 0 ? tint : "text-muted opacity-50"} />
       <span className="text-[20px] leading-tight font-bold">{value}</span>
-      <span className="label text-center text-[8px] text-muted">{label}</span>
+      <span className="label text-center text-[8px] text-muted">{t(label)}</span>
     </div>
   );
 }
 
 function Stat({ value, unit, label, tint }: { value: number; unit?: string; label: string; tint: string }) {
+  const t = useT();
   return (
     <div className={`flex flex-col gap-1 rounded-2xl p-4 ${tint}`}>
       <span className="display text-[40px]">
         {value.toLocaleString()}
         {unit && <span className="ml-0.5 text-[20px]">{unit}</span>}
       </span>
-      <span className="label text-[9px] text-muted">{label}</span>
+      <span className="label text-[9px] text-muted">{t(label)}</span>
     </div>
   );
 }
@@ -198,13 +254,14 @@ const level = (n: number) => (n === 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 
 
 // GitHub-style grid: one column per week, one square per day.
 function Heatmap({ stats }: { stats: MeStats }) {
+  const t = useT();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const activeDays = stats.heat.filter((n) => n > 0).length;
   const months: { col: number; label: string }[] = [];
   for (let w = 0; w < HEAT_WEEKS; w++) {
     const d = new Date(stats.heatStart + w * 7 * 86_400_000);
-    const label = d.toLocaleString(undefined, { month: "short" });
+    const label = d.toLocaleString(dateLocale(), { month: "short" });
     if (!months.length || months[months.length - 1].label !== label) {
       // A month that starts right after the first column pushes out the first label.
       if (months.length === 1 && w - months[0].col < 3) months.pop();
@@ -222,15 +279,15 @@ function Heatmap({ stats }: { stats: MeStats }) {
               </span>
               {Array.from({ length: 7 }, (_, d) => {
                 const i = w * 7 + d;
-                const t = stats.heatStart + i * 86_400_000;
-                const future = t > today.getTime();
+                const day = stats.heatStart + i * 86_400_000;
+                const future = day > today.getTime();
                 const n = stats.heat[i] ?? 0;
                 return (
                   <span
                     key={d}
-                    title={future ? undefined : `${new Date(t).toDateString()}: ${n} thing${n === 1 ? "" : "s"}`}
+                    title={future ? undefined : `${new Date(day).toLocaleDateString(dateLocale())}: ${t(n === 1 ? "{n} thing" : "{n} things", { n })}`}
                     className={`size-3 rounded-[3px] ${future ? "" : LEVELS[level(n)]} ${
-                      t === today.getTime() ? "ring-1 ring-ink" : ""
+                      day === today.getTime() ? "ring-1 ring-ink" : ""
                     }`}
                   />
                 );
@@ -241,14 +298,14 @@ function Heatmap({ stats }: { stats: MeStats }) {
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="text-[13px] text-muted">
-          {activeDays} active day{activeDays === 1 ? "" : "s"} · best streak {stats.bestStreak}
+          {t(activeDays === 1 ? "{n} active day" : "{n} active days", { n: activeDays })} · {t("best streak {n}", { n: stats.bestStreak })}
         </span>
         <span className="flex items-center gap-[3px]" aria-hidden>
-          <span className="label mr-1 text-[8px] text-muted">Less</span>
+          <span className="label mr-1 text-[8px] text-muted">{t("Less")}</span>
           {LEVELS.map((c) => (
             <span key={c} className={`size-2.5 rounded-[2px] ${c}`} />
           ))}
-          <span className="label ml-1 text-[8px] text-muted">More</span>
+          <span className="label ml-1 text-[8px] text-muted">{t("More")}</span>
         </span>
       </div>
     </div>
@@ -256,12 +313,13 @@ function Heatmap({ stats }: { stats: MeStats }) {
 }
 
 function Badges({ badges }: { badges: Badge[] }) {
+  const t = useT();
   const [open, setOpen] = useState<Badge | null>(null);
   const earned = badges.filter((b) => b.value >= b.target).length;
   return (
     <>
       <h2 className="label mt-8 flex justify-between text-[11px] font-medium">
-        Badges
+        {t("Badges")}
         <span className="text-muted">
           {earned}/{badges.length}
         </span>
@@ -283,7 +341,7 @@ function Badges({ badges }: { badges: Badge[] }) {
               >
                 <NamedIcon name={b.icon} size={24} />
               </span>
-              <span className={`text-[12px] leading-tight font-semibold ${got ? "" : "text-muted"}`}>{b.title}</span>
+              <span className={`text-[12px] leading-tight font-semibold ${got ? "" : "text-muted"}`}>{t(b.title)}</span>
               {!got && (
                 <span className="h-1 w-full overflow-hidden rounded-full bg-paper-2">
                   <span className="block h-full rounded-full bg-pdf" style={{ width: `${pct}%` }} />
@@ -303,10 +361,10 @@ function Badges({ badges }: { badges: Badge[] }) {
             >
               <NamedIcon name={open.icon} size={38} />
             </span>
-            <p className="text-[16px]">{open.hint}</p>
+            <p className="text-[16px]">{t(open.hint)}</p>
             <p className="label text-[11px] text-muted">
               {open.value >= open.target
-                ? "Earned ✓"
+                ? t("Earned ✓")
                 : `${Math.min(open.value, open.target).toLocaleString()} / ${open.target.toLocaleString()}`}
             </p>
           </div>

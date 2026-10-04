@@ -5,10 +5,12 @@ import { aiAvailable, runAi, type Answer } from "@/lib/ai";
 import { relevant, type Passage } from "@/lib/search";
 import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
 import { SparkleIcon } from "./stack-icons";
+import { useT } from "@/lib/i18n";
 
 // "Ask your Stack" on the Search screen: Claude answers from your own notes,
 // highlights, saved articles and PDFs, citing each one it used.
 export function AiAsk({ question }: { question: string }) {
+  const t = useT();
   const [asked, setAsked] = useState<string | null>(null);
   const [streaming, setStreaming] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
@@ -28,7 +30,7 @@ export function AiAsk({ question }: { question: string }) {
 
   const run = async () => {
     const q = question.trim();
-    if (!(await confirm("ask", "your question and the notes, highlights and titles that match it"))) return;
+    if (!(await confirm("ask", t("your question and the notes, highlights and titles that match it")))) return;
     const found = await relevant(q);
     setSources(found);
     setAsked(q);
@@ -60,7 +62,7 @@ export function AiAsk({ question }: { question: string }) {
             <SparkleIcon size={20} />
           </span>
           <span className="flex min-w-0 flex-col">
-            <span className="text-[15px] font-semibold">Ask your Stack</span>
+            <span className="text-[15px] font-semibold">{t("Ask your Stack")}</span>
             <span className="truncate text-[13px] text-muted">“{question.trim()}”</span>
           </span>
         </button>
@@ -70,7 +72,10 @@ export function AiAsk({ question }: { question: string }) {
 
   return (
     <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-card p-4">
-      <AiLabel>Answer from your Stack · {sources.length} items read</AiLabel>
+      <AiLabel>
+        {t("Answer from your Stack · {n} items read", { n: sources.length })}
+        {answer?.engine ? ` · ${answer.engine}` : ""}
+      </AiLabel>
       {error !== null ? (
         <AiErrorNote error={error} />
       ) : (
@@ -78,7 +83,7 @@ export function AiAsk({ question }: { question: string }) {
       )}
       {(answer !== null || error !== null) && (
         <button onClick={() => setAsked(null)} className="label self-start text-[10px] text-muted underline">
-          Ask again
+          {t("Ask again")}
         </button>
       )}
     </div>

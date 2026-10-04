@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { tr } from "@/lib/i18n";
 
 // Record player art: the album sleeve with the record lying on top of it.
 // The record's label carries the song title and artist; it spins while
@@ -27,7 +28,7 @@ export function Vinyl({
   const cx = 230;
   const cy = 120;
   const armAngle = playing ? 5 + 11 * Math.min(1, Math.max(0, progress)) : -4;
-  const name = fit(title || "Unknown track", 22);
+  const name = fit(title || tr("Unknown track"), 22);
   const by = fit(artist || "", 17);
 
   const art = (

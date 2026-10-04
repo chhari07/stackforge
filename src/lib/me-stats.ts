@@ -8,7 +8,8 @@ import { getNotes, getPdfs, getSaved } from "./db";
 import { getHistory, stats as focusStats } from "./focus";
 import { getPlaylists } from "./playlists";
 import { reviewStreak } from "./review";
-import { readingDays } from "./reading";
+import { readingDays, yearReading } from "./reading";
+import { tr } from "./i18n";
 
 export const HEAT_WEEKS = 18;
 const DAY = 86_400_000;
@@ -82,7 +83,7 @@ export async function getMeStats(now = Date.now()): Promise<MeStats> {
     getHistory(),
   ]);
 
-  const highlights = notes.filter((n) => n.quote).length;
+  const highlights = notes.filter((n) => n.quote && !n.word).length;
   const ideas = notes.filter((n) => n.kind === "idea").length;
   const pagesRead = pdfs.reduce((sum, p) => sum + (p.lastPage ?? 0), 0);
   const focusMs = history.reduce((sum, r) => sum + r.focusedMs, 0);
@@ -199,3 +200,52 @@ function readerType(s: {
   const [score, type] = scores.reduce((best, x) => (x[0] > best[0] ? x : best));
   return score >= 3 ? type : EMPTY_STATS.type;
 }
+
+// Your year so far, for the "year in Stack" card on the profile.
+export type YearStats = {
+  year: number;
+  minutes: number; // reading and focus together
+  articles: number;
+  pages: number;
+  books: number; // PDFs and books read to the last page
+  highlights: number;
+  notes: number;
+  words: number;
+  days: number; // days with any reading
+  empty: boolean;
+};
+
+export const EMPTY_YEAR: YearStats = { year: 0, minutes: 0, articles: 0, pages: 0, books: 0, highlights: 0, notes: 0, words: 0, days: 0, empty: true };
+
+export async function getYearStats(now = Date.now()): Promise<YearStats> {
+  const year = new Date(now).getFullYear();
+  const inYear = (t?: number) => !!t && new Date(t).getFullYear() === year;
+  const [notes, pdfs, history] = await Promise.all([getNotes(), getPdfs(), getHistory()]);
+  const reading = yearReading(year);
+  const mine = notes.filter((n) => inYear(n.createdAt));
+  const focus = Math.round(history.filter((r) => inYear(r.startedAt)).reduce((s, r) => s + r.focusedMs, 0) / 60_000);
+  const counts = {
+    minutes: reading.minutes + focus,
+    articles: reading.articles,
+    pages: reading.pages,
+    books: pdfs.filter((p) => p.pages > 1 && p.lastPage >= p.pages && inYear(p.lastOpenedAt)).length,
+    highlights: mine.filter((n) => n.quote && !n.word).length,
+    notes: mine.filter((n) => !n.quote).length,
+    words: mine.filter((n) => n.word).length,
+    days: reading.days,
+  };
+  return { year, ...counts, empty: Object.values(counts).every((v) => !v) };
+}
+
+/** The six numbers shown on the card, the largest part of your year first. */
+export const yearFigures = (y: YearStats) => [
+  {
+    value: y.minutes >= 60 ? tr("{n}h", { n: Math.floor(y.minutes / 60) }) : tr("{n}m", { n: y.minutes }),
+    label: tr("read and focused"),
+  },
+  { value: String(y.days), label: tr(y.days === 1 ? "day reading" : "days reading") },
+  { value: String(y.articles), label: tr(y.articles === 1 ? "article read" : "articles read") },
+  { value: String(y.pages), label: y.books ? tr("pages · {n} finished", { n: y.books }) : tr("pages turned") },
+  { value: String(y.highlights), label: tr(y.highlights === 1 ? "highlight" : "highlights") },
+  { value: String(y.words + y.notes), label: y.words ? tr("notes · {n} words", { n: y.words }) : tr("notes written") },
+];

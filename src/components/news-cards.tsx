@@ -9,17 +9,22 @@ import { safeImage, type Story } from "@/lib/use-news";
 import { PlayBadge, rememberStory, storyHref } from "./story";
 import { useToast } from "./toast";
 import { downloadArticle } from "@/lib/offline";
-import { BookmarkIcon, ClockIcon, ExternalIcon } from "./icons";
+import { BookmarkIcon, ClockIcon, ShareIcon } from "./icons";
+import { QuoteCardSheet } from "./quote-card-sheet";
+import { storyCard } from "@/lib/quote-card";
+import { useT } from "@/lib/i18n";
 
 const TINTS = ["#2F4B3A", "#54473A", "#2C3E57", "#4A2F3A", "#3A3A37"];
 const HINT_KEY = "stack.cards-hint-seen";
 
 // One story per full-height card; swipe up for the next (Inshorts-style).
 export function NewsCards({ stories }: { stories: Story[] }) {
+  const t = useT();
   const toast = useToast();
   const [saved] = useStore(getSaved, []);
   const [index, setIndex] = useState(0);
   const [hint, setHint] = useState(false);
+  const [sharing, setSharing] = useState<Story | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
 
   // Which card is on screen, for the "3 / 40" counter.
@@ -55,25 +60,12 @@ export function NewsCards({ stories }: { stories: Story[] }) {
     }
   }, [index, hint]);
 
-  const share = async (s: Story) => {
-    try {
-      if (navigator.share)
-        await navigator.share({ title: s.title, url: s.url });
-      else {
-        await navigator.clipboard.writeText(`${s.title}\n${s.url}`);
-        toast({ text: "Link copied" });
-      }
-    } catch {
-      /* cancelled */
-    }
-  };
-
   return (
     <div className="relative min-h-0 grow">
       <div
         ref={scroller}
-        className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain md:grid md:snap-none md:grid-cols-2 md:content-start md:gap-5 lg:grid-cols-3"
-        aria-label="News cards, swipe up for the next story"
+        className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
+        aria-label={t("News cards, swipe up for the next story")}
       >
         {stories.map((s, i) => {
           const img = safeImage(s.image);
@@ -86,7 +78,7 @@ export function NewsCards({ stories }: { stories: Story[] }) {
           return (
             <article
               key={s.id}
-              className="h-full snap-start snap-always pb-3 md:h-[560px] md:pb-0"
+              className="h-full snap-start snap-always pb-3"
               aria-label={s.title}
             >
               <div className="card-snap flex h-full flex-col overflow-hidden rounded-3xl bg-card shadow-[0_10px_30px_rgba(0,0,0,.08)]">
@@ -108,7 +100,7 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                     </span>
                   )}
                   {s.video && (
-                    <Link href={storyHref(s)} onClick={() => rememberStory(s)} aria-label={`Watch ${s.title}`}>
+                    <Link href={storyHref(s)} onClick={() => rememberStory(s)} aria-label={t("Watch {title}", { title: s.title })}>
                       <PlayBadge size={64} />
                     </Link>
                   )}
@@ -146,11 +138,11 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                       onClick={() => rememberStory(s)}
                       className="flex h-11 grow items-center justify-center rounded-full bg-ink text-[14px] font-semibold text-on-ink"
                     >
-                      {s.video ? "Watch video" : "Read full story"}
+                      {s.video ? t("Watch video") : t("Read full story")}
                     </Link>
                     <button
                       aria-label={
-                        isSaved ? "Remove from saved" : "Save for later"
+                        isSaved ? t("Remove from saved") : t("Save for later")
                       }
                       aria-pressed={isSaved}
                       onClick={async () => {
@@ -163,10 +155,10 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                         toast(
                           now
                             ? {
-                                text: "Saved to your Library",
+                                text: t("Saved to your Library"),
                                 href: "/library",
                               }
-                            : { text: "Removed from saved" },
+                            : { text: t("Removed from saved") },
                         );
                         // Keep a copy to read offline.
                         if (now) downloadArticle(s.id).catch(() => {});
@@ -176,11 +168,11 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                       <BookmarkIcon size={18} filled={isSaved} />
                     </button>
                     <button
-                      aria-label="Share"
-                      onClick={() => share(s)}
+                      aria-label={t("Share")}
+                      onClick={() => setSharing(s)}
                       className="flex size-11 shrink-0 items-center justify-center rounded-full border border-ink/15"
                     >
-                      <ExternalIcon size={17} />
+                      <ShareIcon size={18} />
                     </button>
                   </div>
                 </div>
@@ -189,12 +181,13 @@ export function NewsCards({ stories }: { stories: Story[] }) {
           );
         })}
       </div>
+      <QuoteCardSheet card={sharing ? storyCard(sharing) : null} onClose={() => setSharing(null)} />
       {hint && stories.length > 1 && (
         <div
           aria-hidden
-          className="label pointer-events-none absolute inset-x-0 bottom-20 mx-auto w-fit animate-bounce md:hidden rounded-full bg-ink px-4 py-2 text-[10px] text-on-ink shadow-lg"
+          className="label pointer-events-none absolute inset-x-0 bottom-20 mx-auto w-fit animate-bounce rounded-full bg-ink px-4 py-2 text-[10px] text-on-ink shadow-lg"
         >
-          ↑ Swipe up for the next story
+          {t("↑ Swipe up for the next story")}
         </div>
       )}
     </div>

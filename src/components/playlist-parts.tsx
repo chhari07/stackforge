@@ -10,6 +10,7 @@ import { PlusIcon } from "./icons";
 import { Sheet } from "./sheet";
 import { SWATCHES } from "./spotify-view";
 import { useToast } from "./toast";
+import { useT } from "@/lib/i18n";
 
 export const playlistHref = (id: string) => `/music/mine?id=${id}`;
 
@@ -31,11 +32,12 @@ export function PlaylistCover({ p, size, className = "" }: { p: Pick<Playlist, "
 
 // "Your playlists" row in Music, with a card to make a new one.
 export function PlaylistsRail({ onNew }: { onNew: () => void }) {
+  const tt = useT();
   const [playlists] = useStore(getPlaylists, []);
   return (
     <>
-      <h2 className="label mt-6 text-[11px] font-medium text-music-text">Your playlists</h2>
-      <div role="list" aria-label="Your playlists" className="rail -mx-5 mt-3 gap-3 px-5 md:mx-0 md:px-0">
+      <h2 className="label mt-6 text-[11px] font-medium text-music-text">{tt("Your playlists")}</h2>
+      <div role="list" aria-label={tt("Your playlists")} className="rail -mx-5 mt-3 gap-3 px-5">
         <button
           onClick={onNew}
           className="flex w-[120px] flex-col gap-1.5 text-left"
@@ -43,8 +45,8 @@ export function PlaylistsRail({ onNew }: { onNew: () => void }) {
           <span className="flex size-[120px] items-center justify-center border border-dashed border-ink/30 text-muted">
             <PlusIcon size={26} />
           </span>
-          <span className="song truncate text-[13px]">New playlist</span>
-          <span className="label text-[9px] text-muted">From your songs</span>
+          <span className="song truncate text-[13px]">{tt("New playlist")}</span>
+          <span className="label text-[9px] text-muted">{tt("From your songs")}</span>
         </button>
         {playlists.map((p) => (
           <Link key={p.id} role="listitem" href={playlistHref(p.id)} className="flex w-[120px] flex-col gap-1.5">
@@ -68,6 +70,7 @@ export function AddToPlaylistSheet({
   onClose: () => void;
   newOnly?: boolean;
 }) {
+  const tt = useT();
   const [playlists] = useStore(getPlaylists, []);
   const [name, setName] = useState("");
   const toast = useToast();
@@ -77,11 +80,11 @@ export function AddToPlaylistSheet({
     const p = await createPlaylist(name, songs ?? []);
     setName("");
     onClose();
-    toast({ text: `Made “${p.name}”`, href: playlistHref(p.id) });
+    toast({ text: tt("Made “{name}”", { name: p.name }), href: playlistHref(p.id) });
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title={newOnly ? "New playlist" : songs?.length === 1 ? `Add “${songs[0].title}”` : "Add to playlist"}>
+    <Sheet open={open} onClose={onClose} title={newOnly ? "New playlist" : songs?.length === 1 ? tt("Add “{title}”", { title: songs[0].title }) : "Add to playlist"}>
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -90,10 +93,10 @@ export function AddToPlaylistSheet({
         }}
       >
         <input
-          aria-label="New playlist name"
+          aria-label={tt("New playlist name")}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="New playlist name"
+          placeholder={tt("Name your reading mix")}
           className="h-12 min-w-0 grow rounded-full border border-ink/15 bg-card px-4 text-[15px] outline-none focus:border-ink"
         />
         <button
@@ -101,7 +104,7 @@ export function AddToPlaylistSheet({
           disabled={!name.trim()}
           className="h-12 rounded-full bg-ink px-5 text-[14px] font-semibold text-on-ink disabled:opacity-40"
         >
-          Create
+          {tt("Create")}
         </button>
       </form>
       {!newOnly && playlists.length > 0 && (
@@ -113,7 +116,7 @@ export function AddToPlaylistSheet({
                   const added = await addToPlaylist(p.id, songs ?? []);
                   onClose();
                   toast({
-                    text: added ? `Added to “${p.name}”` : `Already in “${p.name}”`,
+                    text: added ? tt("Added to “{name}”", { name: p.name }) : tt("Already in “{name}”", { name: p.name }),
                     href: playlistHref(p.id),
                   });
                 }}

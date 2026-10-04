@@ -25,9 +25,22 @@ export type Profile = {
   mood?: Mood; // "what I'm up to", shown as a chip
   accent?: Accent; // the profile cover and initials colour
   interests?: Topic[]; // News shows these topics first
+  readingFor?: ReadingFor; // asked on first launch; sets the first interests and Today's order
   dailyGoal?: number; // focus minutes a day
   updatedAt: number;
 };
+
+// "What are you reading for?" (first launch). Each answer picks the news
+// topics you start with, and whether Today puts the news or your reading first.
+export type ReadingFor = "exams" | "work" | "informed" | "me";
+export const READING_FOR: { value: ReadingFor; label: string; hint: string; topics: Topic[] }[] = [
+  { value: "exams", label: "Exams", hint: "GATE · JEE · NEET · UPSC", topics: ["india", "world", "science"] },
+  { value: "work", label: "Work & skills", hint: "Get better at what you do", topics: ["tech", "ai", "business"] },
+  { value: "informed", label: "Staying informed", hint: "Know what’s going on", topics: ["india", "world", "business"] },
+  { value: "me", label: "Just for me", hint: "Books, ideas, curiosity", topics: ["science", "health", "entertainment"] },
+];
+/** Today shows your own reading before the news, except for "Staying informed". */
+export const newsFirst = (p: Pick<Profile, "readingFor">) => p.readingFor === "informed";
 
 export const BIO_MAX = 90;
 export const GOALS = [15, 30, 45, 60, 90, 120];

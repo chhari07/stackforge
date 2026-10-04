@@ -30,11 +30,13 @@ import {
   colorOf,
   noteHref,
   noteText,
+  pageLabel,
 } from "@/components/note-card";
 import {
   addNote,
   deleteNote,
   getNote,
+  getNotes,
   restoreNote,
   uid,
   updateNote,
@@ -45,7 +47,12 @@ import {
 import { noteTime } from "@/lib/format";
 import { AiError, aiAvailable, answerText, runAi } from "@/lib/ai";
 import { useAiConsent } from "@/components/ai-kit";
-import { SparkleIcon } from "@/components/stack-icons";
+import { BellIcon, SparkleIcon } from "@/components/stack-icons";
+import { LinkedNotes, ReminderSheet, TagRow, allTags } from "@/components/note-extras";
+import { remindText, upcoming } from "@/lib/reminders";
+import { useStore } from "@/lib/use-store";
+import { cardOf, sharePlainText } from "@/lib/quote-card";
+import { QuoteCardSheet } from "@/components/quote-card-sheet";
 import { canGoBack } from "@/lib/nav";
 import {
   FONTS,
@@ -55,6 +62,7 @@ import {
   removeCustomFont,
   useCustomFonts,
 } from "@/lib/note-fonts";
+import { useT } from "@/lib/i18n";
 
 export default function Page() {
   // useSearchParams needs a Suspense boundary.
@@ -72,6 +80,9 @@ type Draft = {
   color: NoteColor;
   pinned: boolean;
   font?: string;
+  tags?: string[];
+  links?: string[];
+  remindAt?: number;
 };
 
 const isEmpty = (d: Draft, n: Note | null) =>
@@ -93,6 +104,7 @@ function AutoText(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
 }
 
 function Editor() {
+  const t = useT();
   const params = useSearchParams();
   const router = useRouter();
   const toast = useToast();
@@ -108,6 +120,9 @@ function Editor() {
     pinned: false,
   });
   const [panel, setPanel] = useState<"colour" | "font" | null>(null);
+  const [carding, setCarding] = useState(false);
+  const [reminding, setReminding] = useState(false);
+  const [allNotes] = useStore(getNotes, []); // for tag suggestions and linked notes
   const customFonts = useCustomFonts();
   const fontInput = useRef<HTMLInputElement>(null);
   const [showDone, setShowDone] = useState(true);
@@ -141,6 +156,9 @@ function Editor() {
         color: colorOf(n),
         pinned: !!n.pinned,
         font: n.font,
+        tags: n.tags,
+        links: n.links,
+        remindAt: n.remindAt,
       });
     });
   }, [paramId]);
@@ -159,6 +177,9 @@ function Editor() {
         color: d.color,
         pinned: d.pinned,
         font: d.font,
+        tags: d.tags?.length ? d.tags : undefined,
+        links: d.links?.length ? d.links : undefined,
+        remindAt: d.remindAt,
         highlight: !!n?.quote && !d.body.trim(),
       };
       if (idRef.current) {
@@ -280,12 +301,15 @@ function Editor() {
             }
           : { title: first.trim(), body: lines.join("\n").trim(), checklist: undefined };
       change(next);
-      toast({ text: "Note tidied", action: "Undo", onAction: () => change(before) });
+      toast({ text: t("Note tidied"), action: t("Undo"), onAction: () => change(before) });
     } catch (e) {
-      toast({ text: e instanceof AiError ? e.message : "Couldn’t tidy the note" });
+      toast({ text: e instanceof AiError ? e.message : t("Couldn’t tidy the note") });
     }
     setTidying(false);
   };
+
+  // Share offers a picture of the note when it has words to show.
+  const card = cardOf({ ...note, title: draft.title, body: draft.body, checklist: draft.checklist });
 
   const share = async () => {
     const text = noteText({
@@ -295,11 +319,8 @@ function Editor() {
       checklist: draft.checklist,
     });
     try {
-      if (navigator.share) await navigator.share({ title: draft.title || undefined, text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast({ text: "Note copied" });
-      }
+      // Android's share sheet in the app; the browser's own, or a copy, on the web.
+      if (!(await sharePlainText(text))) toast({ text: t("Note copied") });
     } catch {
       /* cancelled */
     }
@@ -309,13 +330,13 @@ function Editor() {
     try {
       change({ font: customFont(await addCustomFont(file)).value });
     } catch (e) {
-      toast({ text: e instanceof Error ? e.message : "Couldn’t add that font" });
+      toast({ text: e instanceof Error ? t(e.message) : t("Couldn’t add that font") });
     }
   };
   const removeFont = async (id: string, value: string) => {
     await removeCustomFont(id);
     if (draft.font === value) change({ font: undefined });
-    toast({ text: "Font removed from this device" });
+    toast({ text: t("Font removed from this device") });
   };
 
   const remove = async () => {
@@ -325,7 +346,7 @@ function Editor() {
     const stored = idRef.current ? await getNote(idRef.current) : null;
     if (stored) {
       await deleteNote(stored.id);
-      toast({ text: "Note deleted", action: "Undo", onAction: () => restoreNote(stored) });
+      toast({ text: t("Note deleted"), action: t("Undo"), onAction: () => restoreNote(stored) });
     }
     goBack();
   };
@@ -333,9 +354,9 @@ function Editor() {
   if (missing) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-3 px-5">
-        <p className="font-serif text-[22px] italic">This note no longer exists.</p>
+        <p className="font-serif text-[22px] italic">{t("This note no longer exists.")}</p>
         <Link href="/notes" className="label text-[11px] underline">
-          Back to notes
+          {t("Back to notes")}
         </Link>
       </main>
     );
@@ -353,7 +374,7 @@ function Editor() {
       <button
         role="checkbox"
         aria-checked={item.done}
-        aria-label={item.done ? "Mark as not done" : "Mark as done"}
+        aria-label={item.done ? t("Mark as not done") : t("Mark as done")}
         onClick={() => setItems(items.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)))}
         className="flex size-9 shrink-0 items-center justify-center"
       >
@@ -370,7 +391,7 @@ function Editor() {
           if (el) itemRefs.current.set(item.id, el);
           else itemRefs.current.delete(item.id);
         }}
-        aria-label="List item"
+        aria-label={t("List item")}
         value={item.text}
         onChange={(e) => setItems(items.map((i) => (i.id === item.id ? { ...i, text: e.target.value } : i)))}
         onKeyDown={(e) => onItemKey(e, item)}
@@ -378,7 +399,7 @@ function Editor() {
         className={`min-w-0 grow bg-transparent text-[16px] outline-none ${item.done ? "line-through opacity-55" : ""}`}
       />
       <button
-        aria-label="Remove item"
+        aria-label={t("Remove item")}
         onClick={() => setItems(items.filter((i) => i.id !== item.id))}
         className="flex size-9 shrink-0 items-center justify-center opacity-45"
       >
@@ -390,21 +411,31 @@ function Editor() {
   return (
     <main className={`min-h-dvh pb-[calc(120px+env(safe-area-inset-bottom))] ${tone}`}>
       {/* Top bar */}
-      <div className={`sticky top-0 z-20 -mt-[env(safe-area-inset-top)] flex items-center justify-between px-2 pt-[calc(env(safe-area-inset-top)+8px)] pb-1 md:px-8 ${tone}`}>
-        <button aria-label="Back to notes" onClick={goBack} className={iconBtn}>
+      <div className={`sticky top-0 z-20 -mt-[env(safe-area-inset-top)] flex items-center justify-between px-2 pt-[calc(env(safe-area-inset-top)+8px)] pb-1 ${tone}`}>
+        <button aria-label={t("Back to notes")} onClick={goBack} className={iconBtn}>
           <BackIcon size={22} />
         </button>
-        <button
-          aria-label={draft.pinned ? "Unpin note" : "Pin note"}
-          aria-pressed={draft.pinned}
-          onClick={() => change({ pinned: !draft.pinned })}
-          className={iconBtn}
-        >
-          <PinIcon size={21} filled={draft.pinned} />
-        </button>
+        <div className="flex items-center">
+          <button
+            aria-label={draft.remindAt ? t("Reminder: {when}", { when: remindText(draft.remindAt) }) : t("Remind me about this note")}
+            onClick={() => setReminding(true)}
+            className={`flex h-11 items-center gap-1.5 rounded-full px-3 ${draft.remindAt && !upcoming(draft.remindAt) ? "opacity-50" : ""}`}
+          >
+            <BellIcon size={20} />
+            {draft.remindAt && <span className="label text-[10px]">{remindText(draft.remindAt)}</span>}
+          </button>
+          <button
+            aria-label={draft.pinned ? t("Unpin note") : t("Pin note")}
+            aria-pressed={draft.pinned}
+            onClick={() => change({ pinned: !draft.pinned })}
+            className={iconBtn}
+          >
+            <PinIcon size={21} filled={draft.pinned} />
+          </button>
+        </div>
       </div>
 
-      <div className="mx-auto max-w-[720px] px-5 md:px-8" style={{ fontFamily: fontFamily(draft.font) }}>
+      <div className="mx-auto max-w-[720px] px-5" style={{ fontFamily: fontFamily(draft.font) }}>
         {note?.quote && (
           <div className="mt-2 flex flex-col gap-2.5">
             <blockquote
@@ -416,15 +447,15 @@ function Editor() {
             </blockquote>
             {note.href && (
               <Link href={note.href} className="label flex items-center gap-1.5 self-start text-[10px] underline">
-                {note.sourceTitle ?? "Open source"}
-                {note.page ? ` · p. ${note.page}` : ""} <ExternalIcon size={12} />
+                {note.sourceTitle ?? t("Open source")}
+                {note.page ? ` · ${pageLabel(note)}` : ""} <ExternalIcon size={12} />
               </Link>
             )}
           </div>
         )}
 
         <AutoText
-          aria-label="Title"
+          aria-label={t("Title")}
           value={draft.title}
           onChange={(e) => change({ title: e.target.value.replace(/\n/g, " ") })}
           onKeyDown={(e) => {
@@ -434,7 +465,7 @@ function Editor() {
             else if (items[0]) setFocusId(items[0].id);
             else addItemAfter(null);
           }}
-          placeholder="Title"
+          placeholder={t("Title")}
           enterKeyHint="next"
           className="mt-3 w-full resize-none bg-transparent text-[26px] leading-[1.2] font-bold outline-none [font-stretch:87%] placeholder:text-current placeholder:opacity-35"
         />
@@ -449,7 +480,7 @@ function Editor() {
               <span className="flex size-9 items-center justify-center">
                 <PlusIcon size={18} />
               </span>
-              List item
+              {t("List item")}
             </button>
             {done.length > 0 && (
               <>
@@ -458,7 +489,7 @@ function Editor() {
                   aria-expanded={showDone}
                   className="label mt-2 h-10 w-full border-t border-current/15 pt-2 text-left text-[10px] opacity-60"
                 >
-                  {showDone ? "▾" : "▸"} {done.length} checked item{done.length > 1 ? "s" : ""}
+                  {showDone ? "▾" : "▸"} {t(done.length > 1 ? "{n} checked items" : "{n} checked item", { n: done.length })}
                 </button>
                 {showDone && <ul>{done.map(itemRow)}</ul>}
               </>
@@ -467,26 +498,32 @@ function Editor() {
         ) : (
           <AutoText
             id="note-body"
-            aria-label="Note"
+            aria-label={t("Note")}
             value={draft.body}
             onChange={(e) => change({ body: e.target.value })}
             autoFocus={!paramId}
-            placeholder={note?.quote ? "Add your thoughts" : "Note"}
-            className="mt-2 min-h-[40vh] w-full resize-none bg-transparent text-[17px] leading-[1.55] outline-none placeholder:text-current placeholder:opacity-35"
+            placeholder={note?.quote ? t("Add your thoughts") : t("What’s on your mind?")}
+            className="mt-2 min-h-[30vh] w-full resize-none bg-transparent text-[17px] leading-[1.55] outline-none placeholder:text-current placeholder:opacity-35"
           />
         )}
+
+        {/* Tags and linked notes */}
+        <div className="mt-5 flex flex-col gap-3 border-t border-current/10 pt-4">
+          <TagRow tags={draft.tags ?? []} known={allTags(allNotes)} onChange={(tags) => change({ tags })} />
+          <LinkedNotes id={note?.id ?? null} links={draft.links ?? []} notes={allNotes} onChange={(links) => change({ links })} />
+        </div>
       </div>
 
       {/* Bottom toolbar */}
-      <div className={`fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[480px] border-t border-current/10 pb-[env(safe-area-inset-bottom)] md:left-[var(--rail)] md:max-w-none ${tone}`}>
+      <div className={`fixed inset-x-0 bottom-0 z-30 w-full border-t border-current/10 pb-[env(safe-area-inset-bottom)] ${tone}`}>
         {panel === "colour" && (
-          <div role="radiogroup" aria-label="Note colour" className="rail gap-3 px-5 pt-3 pb-1">
+          <div role="radiogroup" aria-label={t("Note colour")} className="rail gap-3 px-5 pt-3 pb-1">
             {COLORS.map((c) => (
               <button
                 key={c.value}
                 role="radio"
                 aria-checked={draft.color === c.value}
-                aria-label={c.label}
+                aria-label={t(c.label)}
                 onClick={() => change({ color: c.value })}
                 className={`size-10 rounded-full border ${c.swatch} ${
                   draft.color === c.value ? "border-2 border-music outline-2 outline-offset-2 outline-music/40" : "border-ink/20"
@@ -496,7 +533,7 @@ function Editor() {
           </div>
         )}
         {panel === "font" && (
-          <div role="radiogroup" aria-label="Note font" className="rail gap-2 px-5 pt-3 pb-1">
+          <div role="radiogroup" aria-label={t("Note font")} className="rail gap-2 px-5 pt-3 pb-1">
             {[...FONTS, ...customFonts.map(customFont)].map((f) => {
               const on = (draft.font ?? "sans") === f.value;
               const mine = f.value.startsWith("custom:");
@@ -514,11 +551,11 @@ function Editor() {
                     style={{ fontFamily: f.family }}
                     className={`h-full text-[15px] ${mine && on ? "pr-1 pl-4" : "px-4"}`}
                   >
-                    {f.label}
+                    {mine ? f.label : t(f.label)}
                   </button>
                   {mine && on && (
                     <button
-                      aria-label={`Remove the font ${f.label} from this device`}
+                      aria-label={t("Remove the font {name} from this device", { name: f.label })}
                       onClick={() => removeFont(f.value.slice(7), f.value)}
                       className="flex size-9 items-center justify-center opacity-60"
                     >
@@ -532,7 +569,7 @@ function Editor() {
               onClick={() => fontInput.current?.click()}
               className="flex h-11 items-center gap-1.5 rounded-full border border-dashed border-current/40 px-4 text-[15px]"
             >
-              <PlusIcon size={16} /> Add font
+              <PlusIcon size={16} /> {t("Add font")}
             </button>
             <input
               ref={fontInput}
@@ -547,9 +584,9 @@ function Editor() {
             />
           </div>
         )}
-        <div className="mx-auto flex h-14 max-w-[720px] items-center px-2 md:px-6">
+        <div className="mx-auto flex h-14 max-w-[720px] items-center px-2">
           <button
-            aria-label={draft.checklist ? "Change to plain text" : "Change to checklist"}
+            aria-label={draft.checklist ? t("Change to plain text") : t("Change to checklist")}
             aria-pressed={!!draft.checklist}
             onClick={toggleList}
             className={iconBtn}
@@ -557,7 +594,7 @@ function Editor() {
             <ListIcon size={21} />
           </button>
           <button
-            aria-label="Colour"
+            aria-label={t("Colour")}
             aria-expanded={panel === "colour"}
             onClick={() => setPanel((p) => (p === "colour" ? null : "colour"))}
             className={iconBtn}
@@ -565,7 +602,7 @@ function Editor() {
             <PaletteIcon size={21} />
           </button>
           <button
-            aria-label="Font"
+            aria-label={t("Font")}
             aria-expanded={panel === "font"}
             onClick={() => setPanel((p) => (p === "font" ? null : "font"))}
             className={iconBtn}
@@ -573,22 +610,36 @@ function Editor() {
             <FontIcon size={21} />
           </button>
           <span className="label grow text-center text-[10px] opacity-60">
-            {edited ? `Edited ${noteTime(edited)}` : "New note"}
+            {edited ? t("Edited {when}", { when: noteTime(edited) }) : t("New note")}
           </span>
           {aiAvailable() && !note?.quote && (
-            <button aria-label="Tidy with Stack AI" onClick={tidy} disabled={tidying} className={`${iconBtn} disabled:animate-pulse`}>
+            <button aria-label={t("Tidy with Stack AI")} onClick={tidy} disabled={tidying} className={`${iconBtn} disabled:animate-pulse`}>
               <SparkleIcon size={20} />
             </button>
           )}
-          <button aria-label="Share note" onClick={share} className={iconBtn}>
+          <button aria-label={t("Share note")} onClick={() => (card ? setCarding(true) : share())} className={iconBtn}>
             <ShareIcon size={20} />
           </button>
-          <button aria-label="Delete note" onClick={remove} className={iconBtn}>
+          <button aria-label={t("Delete note")} onClick={remove} className={iconBtn}>
             <TrashIcon size={20} />
           </button>
         </div>
       </div>
       {aiSheet}
+      <ReminderSheet
+        open={reminding}
+        onClose={() => setReminding(false)}
+        remindAt={draft.remindAt}
+        onChange={(remindAt) => change({ remindAt })}
+      />
+      <QuoteCardSheet
+        card={carding ? card : null}
+        onClose={() => setCarding(false)}
+        onShareText={() => {
+          setCarding(false);
+          share();
+        }}
+      />
     </main>
   );
 }

@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { Capacitor } from "@capacitor/core";
 import type { Article } from "./article";
 import type { Story, Topic } from "./news";
+import { SAMPLE_ID, sampleArticle } from "./sample";
 
 // True inside the Android app (Capacitor), false on the website.
 export const isNative = () => Capacitor.isNativePlatform();
@@ -44,6 +45,7 @@ export async function fetchArticle(id: string): Promise<Article | null> {
 // The network first, falling back to the offline copy (lib/offline.ts);
 // `offlineAt` is set when the copy is what you get. A kept copy is refreshed.
 export async function loadArticle(id: string): Promise<(Article & { offlineAt?: number }) | null> {
+  if (id === SAMPLE_ID) return sampleArticle(); // ships with the app
   const { getCachedArticle, getOfflineIndex, cacheArticle } = await import("./offline");
   const [cached, index] = await Promise.all([getCachedArticle(id), getOfflineIndex()]);
   const fromCache = () => (cached ? { ...cached, offlineAt: index[id]?.at ?? Date.now() } : null);

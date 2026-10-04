@@ -25,9 +25,10 @@ import {
   type Pomodoro,
 } from "@/lib/focus";
 import { isNative } from "@/lib/platform";
-import { askForNotifications, notificationsAllowed } from "@/lib/reminders";
+import { askForNotifications, notificationsAllowed, NOTIFY_LOGO } from "@/lib/reminders";
 import { useNowPlaying } from "./now-playing";
 import { useToast } from "./toast";
+import { tr, useT } from "@/lib/i18n";
 
 const NOTIFY_ID = 1002;
 
@@ -68,12 +69,16 @@ async function scheduleEnd(s: FocusSession | null) {
     notifications: [
       {
         id: NOTIFY_ID,
-        title: s.pomo?.brk ? "Break’s over" : s.pomo ? `Round ${s.pomo.round} done` : "Focus session complete",
+        title: s.pomo?.brk ? tr("Break’s over") : s.pomo ? tr("Round {n} done", { n: s.pomo.round }) : tr("Focus session complete"),
         body: s.pomo?.brk
-          ? "Ready for the next round?"
+          ? tr("Ready for the next round?")
           : s.pomo
-            ? "Time for a break. Stretch, drink some water."
-            : `${s.minutes} minutes on ${s.target.title}. See what you got done.`,
+            ? tr("Time for a break. Stretch, drink some water.")
+            : tr("{n} minutes on {title}. See what you got done.", {
+                n: s.minutes,
+                title: s.target.kind === "none" ? tr(s.target.title) : s.target.title,
+              }),
+        largeIcon: NOTIFY_LOGO,
         schedule: { at: new Date(Date.now() + remainingMs(s)), allowWhileIdle: true },
         // Never ask for the exact-alarm permission; Android may deliver it a little late.
         isExactNotification: false,
@@ -195,7 +200,11 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       // On the focus screen the summary is already showing.
       if (!window.location.pathname.startsWith("/focus"))
         toast({
-          text: session.pomo?.brk ? "Break’s over" : session.pomo ? `Round ${session.pomo.round} done: take a break` : "Focus session complete",
+          text: session.pomo?.brk
+            ? tr("Break’s over")
+            : session.pomo
+              ? tr("Round {n} done: take a break", { n: session.pomo.round })
+              : tr("Focus session complete"),
           href: "/focus",
           action: session.pomo ? "Open" : "Summary",
         });
@@ -212,6 +221,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
 
 // Small live timer on other screens while a session runs.
 function FocusPill({ session }: { session: FocusSession | null }) {
+  const t = useT();
   const path = usePathname();
   const tick = useTick(!!session && !session.endedAt && !session.pausedAt);
   // Only while a session runs; the focus screen and PDF reader show the timer
@@ -220,15 +230,15 @@ function FocusPill({ session }: { session: FocusSession | null }) {
   return (
     <Link
       href="/focus"
-      aria-label="Focus session in progress"
-      className="fixed top-[calc(env(safe-area-inset-top)+64px)] right-3 z-40 flex h-9 items-center gap-2 rounded-full bg-ink px-3.5 text-on-ink shadow-[0_6px_18px_rgba(0,0,0,.22)] md:right-6"
+      aria-label={t("Focus session in progress")}
+      className="fixed top-[calc(env(safe-area-inset-top)+64px)] right-3 z-40 flex h-9 items-center gap-2 rounded-full bg-ink px-3.5 text-on-ink shadow-[0_6px_18px_rgba(0,0,0,.22)]"
     >
       <span className={`size-2 rounded-full ${session.pausedAt ? "bg-pdf" : session.pomo?.brk ? "animate-pulse bg-news" : "animate-pulse bg-music"}`} />
       <span className="text-[14px] font-semibold tabular-nums">{clockText(remainingMs(session, tick))}</span>
       {session.pausedAt ? (
-        <span className="label text-[9px] opacity-70">Paused</span>
+        <span className="label text-[9px] opacity-70">{t("Paused")}</span>
       ) : (
-        session.pomo && <span className="label text-[9px] opacity-70">{session.pomo.brk ? "Break" : `Round ${session.pomo.round}`}</span>
+        session.pomo && <span className="label text-[9px] opacity-70">{session.pomo.brk ? t("Break") : t("Round {n}", { n: session.pomo.round })}</span>
       )}
     </Link>
   );

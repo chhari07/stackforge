@@ -36,13 +36,14 @@ function write(key: string, value: unknown) {
   }
 }
 
-// Highlights that are due: never reviewed ones from before today, or whose
-// next review date has come. Most overdue first.
+// Highlights that are due: never reviewed ones from before today (so every
+// highlight is in the next morning's review, whatever time it was made), or
+// whose next review date has come. Most overdue first.
 export function dueHighlights(notes: Note[], now = Date.now()) {
   const today = startOfDay(now);
   return notes
     .filter((n) => n.quote && !n.review?.off && n.createdAt < today)
-    .map((n) => ({ n, due: n.review?.due ?? n.createdAt + DAY }))
+    .map((n) => ({ n, due: n.review?.due ?? startOfDay(n.createdAt) + DAY }))
     .filter((x) => x.due <= now)
     .sort((a, b) => a.due - b.due)
     .map((x) => x.n);

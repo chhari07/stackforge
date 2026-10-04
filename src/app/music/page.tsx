@@ -6,29 +6,32 @@ import { Logo } from "@/components/logo";
 import { MiniPlayer } from "@/components/mini-player";
 import { LocalView } from "@/components/local-view";
 import { SpotifyView } from "@/components/spotify-view";
+import { OnlineView } from "@/components/online-view";
 import { useLocalMusic } from "@/components/local-music-provider";
-import { useSpotify } from "@/components/spotify-provider";
-import { PLAY_BUILD } from "@/lib/platform";
+import { AddToPlaylistSheet } from "@/components/playlist-parts";
+import { useT } from "@/lib/i18n";
 
-type Source = "phone" | "spotify";
+type Source = "phone" | "online" | "spotify";
 const SOURCE_KEY = "stack.music-source";
+const SOURCES: Source[] = ["phone", "spotify", "online"];
+const LABEL: Record<Source, string> = { phone: "Local", spotify: "Spotify", online: "Online" };
 
 export default function Music() {
+  const tt = useT();
   const local = useLocalMusic();
-  const sp = useSpotify();
-  // Play build: Spotify appears only after you add your own Spotify app in Settings.
-  const spotifyOn = !PLAY_BUILD || sp.configured;
-  const [source, setSourceState] = useState<Source>("spotify");
+  const [source, setSourceState] = useState<Source>("phone");
+  const [naming, setNaming] = useState(false);
 
-  // The app opens on phone music unless you last used Spotify.
+  // Reopen the tab you used last (Local on first run in the app, Online on the web).
   useEffect(() => {
-    if (!local.available) return;
     let saved: string | null = null;
     try {
       saved = localStorage.getItem(SOURCE_KEY);
     } catch {}
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSourceState(saved === "spotify" ? "spotify" : "phone");
+    setSourceState(
+      saved === "phone" || saved === "spotify" || saved === "online" ? saved : local.available ? "phone" : "online",
+    );
   }, [local.available]);
 
   const setSource = (s: Source) => {
@@ -38,33 +41,45 @@ export default function Music() {
     } catch {}
   };
 
+  // Playlists are made from the songs on the phone.
+  const onPhone = source === "phone" && local.available;
+
   return (
-    <main className="overflow-x-hidden px-5 pt-5 pb-[180px] md:px-10 md:pt-8 md:pb-28">
+    <main className="overflow-x-hidden px-5 pt-5 pb-[180px]">
       <div className="flex h-8 items-center justify-between">
-        <Logo size={26} className="-ml-1 md:invisible" />
-        {local.available && spotifyOn ? (
-          <div role="tablist" aria-label="Music source" className="flex rounded-full border border-ink/15 p-0.5">
-            {(["phone", "spotify"] as Source[]).map((s) => (
-              <button
-                key={s}
-                role="tab"
-                aria-selected={source === s}
-                onClick={() => setSource(s)}
-                className={`label h-7 rounded-full px-3 text-[10px] ${source === s ? "bg-ink text-on-ink" : ""}`}
-              >
-                {s === "phone" ? "On phone" : "Spotify"}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="label text-[10px] text-muted">{local.available ? "On phone" : "Spotify"}</span>
-        )}
+        <Logo size={26} className="-ml-1" />
+        <div role="tablist" aria-label={tt("Music source")} className="flex rounded-full border border-ink/15 p-0.5">
+          {SOURCES.map((s) => (
+            <button
+              key={s}
+              role="tab"
+              aria-selected={source === s}
+              onClick={() => setSource(s)}
+              className={`label h-7 rounded-full px-3 text-[10px] ${source === s ? "bg-ink text-on-ink" : ""}`}
+            >
+              {tt(LABEL[s])}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {local.available && (source === "phone" || !spotifyOn) ? <LocalView /> : <SpotifyView />}
+      {source === "phone" ? (
+        local.available ? (
+          <LocalView />
+        ) : (
+          <p className="mt-10 text-[14px] leading-relaxed text-muted">
+            {tt("Songs stored on your phone play in the Stack Android app. Here, try Online for free music or Spotify.")}
+          </p>
+        )
+      ) : source === "online" ? (
+        <OnlineView />
+      ) : (
+        <SpotifyView />
+      )}
 
       <MiniPlayer showTime />
-      <TabBar />
+      <AddToPlaylistSheet songs={naming ? [] : null} newOnly onClose={() => setNaming(false)} />
+      <TabBar add={onPhone ? { label: "New playlist", onClick: () => setNaming(true) } : undefined} />
     </main>
   );
 }

@@ -22,11 +22,13 @@ import {
   disconnect as clearTokens,
   isConnected,
   SpotifyError,
+  wasLoggedOut,
   spotifyConfigured,
   builtInConfigured,
   onClientIdChange,
   type SpPlayer,
 } from "@/lib/spotify";
+import { tr } from "@/lib/i18n";
 
 type WebPlayer = {
   connect(): Promise<boolean>;
@@ -50,6 +52,8 @@ declare global {
 type Ctx = {
   configured: boolean;
   connected: boolean;
+  reachable: boolean; // false while connected but Spotify can't be reached
+  lost: boolean; // Spotify ended the login on its own: offer Reconnect
   player: SpPlayer | null;
   progress: number; // ms, ticks locally between polls
   error: string | null;
@@ -79,16 +83,16 @@ const noDevice = (e: unknown) =>
 function explain(e: unknown) {
   if (e instanceof SpotifyError) {
     if (e.reason === "NO_SPOTIFY_APP")
-      return "The Spotify app isn’t installed on this phone. Install it to play from Stack, or use “Open in Spotify”.";
+      return tr("The Spotify app isn’t installed on this phone. Install it to play from Stack, or use “Open in Spotify”.");
     if (e.reason === "PREMIUM_REQUIRED" || e.status === 403)
-      return "Playing and skipping from Stack needs Spotify Premium. “Open in Spotify” works on free accounts.";
+      return tr("Playing and skipping from Stack needs Spotify Premium. “Open in Spotify” works on free accounts.");
     if (noDevice(e))
       return isNative()
-        ? "Spotify isn’t running. Open the Spotify app, play any song for a second, then come back and tap play again."
-        : "No active device. Open Spotify on your phone or computer, or play once in this browser.";
+        ? tr("Spotify isn’t running. Open the Spotify app, play any song for a second, then come back and tap play again.")
+        : tr("No active device. Open Spotify on your phone or computer, or play once in this browser.");
     return e.message;
   }
-  return "Something went wrong with Spotify.";
+  return tr("Something went wrong with Spotify.");
 }
 
 type Device = { id: string | null; is_active: boolean; is_restricted: boolean; type: string; name: string };
@@ -98,6 +102,8 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
   // Built-in ID during the static build; the runtime one (Settings) in the browser.
   const configured = useSyncExternalStore(onClientIdChange, spotifyConfigured, builtInConfigured);
   const [connected, setConnected] = useState(false);
+  const [reachable, setReachable] = useState(true);
+  const [lost, setLost] = useState(false);
   const [player, setPlayer] = useState<SpPlayer | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +117,7 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
     // Read localStorage after mount so the server render matches.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConnected(configured && isConnected());
+    setLost(configured && wasLoggedOut());
   }, [configured]);
 
   // Android: Spotify's login page sends the user back via com.chhari.stack://callback.
@@ -120,10 +127,12 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       if (!url.startsWith(APP_REDIRECT)) return;
       Browser.close().catch(() => {});
       const code = new URL(url).searchParams.get("code");
-      if (!code) return setError("Spotify login was cancelled.");
+      if (!code) return setError(tr("Spotify login was cancelled."));
       try {
         await finishLogin(code);
         setConnected(true);
+        setLost(false);
+        setReachable(true);
       } catch (e) {
         setError((e as Error).message);
       }
@@ -139,8 +148,15 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       const p = await api<SpPlayer>("/me/player");
       setPlayer(p);
       setProgress(p?.progress_ms ?? 0);
+      setReachable(true);
     } catch (e) {
-      if (e instanceof SpotifyError && e.status === 401) setConnected(false);
+      if (!(e instanceof SpotifyError)) return;
+      if (e.status === 0) setReachable(false);
+      // Only a login Spotify revoked clears the tokens; network blips keep it.
+      if (e.status === 401) {
+        setConnected(isConnected());
+        setLost(wasLoggedOut());
+      }
     }
   }, []);
 
@@ -173,7 +189,7 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       if (!window.Spotify) return;
       const sdk = new window.Spotify.Player({
         name: "Stack",
-        getOAuthToken: (cb) => accessToken().then((t) => t && cb(t)),
+        getOAuthToken: (cb) => accessToken().then((t) => t && cb(t), () => {}),
         volume: 0.7,
       });
       sdk.addListener("ready", ({ device_id }) => setBrowserDeviceId(device_id ?? null));
@@ -240,7 +256,7 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       // Wake the Spotify app up; it registers as a device within a few seconds.
       const { opened } = await AppSettings.openSpotify({ uri: openUri });
       if (!opened) throw new SpotifyError(404, "NO_SPOTIFY_APP", "Spotify not installed");
-      setStatus("Opening Spotify… your music will start in a moment. Come back to Stack any time.");
+      setStatus(tr("Opening Spotify… your music will start in a moment. Come back to Stack any time."));
       const attempt = async () => {
         const id = await findDevice();
         if (!id) return false;
@@ -256,7 +272,7 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
         if (pending.current !== attempt) return;
         if (await attempt().catch(() => false)) return;
       }
-      setStatus("Spotify is open but not ready yet. Press play in Spotify once, then come back: Stack will take over.");
+      setStatus(tr("Spotify is open but not ready yet. Press play in Spotify once, then come back: Stack will take over."));
     },
     [deviceQuery, findDevice, refresh],
   );
@@ -316,6 +332,7 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
     sdkRef.current = null;
     clearTokens();
     setConnected(false);
+    setLost(false);
     setPlayer(null);
   }, []);
 
@@ -324,6 +341,8 @@ export function SpotifyProvider({ children }: { children: ReactNode }) {
       value={{
         configured,
         connected,
+        reachable,
+        lost,
         player,
         progress,
         error,

@@ -9,6 +9,7 @@ import { registerPlugin } from "@capacitor/core";
 import { emit } from "./db";
 import { isNative } from "./platform";
 import { track, type Collection } from "./sync-state";
+import { tr } from "./i18n";
 
 type BackupPlugin = {
   create(opts: { name: string }): Promise<{ uri: string }>;
@@ -30,6 +31,7 @@ const LOCAL = [
   "stack.onboarded",
   "stack.reading",
   "stack.news-alerts",
+  "stack.news-prefs",
   "stack.ai.off",
 ];
 
@@ -135,10 +137,10 @@ export async function readBackup(file: File): Promise<{ backup: Backup; summary:
   try {
     backup = JSON.parse(await file.text());
   } catch {
-    return { error: "That file isn’t a Stack backup." };
+    return { error: tr("That file isn’t a Stack backup.") };
   }
-  if (backup?.app !== "stack" || typeof backup.data !== "object") return { error: "That file isn’t a Stack backup." };
-  if (backup.version > 1) return { error: "This backup is from a newer Stack. Update the app first." };
+  if (backup?.app !== "stack" || typeof backup.data !== "object") return { error: tr("That file isn’t a Stack backup.") };
+  if (backup.version > 1) return { error: tr("This backup is from a newer Stack. Update the app first.") };
   const d = backup.data;
   const notes = d.notes ?? [];
   return {

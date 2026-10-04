@@ -20,6 +20,39 @@ export async function openPdf(data: ArrayBuffer) {
   return getDocument({ data }).promise;
 }
 
+type Doc = Awaited<ReturnType<typeof openPdf>>;
+
+/** The text of one page, lines kept apart. */
+export async function pdfPageText(doc: Doc, page: number) {
+  const content = await (await doc.getPage(page)).getTextContent();
+  return content.items
+    .map((it) => ("str" in it ? it.str + (it.hasEOL ? "\n" : " ") : ""))
+    .join("")
+    .replace(/-\n(?=[a-z])/g, "");
+}
+
+/** The PDF's own table of contents (its outline), flattened, with the page each entry opens. */
+export async function pdfOutline(doc: Doc) {
+  type Node = { title: string; dest: string | unknown[] | null; items?: Node[] };
+  const out: { title: string; page: number; depth: number }[] = [];
+  const walk = async (nodes: Node[], depth: number) => {
+    for (const n of nodes) {
+      if (out.length >= 500) return;
+      try {
+        const dest = typeof n.dest === "string" ? await doc.getDestination(n.dest) : n.dest;
+        const ref = dest?.[0];
+        const index = typeof ref === "number" ? ref : ref ? await doc.getPageIndex(ref as Parameters<Doc["getPageIndex"]>[0]) : -1;
+        if (index >= 0 && n.title?.trim()) out.push({ title: n.title.trim(), page: index + 1, depth });
+      } catch {
+        // An entry that points nowhere is left out.
+      }
+      if (n.items?.length && depth < 3) await walk(n.items, depth + 1);
+    }
+  };
+  await walk(((await doc.getOutline()) ?? []) as Node[], 0);
+  return out;
+}
+
 // Reads the title, page count and a cover thumbnail for a newly added PDF.
 export async function inspectPdf(file: File) {
   const doc = await openPdf(await file.arrayBuffer());
