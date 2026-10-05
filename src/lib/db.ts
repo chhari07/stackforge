@@ -36,7 +36,7 @@ export type Note = {
   highlight?: boolean; // a highlight with no comment
   word?: boolean; // a word saved from "Meaning": quote is the word, body its meaning
   sourceTitle?: string;
-  sourceLabel?: string; // "Hacker News", "dev.to", "Spotify"…
+  sourceLabel?: string; // "Hacker News", "dev.to"…
   href?: string; // where tapping the note takes you inside Stack
   articleId?: string;
   pdfId?: string;

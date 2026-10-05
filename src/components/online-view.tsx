@@ -12,7 +12,7 @@ import {
   PrevIcon,
   SearchIcon,
 } from "./icons";
-import { SWATCHES } from "./spotify-view";
+import { SWATCHES } from "@/lib/swatches";
 import { Vinyl } from "./vinyl";
 import { mmss } from "@/lib/format";
 import {

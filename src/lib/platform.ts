@@ -10,8 +10,8 @@ import { SAMPLE_ID, sampleArticle } from "./sample";
 export const isNative = () => Capacitor.isNativePlatform();
 
 // The Google Play build (`./build-aab.sh`). Play doesn't allow "All files
-// access" for a reading app, and Spotify caps small apps at 25 users, so that
-// build leaves both out. The sideloaded APK and the website keep them.
+// access" for a reading app, so that build leaves it out. The sideloaded APK
+// and the website keep it.
 export const PLAY_BUILD = process.env.NEXT_PUBLIC_STACK_STORE === "play";
 
 // Website: ask our API routes. App: fetch the sources straight from the phone.

@@ -1,21 +1,17 @@
 package com.chhari.stack;
 
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
-import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-/** Opens other apps' screens: Stack's page in Android Settings, and the Spotify app. */
+/** Opens Stack's page in Android Settings. */
 @CapacitorPlugin(name = "AppSettings")
 public class AppSettingsPlugin extends Plugin {
-
-    private static final String SPOTIFY = "com.spotify.music";
 
     @PluginMethod
     public void open(PluginCall call) {
@@ -30,35 +26,5 @@ public class AppSettingsPlugin extends Plugin {
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getActivity().startActivity(intent);
         call.resolve();
-    }
-
-    /**
-     * Starts the Spotify app so it shows up as a Spotify Connect device Stack can
-     * control. With a "spotify:…" uri it opens straight to that playlist/album.
-     */
-    @PluginMethod
-    public void openSpotify(PluginCall call) {
-        JSObject ret = new JSObject();
-        String uri = call.getString("uri");
-        Intent intent = null;
-        if (uri != null && uri.startsWith("spotify:")) {
-            intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri)).setPackage(SPOTIFY);
-        }
-        if (intent == null || intent.resolveActivity(getContext().getPackageManager()) == null) {
-            intent = getContext().getPackageManager().getLaunchIntentForPackage(SPOTIFY);
-        }
-        if (intent == null) {
-            ret.put("opened", false); // Spotify isn't installed
-            call.resolve(ret);
-            return;
-        }
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            getActivity().startActivity(intent);
-            ret.put("opened", true);
-        } catch (ActivityNotFoundException e) {
-            ret.put("opened", false);
-        }
-        call.resolve(ret);
     }
 }

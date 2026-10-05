@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Bodoni_Moda, IBM_Plex_Mono } from "next/font/google";
-import { SpotifyProvider } from "@/components/spotify-provider";
 import { ToastProvider } from "@/components/toast";
 import { NativeBoot } from "@/components/native-boot";
 import { LocalMusicProvider } from "@/components/local-music-provider";
@@ -57,25 +56,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body>
-        <SpotifyProvider>
-          <LocalMusicProvider>
-          <OnlineMusicProvider>
-            <ToastProvider>
-              <AccountProvider>
-              <FocusProvider>
-              <NativeBoot />
-              <FirstRun />
-              <StatusScrim />
-              {/* One layout for phones and tablets: the column fills the screen. */}
-              <div className="relative min-h-dvh w-full bg-paper pt-[env(safe-area-inset-top)]">
-                {children}
-              </div>
-              </FocusProvider>
-              </AccountProvider>
-            </ToastProvider>
-          </OnlineMusicProvider>
-          </LocalMusicProvider>
-        </SpotifyProvider>
+        <LocalMusicProvider>
+        <OnlineMusicProvider>
+          <ToastProvider>
+            <AccountProvider>
+            <FocusProvider>
+            <NativeBoot />
+            <FirstRun />
+            <StatusScrim />
+            {/* One layout for phones and tablets: the column fills the screen. */}
+            <div className="relative min-h-dvh w-full bg-paper pt-[env(safe-area-inset-top)]">
+              {children}
+            </div>
+            </FocusProvider>
+            </AccountProvider>
+          </ToastProvider>
+        </OnlineMusicProvider>
+        </LocalMusicProvider>
       </body>
     </html>
   );

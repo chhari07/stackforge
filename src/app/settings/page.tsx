@@ -7,8 +7,6 @@ import { Avatar } from "@/components/avatar";
 import { useAccount } from "@/components/account-provider";
 import { getProfile } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
-import { useSpotify } from "@/components/spotify-provider";
-import { SpotifyLoginNote, SpotifySetup, SpotifyTroubleshooting } from "@/components/spotify-setup";
 import { useToast } from "@/components/toast";
 import { PLAY_BUILD, useIsNative } from "@/lib/platform";
 import { PhoneFiles, useAllFiles } from "@/lib/phone-files";
@@ -21,7 +19,6 @@ import {
   setReminder,
   type Reminder,
 } from "@/lib/reminders";
-import { login, setClientId } from "@/lib/spotify";
 import { getTheme, setTheme, type Theme } from "@/lib/theme";
 import { AppSettings } from "@/lib/app-settings";
 import { BackupSection } from "@/components/backup-section";
@@ -78,7 +75,6 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export default function Settings() {
   const native = useIsNative();
-  const sp = useSpotify();
   const toast = useToast();
   const t = useT();
   const [theme, setThemeState] = useState<Theme>("system");
@@ -86,7 +82,6 @@ export default function Settings() {
   const [notify, setNotify] = useState<boolean | null>(null);
   const [music, setMusic] = useState<string | null>(null);
   const [reminder, setReminderState] = useState<Reminder | null>(null);
-  const [showSpotifySetup, setShowSpotifySetup] = useState(false);
   const allFiles = useAllFiles();
 
   const refresh = useCallback(() => {
@@ -346,77 +341,7 @@ export default function Settings() {
           )}
         </Section>
 
-        <Section title="04 — Spotify">
-          {PLAY_BUILD && !sp.configured && !showSpotifySetup ? (
-            <>
-              <p className="text-[14px] text-muted">
-                {t("Spotify only lets each app have a few users, so Stack can’t sign you in by itself. If you have a Spotify developer app, add its Client ID to use your playlists here.")}
-              </p>
-              <button
-                onClick={() => setShowSpotifySetup(true)}
-                className="self-start text-[12px] text-muted underline"
-              >
-                {t("Advanced: use my own Spotify app")}
-              </button>
-            </>
-          ) : !sp.configured || showSpotifySetup ? (
-            <SpotifySetup compact />
-          ) : sp.connected ? (
-            <>
-              <div className="flex items-center gap-2 text-[15px]">
-                <span className="size-2 rounded-full bg-[#1DB954]" /> {t("Connected")}
-              </div>
-              <p className="text-[13px] text-muted">
-                {t("Your playlists and Liked Songs are in Music → Spotify.")}
-              </p>
-              <button
-                onClick={sp.disconnect}
-                className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
-              >
-                {t("Log out of Spotify")}
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-[14px] text-muted">
-                {t("Your Spotify app is set up. Log in to see your playlists and control playback.")}
-              </p>
-              <button
-                onClick={login}
-                className="h-12 rounded-full bg-[#1DB954] text-[15px] font-semibold text-black"
-              >
-                {t("Log in with Spotify")}
-              </button>
-              {sp.error && (
-                <p className="text-[13px] text-music-deep">{sp.error}</p>
-              )}
-              <SpotifyLoginNote />
-              <SpotifyTroubleshooting />
-            </>
-          )}
-          {sp.configured && (
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowSpotifySetup((v) => !v)}
-                className="text-[12px] text-muted underline"
-              >
-                {showSpotifySetup ? t("Hide setup") : t("Change Spotify app (Client ID)")}
-              </button>
-              <button
-                onClick={() => {
-                  setClientId(null);
-                  setShowSpotifySetup(false);
-                  toast({ text: t("Spotify app removed") });
-                }}
-                className="text-[12px] text-muted underline"
-              >
-                {t("Reset")}
-              </button>
-            </div>
-          )}
-        </Section>
-
-        <Section title="05 — Daily digest">
+        <Section title="04 — Daily digest">
           {!native || !reminder ? (
             <p className="text-[14px] text-muted">
               {t("The daily digest notification is available in the Android app.")}
@@ -471,11 +396,11 @@ export default function Settings() {
           )}
         </Section>
 
-        <Section title="06 — Breaking news">
+        <Section title="05 — Breaking news">
           <NewsAlertsSection />
         </Section>
 
-        <Section title="07 — Home screen widget">
+        <Section title="06 — Home screen widget">
           {!native ? (
             <p className="text-[14px] text-muted">{t("The home screen widget is available in the Android app.")}</p>
           ) : (
@@ -496,11 +421,11 @@ export default function Settings() {
           )}
         </Section>
 
-        <Section title="08 — Stack AI">
+        <Section title="07 — Stack AI">
           <AiSection />
         </Section>
 
-        <Section title="09 — Backup">
+        <Section title="08 — Backup">
           <BackupSection />
         </Section>
       </div>

@@ -5,16 +5,15 @@ import { TabBar } from "@/components/tab-bar";
 import { Logo } from "@/components/logo";
 import { MiniPlayer } from "@/components/mini-player";
 import { LocalView } from "@/components/local-view";
-import { SpotifyView } from "@/components/spotify-view";
 import { OnlineView } from "@/components/online-view";
 import { useLocalMusic } from "@/components/local-music-provider";
 import { AddToPlaylistSheet } from "@/components/playlist-parts";
 import { useT } from "@/lib/i18n";
 
-type Source = "phone" | "online" | "spotify";
+type Source = "phone" | "online";
 const SOURCE_KEY = "stack.music-source";
-const SOURCES: Source[] = ["phone", "spotify", "online"];
-const LABEL: Record<Source, string> = { phone: "Local", spotify: "Spotify", online: "Online" };
+const SOURCES: Source[] = ["phone", "online"];
+const LABEL: Record<Source, string> = { phone: "Local", online: "Online" };
 
 export default function Music() {
   const tt = useT();
@@ -29,9 +28,7 @@ export default function Music() {
       saved = localStorage.getItem(SOURCE_KEY);
     } catch {}
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSourceState(
-      saved === "phone" || saved === "spotify" || saved === "online" ? saved : local.available ? "phone" : "online",
-    );
+    setSourceState(saved === "phone" || saved === "online" ? saved : local.available ? "phone" : "online");
   }, [local.available]);
 
   const setSource = (s: Source) => {
@@ -68,13 +65,11 @@ export default function Music() {
           <LocalView />
         ) : (
           <p className="mt-10 text-[14px] leading-relaxed text-muted">
-            {tt("Songs stored on your phone play in the Stack Android app. Here, try Online for free music or Spotify.")}
+            {tt("Songs stored on your phone play in the Stack Android app. Here, try Online for free music.")}
           </p>
         )
-      ) : source === "online" ? (
-        <OnlineView />
       ) : (
-        <SpotifyView />
+        <OnlineView />
       )}
 
       <MiniPlayer showTime />

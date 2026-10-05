@@ -23,14 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Spotify login redirect -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.chhari.stack" android:host="callback" />
-            </intent-filter>
-
         </activity>
 
         <!-- Share to Stack: links and text, and PDFs -->
@@ -92,7 +84,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <queries>
-        <package android:name="com.spotify.music" />
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>

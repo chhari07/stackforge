@@ -499,7 +499,7 @@ function FocusMusic() {
               "15, 25, 45 or 60 minutes, or Pomodoro rounds with breaks",
               "Capture a thought without leaving the page; it’s saved to Notes",
               "A summary at the end: minutes, pages, highlights and notes",
-              "Songs on your phone, free music online, or Spotify",
+              "Songs on your phone, or free music online",
               "Shuffle, repeat, speed, sleep timer and an Up next queue",
             ].map((p) => (
               <li key={p} className="flex gap-3 py-3 text-prose">

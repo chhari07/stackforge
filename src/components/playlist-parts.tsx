@@ -8,7 +8,7 @@ import { useStore } from "@/lib/use-store";
 import { plural } from "@/lib/format";
 import { PlusIcon } from "./icons";
 import { Sheet } from "./sheet";
-import { SWATCHES } from "./spotify-view";
+import { SWATCHES } from "@/lib/swatches";
 import { useToast } from "./toast";
 import { useT } from "@/lib/i18n";
 

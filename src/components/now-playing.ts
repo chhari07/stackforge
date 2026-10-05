@@ -1,12 +1,10 @@
 "use client";
 
-import { art as spArt, artists } from "@/lib/spotify";
 import { useLocalMusic } from "./local-music-provider";
 import { useOnlineMusic } from "./online-music-provider";
-import { useSpotify } from "./spotify-provider";
 
 export type NowPlaying = {
-  source: "local" | "online" | "spotify";
+  source: "local" | "online";
   title: string;
   artist: string;
   art?: string | null;
@@ -20,13 +18,11 @@ export type NowPlaying = {
 };
 
 // One "now playing" for the mini player and the PDF reader pill: whatever is
-// playing, preferring music on the phone, then online music, then Spotify.
+// playing, preferring music on the phone, then online music.
 export function useNowPlaying(): NowPlaying | null {
   const local = useLocalMusic();
-  const sp = useSpotify();
   const online = useOnlineMusic();
   const l = local.state;
-  const track = sp.connected ? sp.player?.item : null;
 
   const fromLocal: NowPlaying | null = l.uri
     ? {
@@ -41,22 +37,6 @@ export function useNowPlaying(): NowPlaying | null {
         toggle: local.toggle,
         next: local.next,
         previous: local.previous,
-      }
-    : null;
-
-  const fromSpotify: NowPlaying | null = track
-    ? {
-        source: "spotify",
-        title: track.name,
-        artist: artists(track),
-        art: spArt(track.album.images),
-        playing: !!sp.player?.is_playing,
-        position: sp.progress,
-        duration: track.duration_ms,
-        device: sp.player?.device?.name ?? "Spotify",
-        toggle: sp.toggle,
-        next: sp.next,
-        previous: sp.previous,
       }
     : null;
 
@@ -78,6 +58,5 @@ export function useNowPlaying(): NowPlaying | null {
 
   if (fromLocal?.playing) return fromLocal;
   if (fromOnline?.playing) return fromOnline;
-  if (fromSpotify?.playing) return fromSpotify;
-  return fromLocal ?? fromOnline ?? fromSpotify;
+  return fromLocal ?? fromOnline;
 }

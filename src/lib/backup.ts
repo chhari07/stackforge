@@ -26,7 +26,6 @@ const LOCAL = [
   "stack.music-source",
   "stack.reminder",
   "stack.review.streak",
-  "stack.spotify.clientId",
   "stack.search.recent",
   "stack.onboarded",
   "stack.reading",

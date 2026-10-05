@@ -164,21 +164,11 @@ android {
 // 5. Manifest.
 const manifestPath = "android/app/src/main/AndroidManifest.xml";
 let manifest = readFileSync(manifestPath, "utf8");
-// Spotify login comes back through com.chhari.stack://callback.
-if (!manifest.includes('android:scheme="com.chhari.stack"')) {
-  manifest = manifest.replace(
-    /(<category android:name="android\.intent\.category\.LAUNCHER" \/>\s*<\/intent-filter>)/,
-    `$1
-
-            <!-- Spotify login redirect -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.chhari.stack" android:host="callback" />
-            </intent-filter>`,
-  );
-}
+// Spotify was removed: take its login redirect off an existing manifest.
+manifest = manifest.replace(
+  /\n\s*<!-- Spotify login redirect -->\s*<intent-filter>[\s\S]*?android:host="callback" \/>\s*<\/intent-filter>/,
+  "",
+);
 // "Share to Stack": other apps' share sheets open ShareActivity, a card over
 // that app (see-through window, its own task, so Stack doesn't come forward).
 // An earlier build put these filters on MainActivity; take them off it.
@@ -252,19 +242,14 @@ if (!manifest.includes(".PlaybackService")) {
     </application>`,
   );
 }
-// Android 11+ hides other apps unless declared: Stack needs to find Spotify to open it.
-if (!manifest.includes('<package android:name="com.spotify.music"')) {
-  manifest = manifest.replace(
-    "</manifest>",
-    `    <queries>\n        <package android:name="com.spotify.music" />\n    </queries>\n</manifest>`,
-  );
-}
-// Listen mode uses the phone's text-to-speech engine, which Android 11+ also hides unless declared.
+// Spotify was removed: Stack no longer needs to see the Spotify app.
+manifest = manifest.replace(/\n\s*<package android:name="com\.spotify\.music" \/>/, "");
+// Listen mode uses the phone's text-to-speech engine, which Android 11+ hides unless declared.
 if (!manifest.includes("android.intent.action.TTS_SERVICE")) {
-  manifest = manifest.replace(
-    "</queries>",
-    `    <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>`,
-  );
+  const tts = `<intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>`;
+  manifest = manifest.includes("</queries>")
+    ? manifest.replace("</queries>", `    ${tts}\n    </queries>`)
+    : manifest.replace("</manifest>", `    <queries>\n        ${tts}\n    </queries>\n</manifest>`);
 }
 const permissions = [
   '<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />',

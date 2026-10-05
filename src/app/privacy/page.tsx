@@ -46,8 +46,7 @@ export default function Privacy() {
       <PolicySection title="News and music">
         <p>
           News is fetched from public news sites and feeds. If you turn on breaking-news alerts, Stack checks those
-          feeds in the background; nothing about you is sent. Music on your phone is played from your phone. If you
-          connect Spotify, Spotify’s own privacy policy applies to that connection.
+          feeds in the background; nothing about you is sent. Music on your phone is played from your phone.
         </p>
         <p>
           Video news plays in YouTube’s privacy-enhanced player: when you play a video, your device loads it from

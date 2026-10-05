@@ -1,4 +1,4 @@
-// The small light next to Spotify and Telegram: green connected, amber
+// The small light next to Telegram: green connected, amber
 // connected but the service can't be reached right now, red logged out.
 export type DotState = "ok" | "unreachable" | "lost";
 

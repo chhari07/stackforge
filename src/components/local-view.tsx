@@ -12,7 +12,7 @@ import {
   SearchIcon,
   ShuffleIcon,
 } from "./icons";
-import { SWATCHES } from "./spotify-view";
+import { SWATCHES } from "@/lib/swatches";
 import { AddToPlaylistSheet, PlaylistsRail } from "./playlist-parts";
 import { mmss, plural } from "@/lib/format";
 import { LocalMusic, type LocalTrack } from "@/lib/local-music";

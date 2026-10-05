@@ -3,7 +3,6 @@
 import { Marquee } from "./marquee";
 import Link from "next/link";
 import { mmss } from "@/lib/format";
-import { useSpotify } from "./spotify-provider";
 import { useLocalMusic } from "./local-music-provider";
 import { useNowPlaying } from "./now-playing";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "./icons";
@@ -12,7 +11,6 @@ import { useT } from "@/lib/i18n";
 // Slim floating now-playing pill that sits above the tab bar.
 export function MiniPlayer({ showTime = false }: { showTime?: boolean }) {
   const tt = useT();
-  const sp = useSpotify();
   const local = useLocalMusic();
   const now = useNowPlaying();
 
@@ -25,11 +23,7 @@ export function MiniPlayer({ showTime = false }: { showTime?: boolean }) {
       <Link href="/music" className={shell}>
         <span className={square} />
         <span className="song min-w-0 grow truncate text-[13px]">
-          {local.available
-            ? tt("Press play. Then read.")
-            : sp.connected
-              ? tt("Silence is fine. Music is better.")
-              : tt("Connect Spotify")}
+          {local.available ? tt("Press play. Then read.") : tt("Silence is fine. Music is better.")}
         </span>
         <span className="flex size-9 shrink-0 items-center justify-center">
           <PlayIcon size={14} />
