@@ -7,4 +7,6 @@ export const SITE = {
   line: "Stack makes you remember what you read.",
   email: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "hello@stackforge.in",
   github: "https://github.com/chhari07/stackforge",
+  // The Android app (APK) on Google Drive, until the Play Store release.
+  apk: "https://drive.google.com/file/d/1lhGlMl2OPOuB-eqHuNlJUW8HXmqYo6uX/view?usp=sharing",
 };

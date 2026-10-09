@@ -128,6 +128,10 @@ const FAQ = [
     q: "What is a soft launch?",
     a: "Stack is finished enough to use every day, and we're opening it to a small group first. Testers get the Android app early through Google Play's closed test, and their feedback shapes the public release.",
   },
+  {
+    q: "How do I install the APK?",
+    a: "Open the download link on your Android phone, tap the download icon in Google Drive, then open the file. If Android asks, allow your browser or Files app to install unknown apps, then tap Install. When Stack reaches the Play Store, it will update from there.",
+  },
   { q: "Is it free?", a: "Yes. Stack is free and open source. Testers will also get Stack Plus free for a year when it arrives." },
   { q: "Do I need an account?", a: "No. Stack works fully offline on your phone. Signing in is only for syncing between devices." },
   {
@@ -183,8 +187,8 @@ export default function Home() {
             <Logo size={28} />
             <span className="display text-2xl">STACK</span>
           </a>
-          <a href="#join" className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink transition hover:opacity-90">
-            Join<span className="max-sm:hidden"> the soft launch</span>
+          <a href={SITE.apk} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink transition hover:opacity-90">
+            Download<span className="max-sm:hidden"> the app</span>
           </a>
         </div>
       </header>
@@ -248,9 +252,12 @@ function Hero() {
           </p>
 
           <div className="rise mt-9 flex flex-wrap items-center gap-3 [animation-delay:1050ms]">
-            <a href="#join" className="group inline-flex h-14 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-on-ink shadow-[0_10px_28px_rgba(0,0,0,.18)] transition hover:opacity-90">
+            <a href={SITE.apk} target="_blank" rel="noopener noreferrer" className="group inline-flex h-14 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-on-ink shadow-[0_10px_28px_rgba(0,0,0,.18)] transition hover:opacity-90">
+              Download for Android
+              <span aria-hidden="true" className="transition group-hover:translate-y-0.5">↓</span>
+            </a>
+            <a href="#join" className="inline-flex h-14 items-center rounded-full border border-ink/15 bg-card px-7 text-[15px] font-semibold transition hover:border-ink">
               Join the soft launch
-              <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
             </a>
             <a href="#first-minute" className="inline-flex h-14 items-center rounded-full border border-ink/15 bg-card px-7 text-[15px] font-semibold transition hover:border-ink">
               See the app
@@ -568,7 +575,21 @@ function Join() {
             </li>
           ))}
         </ul>
-        <div className="mt-10 rounded-2xl bg-paper-2 p-6">
+        <div className="mt-10 rounded-2xl bg-ink p-6 text-on-ink">
+          <p className="label text-[11px] font-medium">Try it now</p>
+          <p className="mt-3 opacity-80">
+            Don’t want to wait for the invite? Download the Android app (APK) from Google Drive and install it today.
+          </p>
+          <a
+            href={SITE.apk}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-paper px-6 text-[15px] font-semibold text-ink transition hover:opacity-90"
+          >
+            Download Stack (APK) <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+        <div className="mt-4 rounded-2xl bg-paper-2 p-6">
           <p className="label text-[11px] font-medium">What happens next</p>
           <ol className="mt-4 grid gap-3">
             {[
