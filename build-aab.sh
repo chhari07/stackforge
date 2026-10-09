@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the Google Play version of Stack: a signed Android App Bundle (.aab).
 # Differences from build-apk.sh (the sideloaded APK): no "All files access",
-# Spotify only with your own Client ID, https-only networking, release signing.
+# https-only networking, release signing.
 # Needs android/keystore.properties (see docs/Stack_Launch_Guide.pdf, stage 4)
 # and NEXT_PUBLIC_AI_URL set to the https address of the "ai" Supabase function
 # in .env.local (or leave it empty to ship without AI). Bump "version" in package.json before each upload.

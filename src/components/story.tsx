@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ago, newsTime } from "@/lib/format";
 import { safeImage, type Story } from "@/lib/use-news";
-import { PlayIcon } from "./icons";
+import { PlayIcon, ShareIcon } from "./icons";
+import { useT } from "@/lib/i18n";
 
 // Videos play on /watch; everything else opens in the reader.
 export const storyHref = (s: Story) => (s.video ? `/watch?v=${s.video}` : `/read?id=${s.id}`);
@@ -33,39 +34,63 @@ const meta = (s: Story) =>
   s.readMinutes ? `${s.source} · ${s.readMinutes} min` : `${s.source} · ${s.domain ?? ""}`;
 
 // Dark hero card from the TechCrunch-style reference.
-export function HeroStory({ story, height = 200 }: { story: Story; height?: number }) {
+// With `onShare`, a Share button sits over the top right corner; the element
+// around the card must be `relative`.
+export function HeroStory({
+  story,
+  height = 200,
+  onShare,
+}: {
+  story: Story;
+  height?: number;
+  onShare?: (s: Story) => void;
+}) {
+  const t = useT();
   const img = safeImage(story.image);
   return (
-    <Link
-      href={readHref(story)}
-      onClick={() => rememberStory(story)}
-      style={{ height }}
-      className="relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-soft p-[18px] text-white"
-    >
-      {img && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={img} alt="" decoding="async" className="absolute inset-0 size-full object-cover opacity-55" />
+    <>
+      <Link
+        href={readHref(story)}
+        onClick={() => rememberStory(story)}
+        style={{ height }}
+        className="relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-soft p-[18px] text-white"
+      >
+        {img && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={img} alt="" decoding="async" className="absolute inset-0 size-full object-cover opacity-55" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        {story.video && <PlayBadge />}
+        <span className="label absolute top-4 left-[18px] rounded-full bg-news px-2 py-1 text-[10px]">
+          {story.source} · {ago(story.createdAt)}
+        </span>
+        {!img && story.domain && (
+          <span className={`label absolute top-4 text-[10px] text-[#8C8A84] ${onShare ? "right-[58px]" : "right-[18px]"}`}>
+            {story.domain}
+          </span>
+        )}
+        <span className="relative line-clamp-3 text-[20px] leading-[1.22] font-bold">{story.title}</span>
+        <time dateTime={story.createdAt} className="label relative mt-2 text-[10px] text-white/85">
+          {newsTime(story.createdAt)}
+        </time>
+        <span className="label relative mt-1 truncate text-[10px] text-[#BDBAB2]">
+          {story.points !== undefined
+            ? `${story.points} pts · ${story.comments ?? 0} comments`
+            : story.summary
+              ? story.summary.slice(0, 70) + (story.summary.length > 70 ? "…" : "")
+              : story.domain}
+        </span>
+      </Link>
+      {onShare && (
+        <button
+          aria-label={t("Share {title}", { title: story.title })}
+          onClick={() => onShare(story)}
+          className="absolute top-2 right-2 flex size-10 items-center justify-center rounded-full bg-black/45 text-white"
+        >
+          <ShareIcon size={17} />
+        </button>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-      {story.video && <PlayBadge />}
-      <span className="label absolute top-4 left-[18px] rounded-full bg-news px-2 py-1 text-[10px]">
-        {story.source} · {ago(story.createdAt)}
-      </span>
-      {!img && story.domain && (
-        <span className="label absolute top-4 right-[18px] text-[10px] text-[#8C8A84]">{story.domain}</span>
-      )}
-      <span className="relative line-clamp-3 text-[20px] leading-[1.22] font-bold">{story.title}</span>
-      <time dateTime={story.createdAt} className="label relative mt-2 text-[10px] text-white/85">
-        {newsTime(story.createdAt)}
-      </time>
-      <span className="label relative mt-1 truncate text-[10px] text-[#BDBAB2]">
-        {story.points !== undefined
-          ? `${story.points} pts · ${story.comments ?? 0} comments`
-          : story.summary
-            ? story.summary.slice(0, 70) + (story.summary.length > 70 ? "…" : "")
-            : story.domain}
-      </span>
-    </Link>
+    </>
   );
 }
 
@@ -100,32 +125,45 @@ export function StoryCard({ story }: { story: Story }) {
 
 const THUMBS = ["#2F4B3A", "#54473A", "#3A3A37", "#2C3E57", "#4A2F3A"];
 
-export function StoryRow({ story, index }: { story: Story; index: number }) {
+// With `onShare`, a Share button sits at the end of the lines under the headline.
+export function StoryRow({ story, index, onShare }: { story: Story; index: number; onShare?: (s: Story) => void }) {
+  const t = useT();
   const img = safeImage(story.image);
   return (
-    <Link href={readHref(story)} onClick={() => rememberStory(story)} className="flex gap-3.5 border-b border-line py-3.5">
-      <div className="flex min-w-0 grow flex-col gap-2">
-        <span className="line-clamp-3 text-[15px] leading-[1.3] font-semibold">{story.title}</span>
-        <span className="label text-[10px] text-muted">
-          {meta(story)} · {ago(story.createdAt)}
-        </span>
-        <time dateTime={story.createdAt} className="label -mt-1 text-[10px] text-muted">
-          {newsTime(story.createdAt)}
-        </time>
-      </div>
-      <div
-        className="relative flex h-[72px] w-[92px] shrink-0 items-end overflow-hidden rounded-[10px] p-2"
-        style={{ background: THUMBS[index % THUMBS.length] }}
-      >
-        {story.video && <PlayBadge size={30} />}
-        {img ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={img} alt="" loading="lazy" decoding="async" className="-m-2 h-[72px] w-[92px] max-w-none object-cover" />
-        ) : (
-          <span className="label truncate text-[8px] text-white/70">{story.domain}</span>
-        )}
-      </div>
-    </Link>
+    <div className="relative">
+      <Link href={readHref(story)} onClick={() => rememberStory(story)} className="flex gap-3.5 border-b border-line py-3.5">
+        <div className="flex min-w-0 grow flex-col gap-2">
+          <span className="line-clamp-3 text-[15px] leading-[1.3] font-semibold">{story.title}</span>
+          <span className={`label text-[10px] text-muted ${onShare ? "pr-10" : ""}`}>
+            {meta(story)} · {ago(story.createdAt)}
+          </span>
+          <time dateTime={story.createdAt} className="label -mt-1 text-[10px] text-muted">
+            {newsTime(story.createdAt)}
+          </time>
+        </div>
+        <div
+          className="relative flex h-[72px] w-[92px] shrink-0 items-end overflow-hidden rounded-[10px] p-2"
+          style={{ background: THUMBS[index % THUMBS.length] }}
+        >
+          {story.video && <PlayBadge size={30} />}
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img} alt="" loading="lazy" decoding="async" className="-m-2 h-[72px] w-[92px] max-w-none object-cover" />
+          ) : (
+            <span className="label truncate text-[8px] text-white/70">{story.domain}</span>
+          )}
+        </div>
+      </Link>
+      {onShare && (
+        <button
+          aria-label={t("Share {title}", { title: story.title })}
+          onClick={() => onShare(story)}
+          className="absolute right-[102px] bottom-1.5 flex size-10 items-center justify-center text-muted"
+        >
+          <ShareIcon size={16} />
+        </button>
+      )}
+    </div>
   );
 }
 

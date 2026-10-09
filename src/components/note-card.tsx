@@ -1,10 +1,15 @@
 "use client";
 
+import { InkLayer } from "./ink";
+import type { Stroke } from "@/lib/ink";
 import Link from "next/link";
 import type { Note, NoteColor } from "@/lib/db";
 import { noteTime } from "@/lib/format";
 import { fontFamily, useCustomFonts } from "@/lib/note-fonts";
 import { PinIcon } from "./icons";
+import { BellIcon } from "./stack-icons";
+import { remindText, upcoming } from "@/lib/reminders";
+import { tr } from "@/lib/i18n";
 
 // Note colours use the app's tokens, so they follow light and dark mode.
 export const COLORS: { value: NoteColor; label: string; cls: string; swatch: string }[] = [
@@ -22,14 +27,24 @@ export const colorOf = (n: Pick<Note, "color" | "kind">): NoteColor =>
 export const colorCls = (c: NoteColor) =>
   COLORS.find((x) => x.value === c)?.cls ?? COLORS[0].cls;
 
+// Where in its book a note is from: "p. 12" in a PDF, "ch. 3" in an EPUB.
+export const pageLabel = (n: Pick<Note, "page" | "sourceLabel">) =>
+  n.page ? tr(n.sourceLabel === "EPUB" ? "ch. {n}" : "p. {n}", { n: n.page }) : "";
+
 const SOURCE: Record<Note["kind"], ((n: Note) => string) | null> = {
-  article: () => "Article",
-  pdf: (n) => `PDF · p.${n.page}`,
-  music: () => "Music",
+  article: () => tr("Article"),
+  pdf: (n) => (n.sourceLabel === "EPUB" ? `${tr("Book")} · ${pageLabel(n)}` : `PDF · ${pageLabel(n)}`),
+  music: () => tr("Music"),
   idea: null,
 };
 
 export const noteHref = (id: string) => `/notes/edit?id=${id}`;
+
+/** A one-line name for a note: its title, or the start of what it says. */
+export function noteLabel(n: Note) {
+  const first = n.title?.trim() || n.quote || n.body?.trim().split("\n")[0] || n.checklist?.find((i) => i.text.trim())?.text || tr("Untitled note");
+  return first.length > 70 ? `${first.slice(0, 70)}…` : first;
+}
 
 export function noteText(n: Note) {
   return [
@@ -45,7 +60,7 @@ export function noteText(n: Note) {
 export function NoteCard({ note, compact = false }: { note: Note; compact?: boolean }) {
   const color = colorOf(note);
   const dark = color === "ink";
-  const source = SOURCE[note.kind]?.(note);
+  const source = note.word ? tr("Word") : SOURCE[note.kind]?.(note);
   const items = note.checklist ?? [];
   const open = items.filter((i) => !i.done);
   const done = items.length - open.length;
@@ -71,7 +86,8 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
           {note.title}
         </span>
       )}
-      {note.quote && (
+      {note.word && <span className="text-[19px] leading-[1.2] font-bold [font-stretch:87%]">{note.quote}</span>}
+      {note.quote && !note.word && (
         <span
           className={`${compact ? "line-clamp-4" : "line-clamp-6"} ${
             note.kind === "pdf"
@@ -93,6 +109,7 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
           {note.body}
         </span>
       )}
+      {!!note.ink?.length && <InkPreview strokes={note.ink} />}
       {items.length > 0 && (
         <ul className="flex flex-col gap-1">
           {open.slice(0, compact ? 3 : 6).map((i) => (
@@ -111,6 +128,14 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
           )}
         </ul>
       )}
+      {!!note.tags?.length && (
+        <span className={`line-clamp-2 text-[12px] leading-snug ${muted}`}>{note.tags.map((t) => `#${t}`).join(" ")}</span>
+      )}
+      {note.remindAt && upcoming(note.remindAt) && (
+        <span className={`label flex items-center gap-1 text-[9px] ${muted}`}>
+          <BellIcon size={11} /> {remindText(note.remindAt)}
+        </span>
+      )}
       <span className={`label text-[9px] ${muted}`}>
         {note.sourceTitle
           ? `${note.sourceTitle.slice(0, 28)}${note.sourceTitle.length > 28 ? "…" : ""} · `
@@ -118,5 +143,15 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
         {noteTime(note.updatedAt ?? note.createdAt)}
       </span>
     </Link>
+  );
+}
+
+// A handwritten sticky's ink, at card size.
+function InkPreview({ strokes }: { strokes: Stroke[] }) {
+  const size = 120;
+  return (
+    <span className="relative block rounded-md bg-[#FFE08A]" style={{ width: size, height: size }}>
+      <InkLayer strokes={strokes} w={size} h={size} />
+    </span>
   );
 }

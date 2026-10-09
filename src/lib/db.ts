@@ -4,6 +4,7 @@
 // notes, saved articles, PDF files and their covers. Nothing is sent to a server.
 import { get, set, del, update } from "idb-keyval";
 import { fetchBlob, track } from "./sync-state";
+import type { Stroke } from "./ink";
 
 export type NoteKind = "article" | "pdf" | "idea" | "music";
 export type NoteColor = "default" | "ink" | "green" | "orange" | "red" | "blue";
@@ -25,18 +26,23 @@ export type Note = {
   color?: NoteColor; // unset: ideas are ink, the rest are plain cards
   pinned?: boolean;
   font?: string; // a name from lib/note-fonts.ts; unset is the default font
+  tags?: string[]; // your own labels ("work", "ideas"), without the #
+  links?: string[]; // ids of notes this one is linked to
+  remindAt?: number; // when to remind you about it (lib/reminders.ts)
   updatedAt?: number;
   review?: Review;
   quote?: string; // text highlighted in an article or PDF
   body?: string; // the user's own words
   highlight?: boolean; // a highlight with no comment
+  word?: boolean; // a word saved from "Meaning": quote is the word, body its meaning
   sourceTitle?: string;
-  sourceLabel?: string; // "Hacker News", "dev.to", "Spotify"…
+  sourceLabel?: string; // "Hacker News", "dev.to"…
   href?: string; // where tapping the note takes you inside Stack
   articleId?: string;
   pdfId?: string;
   page?: number;
   sticky?: Sticky; // set when the note sits on the PDF page itself
+  ink?: Stroke[]; // handwriting on a sticky note (lib/ink.ts), across the paper
   createdAt: number;
 };
 
@@ -52,6 +58,8 @@ export type PdfMeta = {
   bookmarks?: Bookmark[];
   view?: PdfView;
   coverStyle?: "stack"; // a plain Stack cover instead of the cover picture
+  format?: "epub"; // an EPUB book (lib/epub.ts): `pages` and `lastPage` count chapters
+  ink?: Record<string, Stroke[]>; // handwriting drawn on the pages (lib/ink.ts), by page number
 };
 
 export type SavedArticle = {
@@ -103,6 +111,13 @@ export async function updateNote(id: string, patch: Partial<Note>) {
       n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n,
     ),
   );
+  await track("notes", id);
+  emit();
+}
+
+// Links and tags changed from another note's screen: not an edit of this one.
+export async function patchNoteQuietly(id: string, patch: Pick<Partial<Note>, "links" | "tags" | "remindAt">) {
+  await update<Note[]>("notes", (all) => (all ?? []).map((n) => (n.id === id ? { ...n, ...patch } : n)));
   await track("notes", id);
   emit();
 }

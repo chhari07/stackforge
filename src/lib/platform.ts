@@ -4,13 +4,14 @@ import { useSyncExternalStore } from "react";
 import { Capacitor } from "@capacitor/core";
 import type { Article } from "./article";
 import type { Story, Topic } from "./news";
+import { SAMPLE_ID, sampleArticle } from "./sample";
 
 // True inside the Android app (Capacitor), false on the website.
 export const isNative = () => Capacitor.isNativePlatform();
 
 // The Google Play build (`./build-aab.sh`). Play doesn't allow "All files
-// access" for a reading app, and Spotify caps small apps at 25 users, so that
-// build leaves both out. The sideloaded APK and the website keep them.
+// access" for a reading app, so that build leaves it out. The sideloaded APK
+// and the website keep it.
 export const PLAY_BUILD = process.env.NEXT_PUBLIC_STACK_STORE === "play";
 
 // Website: ask our API routes. App: fetch the sources straight from the phone.
@@ -44,6 +45,7 @@ export async function fetchArticle(id: string): Promise<Article | null> {
 // The network first, falling back to the offline copy (lib/offline.ts);
 // `offlineAt` is set when the copy is what you get. A kept copy is refreshed.
 export async function loadArticle(id: string): Promise<(Article & { offlineAt?: number }) | null> {
+  if (id === SAMPLE_ID) return sampleArticle(); // ships with the app
   const { getCachedArticle, getOfflineIndex, cacheArticle } = await import("./offline");
   const [cached, index] = await Promise.all([getCachedArticle(id), getOfflineIndex()]);
   const fromCache = () => (cached ? { ...cached, offlineAt: index[id]?.at ?? Date.now() } : null);

@@ -9,6 +9,9 @@ import { getSaved, toggleSaved } from "@/lib/db";
 import { useStore } from "@/lib/use-store";
 import { ago, newsTime } from "@/lib/format";
 import { isVideoId, type Story } from "@/lib/news";
+import { QuoteCardSheet } from "@/components/quote-card-sheet";
+import { storyCard } from "@/lib/quote-card";
+import { useT } from "@/lib/i18n";
 
 export default function Page() {
   // useSearchParams needs a Suspense boundary.
@@ -21,6 +24,7 @@ export default function Page() {
 
 // A news video from the Video topic, played in YouTube's privacy-enhanced player.
 function Watch() {
+  const tt = useT();
   const raw = useSearchParams().get("v") ?? "";
   const v = isVideoId(raw) ? raw : "";
   const id = `yt-${v}`;
@@ -49,22 +53,13 @@ function Watch() {
   }, [now]);
 
   const fromLibrary = saved.find((a) => a.id === id);
-  const title = story?.title ?? fromLibrary?.title ?? "News video";
+  const title = story?.title ?? fromLibrary?.title ?? tt("News video");
   const source = story?.source ?? fromLibrary?.source ?? "YouTube";
   const isSaved = !!fromLibrary;
   const url = `https://www.youtube.com/watch?v=${v}`;
 
-  const share = async () => {
-    try {
-      if (navigator.share) await navigator.share({ title, url });
-      else {
-        await navigator.clipboard.writeText(`${title}\n${url}`);
-        toast({ text: "Link copied" });
-      }
-    } catch {
-      /* cancelled */
-    }
-  };
+  const [sharing, setSharing] = useState(false);
+  const thumb = `https://i.ytimg.com/vi/${v}/hqdefault.jpg`;
 
   const round = "flex size-11 shrink-0 items-center justify-center rounded-full border border-ink/15";
 
@@ -73,7 +68,7 @@ function Watch() {
       <div className="sticky top-0 z-10 bg-black pt-[env(safe-area-inset-top)]">
         <div className="flex h-12 items-center px-2 text-white">
           <button
-            aria-label="Back"
+            aria-label={tt("Back")}
             onClick={() => (history.length > 1 ? router.back() : router.push("/news"))}
             className="flex size-11 items-center justify-center"
           >
@@ -92,7 +87,7 @@ function Watch() {
               className="size-full border-0"
             />
           ) : (
-            <p className="flex size-full items-center justify-center text-[14px] text-white/70">This video link isn’t valid.</p>
+            <p className="flex size-full items-center justify-center text-[14px] text-white/70">{tt("This video link isn’t valid.")}</p>
           )}
         </div>
       </div>
@@ -117,20 +112,20 @@ function Watch() {
             rel="noopener noreferrer"
             className="flex h-11 grow items-center justify-center gap-2 rounded-full bg-ink text-[14px] font-semibold text-on-ink"
           >
-            Open in YouTube <ExternalIcon size={15} />
+            {tt("Open in YouTube")} <ExternalIcon size={15} />
           </a>
           <button
-            aria-label={isSaved ? "Remove from saved" : "Save for later"}
+            aria-label={isSaved ? tt("Remove from saved") : tt("Save for later")}
             aria-pressed={isSaved}
             onClick={async () => {
-              const nowSaved = await toggleSaved({ id, title, source, image: `https://i.ytimg.com/vi/${v}/hqdefault.jpg` });
-              toast(nowSaved ? { text: "Saved to your Library", href: "/library" } : { text: "Removed from saved" });
+              const nowSaved = await toggleSaved({ id, title, source, image: thumb });
+              toast(nowSaved ? { text: tt("Saved to your Library"), href: "/library" } : { text: tt("Removed from saved") });
             }}
             className={round}
           >
             <BookmarkIcon size={18} filled={isSaved} />
           </button>
-          <button aria-label="Share" onClick={share} className={round}>
+          <button aria-label={tt("Share")} onClick={() => setSharing(true)} className={round}>
             <ShareIcon size={18} />
           </button>
         </div>
@@ -139,9 +134,17 @@ function Watch() {
           <p className="mt-5 text-[15px] leading-[1.6] whitespace-pre-line text-muted">{story.summary}</p>
         )}
         <p className="mt-6 text-[12px] leading-relaxed text-muted">
-          If the video doesn’t play here, the channel may only allow it on YouTube. Use Open in YouTube.
+          {tt("If the video doesn’t play here, the channel may only allow it on YouTube. Use Open in YouTube.")}
         </p>
       </div>
+      <QuoteCardSheet
+        card={
+          sharing
+            ? storyCard({ title, source, url, summary: story?.summary, createdAt: story?.createdAt, image: v ? thumb : undefined })
+            : null
+        }
+        onClose={() => setSharing(false)}
+      />
     </main>
   );
 }

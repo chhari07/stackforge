@@ -5,11 +5,13 @@ import { pdfFilesSize, readBackup, restoreBackup, saveBackup, type Backup, type 
 import { DownloadIcon, UploadIcon } from "./stack-icons";
 import { Sheet } from "./sheet";
 import { useToast } from "./toast";
+import { dateLocale, useT } from "@/lib/i18n";
 
 const mb = (bytes: number) => (bytes < 1e6 ? `${Math.max(1, Math.round(bytes / 1e3))} KB` : `${(bytes / 1e6).toFixed(1)} MB`);
 
 // Settings → Backup: save everything to a file, or bring a backup back.
 export function BackupSection() {
+  const t = useT();
   const [withPdfs, setWithPdfs] = useState(true);
   const [pdfBytes, setPdfBytes] = useState(0);
   const [busy, setBusy] = useState<"save" | "restore" | null>(null);
@@ -25,9 +27,9 @@ export function BackupSection() {
     setBusy("save");
     try {
       const r = await saveBackup(withPdfs);
-      if (r === "saved") toast({ text: "Backup saved" });
+      if (r === "saved") toast({ text: t("Backup saved") });
     } catch {
-      toast({ text: "Couldn’t save the backup" });
+      toast({ text: t("Couldn’t save the backup") });
     }
     setBusy(null);
   };
@@ -46,10 +48,10 @@ export function BackupSection() {
     setBusy("restore");
     try {
       await restoreBackup(pending.backup);
-      toast({ text: "Backup restored" });
+      toast({ text: t("Backup restored") });
       setPending(null);
     } catch {
-      toast({ text: "Couldn’t restore that backup" });
+      toast({ text: t("Couldn’t restore that backup") });
     }
     setBusy(null);
   };
@@ -70,13 +72,14 @@ export function BackupSection() {
   return (
     <>
       <p className="text-[14px] leading-relaxed text-muted">
-        Keep everything in one file: notes, highlights, saved articles, PDFs, playlists, focus history, feeds and your
-        profile. Works without an account.
+        {t("Keep everything in one file: notes, highlights, saved articles, PDFs, playlists, focus history, feeds and your profile. Works without an account.")}
       </p>
       <label className="flex items-center justify-between gap-3">
         <span className="flex flex-col">
-          <span className="text-[14px] font-semibold">Include PDF files</span>
-          <span className="text-[12px] text-muted">{pdfBytes ? `About ${mb(pdfBytes * 1.34)} more` : "No PDF files on this device"}</span>
+          <span className="text-[14px] font-semibold">{t("Include PDF files")}</span>
+          <span className="text-[12px] text-muted">
+            {pdfBytes ? t("About {size} more", { size: mb(pdfBytes * 1.34) }) : t("No PDF files on this device")}
+          </span>
         </span>
         <input
           type="checkbox"
@@ -93,7 +96,7 @@ export function BackupSection() {
           className="flex h-12 grow items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-50"
         >
           <DownloadIcon size={18} />
-          {busy === "save" ? "Saving…" : "Back up"}
+          {busy === "save" ? t("Saving…") : t("Back up")}
         </button>
         <button
           onClick={() => input.current?.click()}
@@ -101,7 +104,7 @@ export function BackupSection() {
           className="flex h-12 grow items-center justify-center gap-2 rounded-full border border-ink/20 text-[15px] font-semibold disabled:opacity-50"
         >
           <UploadIcon size={18} />
-          {busy === "restore" && !pending ? "Reading…" : "Restore"}
+          {busy === "restore" && !pending ? t("Reading…") : t("Restore")}
         </button>
         <input
           ref={input}
@@ -119,35 +122,36 @@ export function BackupSection() {
         {s && (
           <>
             <p className="text-[15px] leading-relaxed">
-              From{" "}
+              {t("From")}{" "}
               <b>
-                {new Date(s.exportedAt).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                {new Date(s.exportedAt).toLocaleString(dateLocale(), { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}
               </b>
               :
             </p>
             <ul className="flex flex-wrap gap-1.5">
               {lines.map(([n, word]) => (
                 <li key={word as string} className="label rounded-full bg-card px-3 py-1.5 text-[10px]">
-                  {n as number} {word as string}
-                  {(n as number) === 1 ? "" : "s"}
+                  {n as number} {t((n as number) === 1 ? (word as string) : `${word as string}s`)}
                 </li>
               ))}
             </ul>
             {s.pdfs > 0 && s.pdfFiles < s.pdfs && (
               <p className="text-[13px] text-muted">
-                {s.pdfFiles === 0 ? "PDF files aren’t in this backup" : `${s.pdfFiles} of ${s.pdfs} PDF files are in it`}: the others
-                open only if they’re already on this device or in your account.
+                {s.pdfFiles === 0
+                  ? t("PDF files aren’t in this backup")
+                  : t("{n} of {total} PDF files are in it", { n: s.pdfFiles, total: s.pdfs })}
+                : {t("the others open only if they’re already on this device or in your account.")}
               </p>
             )}
             <p className="text-[13px] leading-relaxed text-muted">
-              It’s added to what’s already here. Anything in both is replaced by the backup’s copy. Nothing is deleted.
+              {t("It’s added to what’s already here. Anything in both is replaced by the backup’s copy. Nothing is deleted.")}
             </p>
             <button
               onClick={restore}
               disabled={busy === "restore"}
               className="h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-50"
             >
-              {busy === "restore" ? "Restoring…" : "Restore"}
+              {busy === "restore" ? t("Restoring…") : t("Restore")}
             </button>
           </>
         )}

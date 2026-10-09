@@ -61,3 +61,11 @@ google-services.json
 /android/keystore.properties
 *.jks
 *.keystore
+
+# Local test files (music, books, screenshots) kept in the repo root
+/*.mp3
+/*.mpeg
+/*.PDF
+/*.jpeg
+/*.jpg
+/question.txt

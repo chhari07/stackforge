@@ -8,6 +8,7 @@ import { CloseIcon, PlusIcon } from "./icons";
 import { PlaylistIcon, QueueIcon } from "./stack-icons";
 import { mmss } from "@/lib/format";
 import type { LocalTrack, QueueItem } from "@/lib/local-music";
+import { useT } from "@/lib/i18n";
 
 export const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -29,6 +30,7 @@ export function SpeedSheet({ open, onClose }: { open: boolean; onClose: () => vo
 const SLEEP = [5, 15, 30, 45, 60];
 
 export function SleepSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const tt = useT();
   const player = useLocalMusic();
   const s = player.state;
   const left = useCountdown(s.sleepAt);
@@ -41,21 +43,21 @@ export function SleepSheet({ open, onClose }: { open: boolean; onClose: () => vo
     <Sheet open={open} onClose={onClose} title="Sleep timer">
       {(left > 0 || s.sleepEndOfTrack) && (
         <p className="label text-[10px] text-music-text">
-          {s.sleepEndOfTrack ? "Stops when this song ends" : `Stops in ${mmss(left)}`}
+          {s.sleepEndOfTrack ? tt("Stops when this song ends") : tt("Stops in {time}", { time: mmss(left) })}
         </p>
       )}
       <div className="flex flex-col">
         {SLEEP.map((m) => (
           <button key={m} onClick={() => set({ minutes: m })} className={row}>
-            {m < 60 ? `${m} minutes` : "1 hour"}
+            {m < 60 ? tt("{n} minutes", { n: m }) : tt("1 hour")}
           </button>
         ))}
         <button onClick={() => set({ endOfTrack: true })} className={`${row} ${s.sleepEndOfTrack ? "text-music-text" : ""}`}>
-          End of this song
+          {tt("End of this song")}
         </button>
         {(left > 0 || s.sleepEndOfTrack) && (
           <button onClick={() => set({})} className={`${row} text-music-text`}>
-            Turn off timer
+            {tt("Turn off timer")}
           </button>
         )}
       </div>
@@ -64,6 +66,7 @@ export function SleepSheet({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 export function QueueSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const tt = useT();
   const player = useLocalMusic();
   const s = player.state;
   const [items, setItems] = useState<QueueItem[] | null>(null);
@@ -85,21 +88,21 @@ export function QueueSheet({ open, onClose }: { open: boolean; onClose: () => vo
       <div className="-mx-5 max-h-[60vh] overflow-y-auto px-5">
         {now && (
           <>
-            <p className="label text-[10px] text-music-text">Now playing</p>
+            <p className="label text-[10px] text-music-text">{tt("Now playing")}</p>
             <Row item={now} current />
           </>
         )}
         {next.length > 0 ? (
           <>
             <p className="label mt-3 text-[10px] text-muted">
-              {s.shuffle ? "Next (shuffled)" : "Next"} · {next.length}
+              {s.shuffle ? tt("Next (shuffled)") : tt("Next")} · {next.length}
             </p>
             <ol>
               {next.map((q) => (
                 <li key={`${q.index}-${q.uri}`} className="flex items-center">
                   <Row item={q} onPlay={() => player.jump(q.index)} />
                   <button
-                    aria-label={`Remove ${q.title} from the queue`}
+                    aria-label={tt("Remove {name} from the queue", { name: q.title })}
                     onClick={() => player.removeFromQueue(q.index)}
                     className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
                   >
@@ -112,7 +115,7 @@ export function QueueSheet({ open, onClose }: { open: boolean; onClose: () => vo
         ) : (
           items && (
             <p className="mt-3 text-[14px] text-muted">
-              {s.repeat === "all" ? "The queue starts over after this song." : "Nothing after this song."}
+              {s.repeat === "all" ? tt("The queue starts over after this song.") : tt("Nothing after this song.")}
             </p>
           )
         )}
@@ -122,9 +125,10 @@ export function QueueSheet({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 function Row({ item, current, onPlay }: { item: QueueItem; current?: boolean; onPlay?: () => void }) {
+  const tt = useT();
   return (
     <button onClick={onPlay} disabled={!onPlay} className="flex h-14 min-w-0 grow flex-col justify-center text-left">
-      <span className={`song truncate text-[15px] ${current ? "text-music-text" : ""}`}>{item.title || "Unknown track"}</span>
+      <span className={`song truncate text-[15px] ${current ? "text-music-text" : ""}`}>{item.title || tt("Unknown track")}</span>
       <span className="label truncate text-[9px] text-muted">{item.artist}</span>
     </button>
   );
@@ -140,23 +144,24 @@ export function SongActionsSheet({
   onClose: () => void;
   onAddToPlaylist: (t: LocalTrack) => void;
 }) {
+  const tt = useT();
   const player = useLocalMusic();
   const toast = useToast();
   const row = "flex h-12 items-center gap-3 rounded-xl px-1 text-left text-[15px]";
   const queue = async (next: boolean) => {
     if (!song) return;
     await player.enqueue(song, next);
-    toast({ text: next ? `“${song.title}” plays next` : `Added “${song.title}” to the queue` });
+    toast({ text: next ? tt("“{title}” plays next", { title: song.title }) : tt("Added “{title}” to the queue", { title: song.title }) });
     onClose();
   };
   return (
     <Sheet open={song !== null} onClose={onClose} title={song?.title ?? ""}>
       <div className="flex flex-col">
         <button onClick={() => queue(true)} className={row}>
-          <QueueIcon size={20} /> Play next
+          <QueueIcon size={20} /> {tt("Play next")}
         </button>
         <button onClick={() => queue(false)} className={row}>
-          <PlusIcon size={20} /> Add to queue
+          <PlusIcon size={20} /> {tt("Add to queue")}
         </button>
         <button
           onClick={() => {
@@ -165,7 +170,7 @@ export function SongActionsSheet({
           }}
           className={row}
         >
-          <PlaylistIcon size={20} /> Add to a playlist
+          <PlaylistIcon size={20} /> {tt("Add to a playlist")}
         </button>
       </div>
     </Sheet>

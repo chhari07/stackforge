@@ -1,34 +1,32 @@
 "use client";
 
+import { Marquee } from "./marquee";
 import Link from "next/link";
 import { mmss } from "@/lib/format";
-import { useSpotify } from "./spotify-provider";
 import { useLocalMusic } from "./local-music-provider";
 import { useNowPlaying } from "./now-playing";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "./icons";
+import { useT } from "@/lib/i18n";
 
-// Floating now-playing bar that sits above the tab bar.
+// Slim floating now-playing pill that sits above the tab bar.
 export function MiniPlayer({ showTime = false }: { showTime?: boolean }) {
-  const sp = useSpotify();
+  const tt = useT();
   const local = useLocalMusic();
   const now = useNowPlaying();
 
   const shell =
-    "fixed inset-x-3 bottom-[var(--above-tabs)] z-30 mx-auto flex h-[62px] max-w-[456px] md:left-auto md:right-6 md:mx-0 md:w-[420px] items-center gap-3 overflow-hidden rounded-[14px] bg-card px-2.5 shadow-[0_8px_24px_rgba(0,0,0,.08)]";
+    "fixed inset-x-6 bottom-[calc(var(--above-tabs)+6px)] z-30 mx-auto flex h-[46px] max-w-[420px] items-center gap-2.5 overflow-hidden rounded-full bg-card pr-1.5 pl-3 shadow-[0_8px_24px_rgba(0,0,0,.12)]";
+  const square = "size-[22px] shrink-0 overflow-hidden rounded-[5px] bg-music";
 
   if (!now) {
     return (
       <Link href="/music" className={shell}>
-        <span className="flex size-[42px] shrink-0 items-center justify-center rounded-md bg-music text-white">
-          <PlayIcon />
+        <span className={square} />
+        <span className="song min-w-0 grow truncate text-[13px]">
+          {local.available ? tt("Press play. Then read.") : tt("Silence is fine. Music is better.")}
         </span>
-        <span className="flex min-w-0 grow flex-col gap-0.5">
-          <span className="label text-[12px] font-medium">
-            {local.available ? "Play music" : sp.connected ? "Nothing playing" : "Connect Spotify"}
-          </span>
-          <span className="label truncate text-[10px] text-muted">
-            {local.available ? (sp.configured ? "From your phone or Spotify" : "From your phone") : "Your music, next to your reading"}
-          </span>
+        <span className="flex size-9 shrink-0 items-center justify-center">
+          <PlayIcon size={14} />
         </span>
       </Link>
     );
@@ -38,33 +36,38 @@ export function MiniPlayer({ showTime = false }: { showTime?: boolean }) {
 
   return (
     <div className={shell}>
-      <div className="absolute top-0 left-0 h-0.5 bg-music" style={{ width: `${pct}%` }} />
-      <Link href="/music" className="size-[42px] shrink-0 overflow-hidden rounded-md bg-music">
+      <div className="absolute bottom-0 left-0 h-0.5 bg-music" style={{ width: `${pct}%` }} />
+      <Link href="/music" className={square}>
         {now.art && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={now.art} alt="" className="size-full object-cover" />
         )}
       </Link>
-      <Link href="/music" className="flex min-w-0 grow flex-col gap-[3px]">
-        <span className="song truncate text-[14px]">{now.title}</span>
-        <span className="label truncate text-[10px] text-muted">
-          {now.artist}
-          {showTime ? ` · ${mmss(now.position)} / ${mmss(now.duration)}` : ` · ${now.device}`}
-        </span>
+      <Link href="/music" className="flex min-w-0 grow items-baseline gap-2">
+        <Marquee className="song min-w-0 text-[13px]">{now.title}</Marquee>
+        {showTime && (
+          <span className="label shrink-0 text-[10px] text-muted">
+            {mmss(now.position)} / {mmss(now.duration)}
+          </span>
+        )}
       </Link>
-      <button aria-label="Previous track" onClick={now.previous} className="flex h-11 w-8 items-center justify-center">
-        <PrevIcon />
-      </button>
+      {showTime && (
+        <button aria-label={tt("Previous track")} onClick={now.previous} className="flex size-9 shrink-0 items-center justify-center">
+          <PrevIcon size={14} />
+        </button>
+      )}
       <button
         aria-label={now.playing ? "Pause" : "Play"}
         onClick={now.toggle}
-        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-music text-white"
+        className="flex size-9 shrink-0 items-center justify-center"
       >
-        {now.playing ? <PauseIcon /> : <PlayIcon />}
+        {now.playing ? <PauseIcon size={14} /> : <PlayIcon size={14} />}
       </button>
-      <button aria-label="Next track" onClick={now.next} className="flex h-11 w-8 items-center justify-center">
-        <NextIcon />
-      </button>
+      {showTime && (
+        <button aria-label={tt("Next track")} onClick={now.next} className="flex size-9 shrink-0 items-center justify-center">
+          <NextIcon size={14} />
+        </button>
+      )}
     </div>
   );
 }

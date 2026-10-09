@@ -6,6 +6,7 @@
 // The website uses the browser's speech synthesis.
 import { LocalMusic } from "./local-music";
 import { isNative } from "./platform";
+import { tr } from "./i18n";
 
 /** Splits text into parts of about `max` characters, on paragraph and sentence breaks. */
 export function chunkText(text: string, max = 1500): string[] {
@@ -39,7 +40,7 @@ export const canListen = () => isNative() || (typeof window !== "undefined" && "
 /** Starts reading aloud. Resolves once it's playing, with the number of parts. */
 export async function listen(opts: { title: string; source: string; text: string }): Promise<number> {
   const chunks = chunkText(opts.text);
-  if (!chunks.length) throw new Error("Nothing to read");
+  if (!chunks.length) throw new Error(tr("Nothing to read"));
   if (isNative()) {
     const { parts } = await LocalMusic.listen({ title: opts.title, source: opts.source, chunks, lang: lang(opts.text) });
     return parts;

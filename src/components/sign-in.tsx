@@ -14,10 +14,12 @@ import {
 } from "@/lib/cloud";
 import { useAccount } from "./account-provider";
 import { useToast } from "./toast";
+import { useT } from "@/lib/i18n";
 
 // Sign in or sign up with Google (one button does both). Email + password is
 // there for people without a Google account.
 export function SignInPanel() {
+  const t = useT();
   const { configured } = useAccount();
   const toast = useToast();
   const [withEmail, setWithEmail] = useState(false);
@@ -34,14 +36,14 @@ export function SignInPanel() {
   if (!configured) {
     return (
       <p className="rounded-2xl bg-card p-4 text-[14px] leading-relaxed text-muted">
-        Accounts aren’t set up in this build of Stack yet, so everything stays on this device. (For the developer:
-        see <code>supabase/README.md</code>.)
+        {t("Accounts aren’t set up in this build of Stack yet, so everything stays on this device.")} (
+        {t("For the developer: see")} <code>supabase/README.md</code>.)
       </p>
     );
   }
 
   // `done`: what to say when it worked (nothing for "forgot password", which shows its own notice).
-  const run = async (which: "google" | "email", fn: () => Promise<void>, done: string | null = "You’re signed in") => {
+  const run = async (which: "google" | "email", fn: () => Promise<void>, done: string | null = t("You’re signed in")) => {
     setBusy(which);
     setError(null);
     setNotice(null);
@@ -52,7 +54,7 @@ export function SignInPanel() {
     } catch (e) {
       if (e instanceof GoogleNotReady) setNotReady(true);
       else if (e instanceof ConfirmEmail)
-        setNotice(`We sent a confirmation link to ${email.trim()}. Open it, then sign in here.`);
+        setNotice(t("We sent a confirmation link to {email}. Open it, then sign in here.", { email: email.trim() }));
       else if (!(e instanceof SignInCancelled)) setError(explainAuth(e));
     } finally {
       setBusy(null);
@@ -68,7 +70,7 @@ export function SignInPanel() {
         setPassword("");
         setCode("");
         setMode("reset");
-        setNotice(`We sent a code to ${email.trim()}. Enter it here with a new password.`);
+        setNotice(t("We sent a code to {email}. Enter it here with a new password.", { email: email.trim() }));
       },
       null,
     );
@@ -83,13 +85,13 @@ export function SignInPanel() {
         <span className="flex size-8 items-center justify-center rounded-full bg-white">
           <GoogleMark />
         </span>
-        {busy === "google" ? "Opening Google…" : "Continue with Google"}
+        {busy === "google" ? t("Opening Google…") : t("Continue with Google")}
       </button>
-      <p className="text-center text-[13px] text-muted">New to Stack? The same button creates your account.</p>
+      <p className="text-center text-[13px] text-muted">{t("New to Stack? The same button creates your account.")}</p>
 
       {!withEmail ? (
         <button onClick={() => setWithEmail(true)} className="label mt-1 h-10 text-[10px] text-muted underline">
-          No Google account? Use email instead
+          {t("No Google account? Use email instead")}
         </button>
       ) : mode === "reset" ? (
         <form
@@ -97,25 +99,25 @@ export function SignInPanel() {
           onSubmit={(e) => {
             e.preventDefault();
             if (code.trim() && password.length >= 6)
-              run("email", () => setNewPassword(email, code, password), "Password changed. You’re signed in");
+              run("email", () => setNewPassword(email, code, password), t("Password changed. You’re signed in"));
           }}
         >
           <input
-            aria-label="Code from the email"
+            aria-label={t("Code from the email")}
             inputMode="numeric"
             autoComplete="one-time-code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Code from the email"
+            placeholder={t("Code from the email")}
             className="h-14 rounded-full border border-ink/15 bg-card px-5 text-[16px] outline-none focus:border-ink"
           />
           <input
-            aria-label="New password"
+            aria-label={t("New password")}
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password (6+ characters)"
+            placeholder={t("New password (6+ characters)")}
             className="h-14 rounded-full border border-ink/15 bg-card px-5 text-[16px] outline-none focus:border-ink"
           />
           <button
@@ -123,7 +125,7 @@ export function SignInPanel() {
             disabled={!!busy || !code.trim() || password.length < 6}
             className="h-14 rounded-full border border-ink/25 text-[16px] font-semibold disabled:opacity-40"
           >
-            {busy === "email" ? "One moment…" : "Set new password"}
+            {busy === "email" ? t("One moment…") : t("Set new password")}
           </button>
           <div className="flex justify-center gap-5">
             <button
@@ -132,7 +134,7 @@ export function SignInPanel() {
               onClick={sendCode}
               className="label h-10 text-[10px] text-muted underline disabled:opacity-40"
             >
-              Send a new code
+              {t("Send a new code")}
             </button>
             <button
               type="button"
@@ -145,7 +147,7 @@ export function SignInPanel() {
               }}
               className="label h-10 text-[10px] text-muted underline disabled:opacity-40"
             >
-              Back to sign in
+              {t("Back to sign in")}
             </button>
           </div>
         </form>
@@ -158,7 +160,7 @@ export function SignInPanel() {
               run("email", () => (mode === "in" ? signInWithEmail(email, password) : signUpWithEmail(email, password)));
           }}
         >
-          <div role="tablist" aria-label="Email sign-in" className="flex rounded-full border border-ink/15 p-0.5">
+          <div role="tablist" aria-label={t("Email sign-in")} className="flex rounded-full border border-ink/15 p-0.5">
             {(["in", "up"] as const).map((m) => (
               <button
                 key={m}
@@ -168,12 +170,12 @@ export function SignInPanel() {
                 onClick={() => setMode(m)}
                 className={`label h-9 grow rounded-full text-[10px] ${mode === m ? "bg-ink text-on-ink" : ""}`}
               >
-                {m === "in" ? "Sign in" : "Create account"}
+                {m === "in" ? t("Sign in") : t("Create account")}
               </button>
             ))}
           </div>
           <input
-            aria-label="Email"
+            aria-label={t("Email")}
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -183,12 +185,12 @@ export function SignInPanel() {
             className="h-14 rounded-full border border-ink/15 bg-card px-5 text-[16px] outline-none focus:border-ink"
           />
           <input
-            aria-label="Password"
+            aria-label={t("Password")}
             type="password"
             autoComplete={mode === "in" ? "current-password" : "new-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={mode === "in" ? "Password" : "Choose a password (6+ characters)"}
+            placeholder={mode === "in" ? t("Password") : t("Choose a password (6+ characters)")}
             className="h-14 rounded-full border border-ink/15 bg-card px-5 text-[16px] outline-none focus:border-ink"
           />
           <button
@@ -196,7 +198,7 @@ export function SignInPanel() {
             disabled={!!busy || !validEmail || !password}
             className="h-14 rounded-full border border-ink/25 text-[16px] font-semibold disabled:opacity-40"
           >
-            {busy === "email" ? "One moment…" : mode === "in" ? "Sign in" : "Create account"}
+            {busy === "email" ? t("One moment…") : mode === "in" ? t("Sign in") : t("Create account")}
           </button>
           {mode === "in" && (
             <button
@@ -205,7 +207,7 @@ export function SignInPanel() {
               onClick={sendCode}
               className="label h-10 text-[10px] text-muted underline disabled:opacity-40"
             >
-              Forgot password?
+              {t("Forgot password?")}
             </button>
           )}
         </form>
@@ -213,14 +215,12 @@ export function SignInPanel() {
 
       {notReady && (
         <div role="alert" className="flex flex-col gap-2.5 rounded-2xl bg-card p-4">
-          <p className="text-[14px] font-semibold">Google sign-in isn’t ready for this app yet</p>
+          <p className="text-[14px] font-semibold">{t("Google sign-in isn’t ready for this app yet")}</p>
           <p className="text-[13px] leading-relaxed text-muted">
-            Google doesn’t recognise this version of Stack. Until that’s fixed you can create an account with your
-            email instead; your data moves over when you add Google later.
+            {t("Google doesn’t recognise this version of Stack. Until that’s fixed you can create an account with your email instead; your data moves over when you add Google later.")}
           </p>
           <p className="text-[12px] leading-relaxed text-muted">
-            For the developer: add the APK’s SHA-1 to an Android OAuth client (package com.chhari.stack) in Google
-            Cloud → Credentials. See supabase/README.md.
+            {t("For the developer: add the APK’s SHA-1 to an Android OAuth client (package com.chhari.stack) in Google Cloud → Credentials. See supabase/README.md.")}
           </p>
           <button
             onClick={() => {
@@ -230,7 +230,7 @@ export function SignInPanel() {
             }}
             className="h-12 rounded-full border border-ink/20 text-[15px] font-semibold"
           >
-            Use email instead
+            {t("Use email instead")}
           </button>
         </div>
       )}

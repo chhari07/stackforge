@@ -10,13 +10,19 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import android.content.ClipData;
+import android.util.Base64;
+import androidx.core.content.FileProvider;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Saves a Stack backup where the person chooses (Android's "Save to" picker),
  * written in pieces so a backup with PDFs never has to cross the bridge at once.
- * See src/lib/backup.ts.
+ * Also hands text and pictures (quote cards) to other apps. See
+ * src/lib/backup.ts, export-md.ts and quote-card.ts.
  */
 @CapacitorPlugin(name = "Backup")
 public class BackupPlugin extends Plugin {
@@ -73,5 +79,41 @@ public class BackupPlugin extends Plugin {
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getContext().startActivity(chooser);
         call.resolve();
+    }
+
+    /** Hands a PNG (base64 in "data") to another app, with "text" as its caption. The file sits in the app's cache, readable only by the app picked. */
+    @PluginMethod
+    public void shareImage(PluginCall call) {
+        String data = call.getString("data");
+        if (data == null) {
+            call.reject("data missing");
+            return;
+        }
+        try {
+            File dir = new File(getContext().getCacheDir(), "shared");
+            dir.mkdirs();
+            // One card at a time: clear the last one.
+            File[] old = dir.listFiles();
+            if (old != null) for (File f : old) f.delete();
+            String name = call.getString("name", "stack-quote.png").replaceAll("[^A-Za-z0-9._-]", "_");
+            File file = new File(dir, name);
+            try (FileOutputStream out = new FileOutputStream(file)) {
+                out.write(Base64.decode(data, Base64.DEFAULT));
+            }
+            Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", file);
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("image/png");
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            String text = call.getString("text");
+            if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);
+            send.setClipData(ClipData.newRawUri("", uri));
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            Intent chooser = Intent.createChooser(send, call.getString("title", "Share"));
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            getContext().startActivity(chooser);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("share failed: " + e.getMessage());
+        }
     }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Marquee } from "./marquee";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocalMusic } from "./local-music-provider";
 import {
@@ -11,7 +12,7 @@ import {
   SearchIcon,
   ShuffleIcon,
 } from "./icons";
-import { SWATCHES } from "./spotify-view";
+import { SWATCHES } from "@/lib/swatches";
 import { AddToPlaylistSheet, PlaylistsRail } from "./playlist-parts";
 import { mmss, plural } from "@/lib/format";
 import { LocalMusic, type LocalTrack } from "@/lib/local-music";
@@ -20,11 +21,13 @@ import { PLAY_BUILD } from "@/lib/platform";
 import { MoreVerticalIcon, QueueIcon, TimerIcon } from "./stack-icons";
 import { Vinyl } from "./vinyl";
 import { QueueSheet, SleepSheet, SongActionsSheet, SpeedSheet, useCountdown } from "./player-sheets";
+import { useT } from "@/lib/i18n";
 
 type Sort = "title" | "artist" | "recent";
 
 // Music stored on the phone, played by the native background player.
 export function LocalView() {
+  const tt = useT();
   const player = useLocalMusic();
   const s = player.state;
   const [permission, setPermission] = useState<string | null>(null);
@@ -91,22 +94,21 @@ export function LocalView() {
     return list;
   }, [tracks, query, sort]);
 
-  const word =
-    (s.title ?? "").split(/\s+/)[0]?.toUpperCase().slice(0, 9) || "LOCAL";
+  const word = s.title?.toUpperCase() || tt("LOCAL");
   const pct = s.duration
     ? Math.min(100, ((s.position ?? 0) / s.duration) * 100)
     : 0;
 
   return (
-    <div className="md:grid md:grid-cols-2 md:items-start md:gap-12">
+    <div className="">
       {/* Tablets: player on the left, song list on the right */}
       <div>
-        <h1 className="display -ml-3 mt-3 whitespace-nowrap text-[clamp(96px,35vw,160px)] tracking-[-0.045em]">
-          {word}
+        <h1 className="display -ml-3 mt-3 text-[clamp(96px,35vw,160px)] tracking-[-0.045em]">
+          <Marquee speed={90}>{word}</Marquee>
         </h1>
         <div className="mt-2.5 flex justify-between">
           <span className="label truncate text-[10px]">
-            {s.artist || "Music on this phone"}
+            {s.artist || tt("Music on this phone")}
           </span>
           <span className="label text-[10px]">
             {tracks ? plural(tracks.length, "song") : ""}
@@ -116,24 +118,18 @@ export function LocalView() {
         {permission && permission !== "granted" && (
           <div className="mt-6 flex flex-col gap-3 rounded-2xl bg-card p-5">
             <p className="label text-[11px] font-medium text-music-text">
-              Music on your phone
+              {tt("Bring your own soundtrack.")}
             </p>
             <p className="text-[14px] leading-relaxed">
-              Stack can play the songs stored on this phone, with controls in
-              the notification and on the lock screen.
-              {!PLAY_BUILD && (
-                <>
-                  <b> All files access</b> lets it find your music and every
-                  PDF; Android shows a switch for Stack.
-                </>
-              )}
+              {tt("Stack can play the songs stored on this phone, with controls in the notification and on the lock screen.")}
+              {!PLAY_BUILD && ` ${tt("All files access lets it find your music and every PDF; Android shows a switch for Stack.")}`}
             </p>
             {PLAY_BUILD ? (
               <button
                 onClick={ask}
                 className="h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink"
               >
-                Allow music
+                {tt("Show my music")}
               </button>
             ) : (
               <>
@@ -141,20 +137,19 @@ export function LocalView() {
                   onClick={() => PhoneFiles.requestAllFiles().catch(() => {})}
                   className="h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink"
                 >
-                  Allow access to all files
+                  {tt("Allow access to all files")}
                 </button>
                 <button
                   onClick={ask}
                   className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
                 >
-                  Music only
+                  {tt("Music only")}
                 </button>
               </>
             )}
             {permission === "denied" && (
               <p className="text-[12px] text-muted">
-                If nothing happens, Android has blocked the prompt: open
-                Settings → Access in Stack to allow it.
+                {tt("If nothing happens, Android has blocked the prompt: open Settings → Access in Stack to allow it.")}
               </p>
             )}
           </div>
@@ -174,14 +169,14 @@ export function LocalView() {
               />
             </div>
             <div className="mt-4 flex flex-col gap-1">
-              <span className="song truncate text-[20px]">{s.title}</span>
+              <Marquee className="song text-[20px]">{s.title}</Marquee>
               <span className="label truncate text-[10px] text-muted">
                 {[s.artist, s.album].filter(Boolean).join(" · ")}
               </span>
             </div>
             <input
               type="range"
-              aria-label="Seek"
+              aria-label={tt("Seek")}
               min={0}
               max={Math.max(1, s.duration ?? 0)}
               value={Math.min(s.position ?? 0, s.duration ?? 0)}
@@ -204,7 +199,7 @@ export function LocalView() {
                 <ShuffleIcon size={22} />
               </ModeButton>
               <button
-                aria-label="Previous track"
+                aria-label={tt("Previous track")}
                 onClick={player.previous}
                 className="flex size-12 items-center justify-center"
               >
@@ -218,7 +213,7 @@ export function LocalView() {
                 {s.playing ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
               </button>
               <button
-                aria-label="Next track"
+                aria-label={tt("Next track")}
                 onClick={player.next}
                 className="flex size-12 items-center justify-center"
               >
@@ -246,7 +241,13 @@ export function LocalView() {
                 <span className="label text-[11px] font-medium">{s.speed || 1}×</span>
               </Extra>
               <Extra
-                label={sleepLeft > 0 ? `Sleep timer: ${mmss(sleepLeft)} left` : s.sleepEndOfTrack ? "Sleep timer: end of song" : "Sleep timer"}
+                label={
+                  sleepLeft > 0
+                    ? tt("Sleep timer: {time} left", { time: mmss(sleepLeft) })
+                    : s.sleepEndOfTrack
+                      ? tt("Sleep timer: end of song")
+                      : "Sleep timer"
+                }
                 on={sleepLeft > 0 || !!s.sleepEndOfTrack}
                 onClick={() => setSheet("sleep")}
               >
@@ -269,14 +270,12 @@ export function LocalView() {
           </>
         )}
       </div>
-      <div className="md:pt-6">
+      <div className="">
         {error && <p className="mt-4 text-[13px] text-music-deep">{error}</p>}
 
         {tracks && tracks.length === 0 && (
           <p className="mt-6 text-[14px] leading-relaxed text-muted">
-            No songs found. Stack shows music files (MP3, M4A, FLAC…) that
-            Android lists in its media library, such as the Music and Download
-            folders.
+            {tt("No songs found. Stack shows music files (MP3, M4A, FLAC…) that Android lists in its media library, such as the Music and Download folders.")}
           </p>
         )}
 
@@ -291,18 +290,18 @@ export function LocalView() {
             <label className="mt-6 flex h-[46px] items-center gap-2.5 rounded-full border border-ink/12 bg-card px-4">
               <SearchIcon size={18} className="text-muted" />
               <input
-                aria-label="Search songs"
+                aria-label={tt("Search songs")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search songs, artists, albums"
+                placeholder={tt("Search songs, artists, albums")}
                 className="grow bg-transparent text-[14px] outline-none"
               />
             </label>
             <div className="mt-3 flex items-center justify-between">
               <h2 className="label text-[11px] font-medium text-music-text">
-                {query ? `${shown.length} matches` : "All songs"}
+                {query ? tt("{n} matches", { n: shown.length }) : tt("All songs")}
               </h2>
-              <div role="radiogroup" aria-label="Sort" className="flex gap-3">
+              <div role="radiogroup" aria-label={tt("Sort")} className="flex gap-3">
                 {(["title", "artist", "recent"] as Sort[]).map((o) => (
                   <button
                     key={o}
@@ -312,8 +311,8 @@ export function LocalView() {
                     className={`label h-8 text-[10px] ${sort === o ? "font-medium underline" : "text-muted"}`}
                   >
                     {o === "recent"
-                      ? "Newest"
-                      : o[0].toUpperCase() + o.slice(1)}
+                      ? tt("Newest")
+                      : tt(o[0].toUpperCase() + o.slice(1))}
                   </button>
                 ))}
               </div>
@@ -355,7 +354,7 @@ export function LocalView() {
                       </span>
                     </button>
                     <button
-                      aria-label={`More for ${t.title}`}
+                      aria-label={tt("More for {title}", { title: t.title })}
                       onClick={() => setMenuFor(t)}
                       className="-mr-2 flex size-11 shrink-0 items-center justify-center text-muted"
                     >
@@ -370,7 +369,7 @@ export function LocalView() {
                 onClick={() => setLimit((l) => l + 100)}
                 className="label mt-3 h-11 w-full rounded-full border border-ink/15 text-[10px]"
               >
-                Show more ({shown.length - limit})
+                {tt("Show more ({n})", { n: shown.length - limit })}
               </button>
             )}
           </>
@@ -404,10 +403,11 @@ export function ModeButton({
   onClick: () => void;
   children: ReactNode;
 }) {
+  const tt = useT();
   return (
     <button
-      aria-label={label}
-      title={label}
+      aria-label={tt(label)}
+      title={tt(label)}
       aria-pressed={on}
       onClick={onClick}
       className={`relative flex size-12 shrink-0 items-center justify-center ${on ? "text-music-text" : "text-muted"}`}
@@ -432,10 +432,11 @@ function Extra({
   onClick: () => void;
   children: ReactNode;
 }) {
+  const tt = useT();
   return (
     <button
-      aria-label={label}
-      title={label}
+      aria-label={tt(label)}
+      title={tt(label)}
       onClick={onClick}
       className={`flex h-12 min-w-12 flex-col items-center justify-center gap-0.5 ${on ? "text-music-text" : "text-muted"}`}
     >

@@ -13,6 +13,7 @@ import { LocalMusic, type LocalTrack } from "@/lib/local-music";
 import { canGoBack } from "@/lib/nav";
 import { addToPlaylist, deletePlaylist, getPlaylists, resolveTracks, updatePlaylist } from "@/lib/playlists";
 import { useStore } from "@/lib/use-store";
+import { useT } from "@/lib/i18n";
 
 export default function Page() {
   // useSearchParams needs a Suspense boundary.
@@ -37,6 +38,7 @@ function useLibrary(on: boolean) {
 }
 
 function PlaylistScreen() {
+  const tt = useT();
   const id = useSearchParams().get("id") ?? "";
   const router = useRouter();
   const toast = useToast();
@@ -60,9 +62,9 @@ function PlaylistScreen() {
   if (ready && !p) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-3 px-5">
-        <p className="font-serif text-[22px] italic">This playlist no longer exists.</p>
+        <p className="font-serif text-[22px] italic">{tt("This playlist no longer exists.")}</p>
         <button onClick={() => router.push("/music")} className="label text-[11px] underline">
-          Back to Music
+          {tt("Back to Music")}
         </button>
       </main>
     );
@@ -97,9 +99,9 @@ function PlaylistScreen() {
   };
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+60px)] md:px-10 md:pt-8">
+    <main className="min-h-dvh px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+60px)]">
       <div className="flex h-8 items-center justify-between">
-        <button aria-label="Back" onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
+        <button aria-label={tt("Back")} onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
           <BackIcon size={22} />
         </button>
         <button
@@ -112,17 +114,17 @@ function PlaylistScreen() {
 
       <div className="mx-auto max-w-[640px]">
         <div className="mt-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end">
-          <button onClick={changeCover} aria-label="Change playlist image" className="relative shadow-[0_10px_24px_rgba(0,0,0,.18)]">
+          <button onClick={changeCover} aria-label={tt("Change playlist image")} className="relative shadow-[0_10px_24px_rgba(0,0,0,.18)]">
             <PlaylistCover p={p} size={210} />
             <span className="label absolute right-2 bottom-2 rounded-full bg-black/60 px-2.5 py-1 text-[9px] text-white">
-              {p.cover ? "Change image" : "Add image"}
+              {p.cover ? tt("Change image") : tt("Add image")}
             </span>
           </button>
           <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="label text-[10px] text-music-text">Playlist</span>
+            <span className="label text-[10px] text-music-text">{tt("Playlist")}</span>
             {editing ? (
               <input
-                aria-label="Playlist name"
+                aria-label={tt("Playlist name")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={saveName}
@@ -133,11 +135,11 @@ function PlaylistScreen() {
               <h1 className="text-[32px] leading-[1.05] font-bold [font-stretch:87%]">{p.name}</h1>
             )}
             <span className="label text-[10px] text-muted">
-              {plural(p.tracks.length, "song")} · {Math.max(1, Math.round(minutes))} min
+              {plural(p.tracks.length, "song")} · {tt("{n} min", { n: Math.max(1, Math.round(minutes)) })}
             </span>
             {editing && p.cover && (
               <button onClick={() => updatePlaylist(p.id, { cover: undefined })} className="label self-start text-[9px] text-muted underline">
-                Remove image
+                {tt("Remove image")}
               </button>
             )}
           </div>
@@ -145,7 +147,7 @@ function PlaylistScreen() {
 
         {!player.available && (
           <p className="mt-5 rounded-xl bg-card px-4 py-3 text-[13px] text-muted">
-            Playlists play songs stored on your phone. Open Stack on your Android phone to play this one.
+            {tt("Playlists play songs stored on your phone. Open Stack on your Android phone to play this one.")}
           </p>
         )}
 
@@ -155,12 +157,12 @@ function PlaylistScreen() {
             disabled={!playable.length}
             className="flex h-14 grow items-center justify-center gap-2 rounded-full bg-music text-[16px] font-semibold text-white disabled:opacity-40"
           >
-            <PlayIcon size={18} /> Play
+            <PlayIcon size={18} /> {tt("Play")}
           </button>
           <button
             onClick={() => play(true)}
             disabled={!playable.length}
-            aria-label="Shuffle play"
+            aria-label={tt("Shuffle play")}
             className="flex h-14 w-16 items-center justify-center rounded-full border border-ink/20 disabled:opacity-40"
           >
             <ShuffleIcon size={20} />
@@ -168,7 +170,7 @@ function PlaylistScreen() {
           <button
             onClick={() => setPicking(true)}
             disabled={!library.length}
-            aria-label="Add songs"
+            aria-label={tt("Add songs")}
             className="flex h-14 w-16 items-center justify-center rounded-full border border-ink/20 disabled:opacity-40"
           >
             <PlusIcon size={20} />
@@ -187,7 +189,7 @@ function PlaylistScreen() {
             className="mt-8 flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink/25 text-muted"
           >
             <PlusIcon size={20} />
-            <span className="label text-[10px]">Add songs</span>
+            <span className="label text-[10px]">{tt("Add songs")}</span>
           </button>
         ) : (
           <ol className="mt-5">
@@ -206,21 +208,21 @@ function PlaylistScreen() {
                         {t.title}
                       </span>
                       <span className="label truncate text-[9px] text-muted">
-                        {here ? t.artist || "Unknown artist" : "Not on this phone"}
+                        {here ? t.artist || tt("Unknown artist") : tt("Not on this phone")}
                       </span>
                     </span>
                     {!editing && <span className="label text-[10px]">{mmss(t.duration)}</span>}
                   </button>
                   {editing && (
                     <div className="flex shrink-0 items-center">
-                      <button aria-label={`Move ${t.title} up`} disabled={i === 0} onClick={() => move(i, i - 1)} className="flex size-10 items-center justify-center text-[16px] disabled:opacity-25">
+                      <button aria-label={tt("Move {title} up", { title: t.title })} disabled={i === 0} onClick={() => move(i, i - 1)} className="flex size-10 items-center justify-center text-[16px] disabled:opacity-25">
                         ↑
                       </button>
-                      <button aria-label={`Move ${t.title} down`} disabled={i === p.tracks.length - 1} onClick={() => move(i, i + 1)} className="flex size-10 items-center justify-center text-[16px] disabled:opacity-25">
+                      <button aria-label={tt("Move {title} down", { title: t.title })} disabled={i === p.tracks.length - 1} onClick={() => move(i, i + 1)} className="flex size-10 items-center justify-center text-[16px] disabled:opacity-25">
                         ↓
                       </button>
                       <button
-                        aria-label={`Remove ${t.title}`}
+                        aria-label={tt("Remove {name}", { name: t.title })}
                         onClick={() => updatePlaylist(p.id, { tracks: p.tracks.filter((_, j) => j !== i) })}
                         className="flex size-10 items-center justify-center text-music-text"
                       >
@@ -236,7 +238,7 @@ function PlaylistScreen() {
 
         {editing && (
           <button onClick={() => setConfirmDelete(true)} className="label mt-8 h-11 w-full rounded-full border border-music/40 text-[10px] text-music-text">
-            Delete playlist
+            {tt("Delete playlist")}
           </button>
         )}
       </div>
@@ -249,12 +251,12 @@ function PlaylistScreen() {
         onAdd={async (songs) => {
           const added = await addToPlaylist(p.id, songs);
           setPicking(false);
-          toast({ text: `Added ${added} song${added === 1 ? "" : "s"}` });
+          toast({ text: tt(added === 1 ? "Added {n} song" : "Added {n} songs", { n: added }) });
         }}
       />
 
-      <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Delete “${p.name}”?`}>
-        <p className="text-[15px] text-muted">The songs stay on your phone; only the playlist is removed.</p>
+      <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title={tt("Delete “{name}”?", { name: p.name })}>
+        <p className="text-[15px] text-muted">{tt("The songs stay on your phone; only the playlist is removed.")}</p>
         <button
           onClick={async () => {
             await deletePlaylist(p.id);
@@ -262,7 +264,7 @@ function PlaylistScreen() {
           }}
           className="h-12 rounded-full bg-music text-[15px] font-semibold text-white"
         >
-          Delete playlist
+          {tt("Delete playlist")}
         </button>
       </Sheet>
     </main>
@@ -283,6 +285,7 @@ function SongPicker({
   onClose: () => void;
   onAdd: (songs: LocalTrack[]) => void;
 }) {
+  const tt = useT();
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const shown = library.filter(
@@ -298,10 +301,10 @@ function SongPicker({
       <label className="flex h-[46px] items-center gap-2.5 rounded-full border border-ink/12 bg-card px-4">
         <SearchIcon size={18} className="text-muted" />
         <input
-          aria-label="Search songs"
+          aria-label={tt("Search songs")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search your songs"
+          placeholder={tt("Search your songs")}
           className="grow bg-transparent text-[14px] outline-none"
         />
       </label>
@@ -328,7 +331,7 @@ function SongPicker({
                 />
                 <span className="flex min-w-0 grow flex-col">
                   <span className="song truncate text-[15px]">{t.title}</span>
-                  <span className="label truncate text-[9px] text-muted">{inList ? "Already in playlist" : t.artist}</span>
+                  <span className="label truncate text-[9px] text-muted">{inList ? tt("Already in playlist") : t.artist}</span>
                 </span>
               </label>
             </li>
@@ -344,7 +347,7 @@ function SongPicker({
         }}
         className="h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-40"
       >
-        Add {picked.size || ""} song{picked.size === 1 ? "" : "s"}
+        {picked.size ? tt(picked.size === 1 ? "Add {n} song" : "Add {n} songs", { n: picked.size }) : tt("Add songs")}
       </button>
     </Sheet>
   );

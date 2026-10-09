@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stack: the competition and how to win</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&family=Bodoni+Moda:ital,wght@1,500&display=block" rel="stylesheet">
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --paper: #F7F5F0; --paper-2: #EEECE8; --card: #FFFFFF; --ink: #111111; --muted: #6B6862; --rule: #E2DFD8;
+    --news: #0A8A3A; --news-tint: #D6EEDC; --news-deep: #065C27;
+    --music: #D62F26; --music-tint: #F8D8D5; --music-deep: #A3221B;
+    --pdf: #F2A246; --pdf-tint: #FCE3C4; --pdf-deep: #8A4B00;
+    --blue: #4E9EE6; --blue-tint: #D7E8F8; --blue-deep: #1F5796;
+    --violet-tint: #E5DBFF; --violet: #6741D9; --yellow-tint: #FFF3BF; --yellow-deep: #8A5A00;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Archivo", sans-serif; }
+  .label { font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .04em; }
+  .display { font-weight: 800; font-stretch: 75%; letter-spacing: -0.04em; line-height: .84; }
+  .serif { font-family: "Bodoni Moda", Georgia, serif; font-style: italic; font-weight: 500; }
+  .page { width: 210mm; height: 297mm; padding: 13mm 13mm 16mm; position: relative; overflow: hidden; }
+  .page + .page { break-before: page; }
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .top .label { font-size: 7.5pt; color: var(--muted); }
+  .foot { position: absolute; left: 13mm; right: 13mm; bottom: 7mm; display: flex; justify-content: space-between; font-size: 7pt; color: var(--muted); }
+  h1 { margin: 5mm 0 0 -1mm; font-size: 46pt; }
+  h2 { margin: 6mm 0 1.5mm; font-size: 22pt; }
+  h3 { margin: 0; font-size: 13pt; font-weight: 800; font-stretch: 80%; letter-spacing: -.01em; }
+  .intro { margin: 4mm 0 4mm; font-size: 10pt; line-height: 1.5; max-width: 176mm; }
+  .sub { font-size: 7.5pt; color: var(--muted); margin-bottom: 3mm; }
+  p { margin: 0 0 2mm; }
+  b { font-weight: 700; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0 1.3mm; font-size: 8.3pt; }
+  th { text-align: left; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .04em; font-size: 6.8pt; font-weight: 500; color: var(--muted); padding: 0 2.6mm .4mm; }
+  td { background: var(--card); padding: 1.9mm 2.6mm; line-height: 1.36; vertical-align: top; }
+  td:first-child { border-radius: 3mm 0 0 3mm; font-weight: 700; }
+  td:last-child { border-radius: 0 3mm 3mm 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.8mm; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.6mm; }
+  .card { background: var(--card); border-radius: 3.5mm; padding: 3.4mm 3.8mm; font-size: 8.4pt; line-height: 1.45; }
+  .card ul { margin: 1.6mm 0 0; padding-left: 3.6mm; }
+  .card li { margin-bottom: .6mm; }
+  .tag { display: inline-block; font-size: 6.3pt; padding: .8mm 2.2mm; border-radius: 3mm; background: var(--news-tint); color: var(--news-deep); }
+  .t-red { background: var(--music-tint); color: var(--music-deep); }
+  .t-org { background: var(--pdf-tint); color: var(--pdf-deep); }
+  .t-blue { background: var(--blue-tint); color: var(--blue-deep); }
+  .t-vio { background: var(--violet-tint); color: var(--violet); }
+  .t-ink { background: var(--ink); color: #fff; }
+
+  .stat { background: var(--card); border-radius: 3.5mm; padding: 3.2mm 3.6mm 3mm; }
+  .stat .n { font-size: 25pt; font-weight: 800; font-stretch: 75%; letter-spacing: -.03em; line-height: .95; }
+  .stat .d { font-size: 7.6pt; line-height: 1.35; margin-top: 1.2mm; }
+  .stat .s { font-size: 6.2pt; color: var(--muted); margin-top: 1.4mm; }
+  .g { color: var(--news); } .r { color: var(--music); } .o { color: var(--pdf-deep); } .bl { color: var(--blue-deep); } .v { color: var(--violet); }
+
+  .band { border-radius: 4mm; padding: 4mm 5mm; margin-bottom: 3mm; font-size: 8.8pt; line-height: 1.48; }
+  .band .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.4mm; }
+  .band ul { list-style: none; margin: 1.6mm 0 0; padding: 0; }
+  .band li { display: flex; gap: 2.4mm; margin-bottom: 1.1mm; }
+  .band li::before { content: ""; flex-shrink: 0; width: 3mm; height: 3mm; margin-top: .7mm; border: 1.2px solid currentColor; border-radius: 1mm; opacity: .7; }
+  .b1 { background: var(--yellow-tint); color: #3a2a00; }
+  .b2 { background: var(--pdf-tint); color: #3d2200; }
+  .b3 { background: var(--blue-tint); color: #0e2a4a; }
+  .b4 { background: var(--violet-tint); color: #2a1a66; }
+  .b5 { background: var(--news-tint); color: #06321a; }
+  .b6 { background: var(--music-tint); color: #4a1210; }
+  .inked { background: var(--ink); color: #fff; border-radius: 4mm; padding: 4.2mm 5mm; font-size: 9pt; line-height: 1.55; }
+  .inked .label { font-size: 7pt; color: #BDBAB2; }
+
+  .verdict { display: grid; grid-template-columns: 30mm 1fr; gap: 0; background: var(--card); border-radius: 3.5mm; margin-bottom: 2.4mm; overflow: hidden; }
+  .verdict .v1 { padding: 3.4mm; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1mm; }
+  .verdict .v1 .big { font-size: 17pt; font-weight: 800; font-stretch: 75%; letter-spacing: -.02em; line-height: .9; }
+  .verdict .v2 { padding: 3.4mm 4mm; font-size: 8.8pt; line-height: 1.48; border-left: 1px solid var(--rule); }
+
+  .meter { display: inline-flex; gap: .7mm; vertical-align: middle; }
+  .meter i { display: block; width: 2.4mm; height: 2.4mm; border-radius: .6mm; background: var(--rule); }
+  .meter.m1 i:nth-child(-n+1), .meter.m2 i:nth-child(-n+2), .meter.m3 i:nth-child(-n+3), .meter.m4 i:nth-child(-n+4), .meter.m5 i:nth-child(-n+5) { background: var(--ink); }
+
+  .quad { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2.6mm; height: 118mm; position: relative; }
+  .quad > div { border-radius: 4mm; padding: 3.6mm 4mm; font-size: 8.4pt; line-height: 1.4; }
+  .chip { display: inline-block; background: var(--card); border-radius: 2.4mm; padding: 1.2mm 2.4mm; margin: 0 1.2mm 1.4mm 0; font-size: 8pt; font-weight: 600; }
+  .chip small { font-weight: 400; color: var(--muted); }
+
+  .cover { background: var(--ink); color: #fff; }
+  .cover .label { color: #BDBAB2; }
+  .src { font-size: 7.2pt; line-height: 1.45; columns: 2; column-gap: 7mm; }
+  .src p { break-inside: avoid; margin-bottom: 1.4mm; }
+  .src a { color: var(--blue-deep); text-decoration: none; word-break: break-all; }
+  .note { font-size: 7.2pt; color: var(--muted); line-height: 1.4; }
+</style>
+<style>
+  .step { display:grid; grid-template-columns: 9mm 1fr; gap: 2.4mm; background: var(--card); border-radius: 3.2mm; padding: 2.6mm 3.4mm; margin-bottom: 1.8mm; font-size: 8.5pt; line-height: 1.42; }
+  .step .num { width: 7mm; height: 7mm; border-radius: 2mm; background: var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-stretch:75%; font-size: 10pt; }
+  .step b.t { display:block; font-size: 9.2pt; margin-bottom: .4mm; }
+  .step code, .cmd code { font-family: "IBM Plex Mono", monospace; font-size: 7.4pt; background: var(--paper-2); padding: .2mm 1mm; border-radius: 1mm; }
+  .cmd { background: #1b1b1a; color: #e9e6df; border-radius: 3mm; padding: 3mm 4mm; font-family: "IBM Plex Mono", monospace; font-size: 7.3pt; line-height: 1.55; margin: 1.6mm 0 2.4mm; white-space: pre-wrap; }
+  .cmd .c { color: #8f8b83; }
+  .who { float:right; font-size: 6.2pt; }
+  .ok { color: var(--news-deep); font-weight: 700; } .no { color: var(--music-deep); font-weight: 700; }
+  .stage { display:flex; gap: 3mm; align-items: baseline; }
+  .stage .sn { font-size: 30pt; font-weight: 800; font-stretch: 75%; line-height: .8; }
+  .tick { list-style:none; padding:0; margin: 0; columns: 2; column-gap: 6mm; font-size: 8.2pt; line-height: 1.4; }
+  .tick li { break-inside: avoid; display:flex; gap: 2mm; margin-bottom: 1.3mm; }
+  .tick li::before { content:""; flex-shrink:0; width: 3.2mm; height: 3.2mm; margin-top: .5mm; border: 1.2px solid #111; border-radius: 1mm; }
+  .tick h4 { column-span: all; margin: 2.4mm 0 1.4mm; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; font-size: 7pt; letter-spacing: .04em; color: var(--muted); font-weight: 500; }
+</style>
+<style>
+  html, body { font-family: "Archivo", "Noto Sans Devanagari", sans-serif; }
+  .hi { font-family: "Noto Sans Devanagari", sans-serif; letter-spacing: 0; }
+  td.c, th.c { text-align: center; }
+  .lead { font-size: 9pt; line-height: 1.5; margin: 0 0 3mm; max-width: 180mm; }
+  .card h3 { margin-bottom: 1.2mm; }
+  .card .tag { margin-bottom: 1.6mm; }
+  .meta { font-size: 7.2pt; color: var(--muted); margin-top: 1.4mm; line-height: 1.4; }
+  .band h3 { font-size: 11.5pt; }
+  .kv { display: grid; grid-template-columns: 34mm 1fr; gap: 1mm 3mm; font-size: 8.4pt; line-height: 1.42; }
+  .kv b { font-weight: 700; }
+  .ok { white-space: nowrap; } .no { white-space: nowrap; }
+  .mid { color: var(--pdf-deep); font-weight: 700; white-space: nowrap; }
+</style>
+<style>
+  .mx td { text-align: center; padding: 1.5mm 1.6mm; font-size: 9pt; }
+  .mx td:first-child { text-align: left; font-size: 8.1pt; }
+  .mx th { text-align: center; padding: 0 1mm .4mm; }
+  .mx th:first-child { text-align: left; }
+  .mx td.me { background: var(--yellow-tint); }
+  .y { color: var(--news); font-weight: 800; } .p { color: var(--pdf-deep); font-weight: 800; } .x { color: #C9C5BC; font-weight: 800; }
+  .grp { font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .04em; font-size: 7pt; color: var(--muted); margin: 3mm 0 0; }
+  .ten .tag, .who { white-space: nowrap; }
+  .ten td { padding: 1.4mm 2.4mm; font-size: 7.8pt; line-height: 1.3; }
+  .imp { white-space: nowrap; font-family: "IBM Plex Mono", monospace; font-size: 7pt; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="logo" viewBox="242.5 130 124 124">
+    <rect x="272.2" y="236" width="65" height="18" rx="2"/>
+    <rect x="273.9" y="194.8" width="60" height="18" rx="2" transform="rotate(-26.6 303.9 203.8)"/>
+    <rect x="274.7" y="167.9" width="38" height="18" rx="2" transform="rotate(-32 293.7 176.9)"/>
+    <rect x="272.5" y="130.5" width="18" height="29" rx="2"/>
+  </symbol>
+</svg>
+
+<!-- 01 · cover -->
+<section class="page cover">
+  <div class="top"><svg width="34" height="34" fill="#fff"><use href="#logo"/></svg><span class="label">StackForge Labs · competition &amp; growth · 04.10.2026 · version 3</span></div>
+  <div style="position:absolute; left:13mm; right:13mm; top:58mm;">
+    <div class="label" style="font-size:9pt; margin-bottom:6mm">Stack makes you remember what you read</div>
+    <div class="display" style="font-size:88pt">THE<br>FIELD.</div>
+    <p class="serif" style="font-size:21pt; margin-top:8mm; line-height:1.2">Who Stack is up against,<br>and how it gets ahead of them.</p>
+  </div>
+  <div style="position:absolute; left:13mm; right:13mm; bottom:24mm; display:grid; grid-template-columns:repeat(5,1fr); gap:2mm;">
+    <div style="background:var(--news); border-radius:3mm; padding:3mm; height:26mm"><div class="label" style="color:#fff; font-size:6.5pt">News</div><div style="font-size:8pt; margin-top:1.5mm">Inshorts, Dailyhunt, Feedly</div></div>
+    <div style="background:var(--pdf); border-radius:3mm; padding:3mm; height:26mm; color:#111"><div class="label" style="color:#3d2200; font-size:6.5pt">Read later</div><div style="font-size:8pt; margin-top:1.5mm">Readwise Reader, Matter, Instapaper</div></div>
+    <div style="background:var(--blue); border-radius:3mm; padding:3mm; height:26mm; color:#111"><div class="label" style="color:#0e2a4a; font-size:6.5pt">Study + AI</div><div style="font-size:8pt; margin-top:1.5mm">NotebookLM, PW Books, Anki</div></div>
+    <div style="background:var(--violet-tint); border-radius:3mm; padding:3mm; height:26mm; color:#111"><div class="label" style="color:#2a1a66; font-size:6.5pt">Notes</div><div style="font-size:8pt; margin-top:1.5mm">Keep, Notion, Obsidian</div></div>
+    <div style="background:var(--music); border-radius:3mm; padding:3mm; height:26mm"><div class="label" style="color:#fff; font-size:6.5pt">Focus + listen</div><div style="font-size:8pt; margin-top:1.5mm">Forest, ElevenReader</div></div>
+  </div>
+  <div class="foot"><span class="label">Prepared for Aman Kumar Chhari</span><span class="label">01 / 13</span></div>
+</section>
+
+<!-- 02 · the map -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">00 · The whole picture on one page</span></div>
+  <h1 class="display">THE MAP</h1>
+  <p class="intro">Stack does five jobs. Each job already has a leader, and most people use <b>four or five separate apps</b> to do them all. No app does the whole loop: <b>save → read → highlight → remember</b>, free, offline, and with Indian sources and languages. That loop is the space Stack can own.</p>
+
+  <table>
+    <tr><th style="width:30mm">Job</th><th style="width:52mm">Who leads it today</th><th>What Stack does differently</th></tr>
+    <tr><td>Read the news</td><td>Inshorts, Dailyhunt, Google News; Feedly and Inoreader for RSS</td><td>News is a <b>source of things to keep</b>: select a line and it becomes a note that links back to the story</td></tr>
+    <tr><td>Save to read later</td><td>Readwise Reader ($9.99/mo), Matter, Instapaper. Pocket closed in July 2025 and Omnivore in late 2024</td><td>Free and open source, with a Share-to-Stack card that works in WhatsApp, Chrome, YouTube and Telegram</td></tr>
+    <tr><td>Study from PDFs</td><td>NotebookLM, PW Books app (July 2026), Adobe and other PDF readers</td><td>Works with <b>any</b> PDF on the phone, offline, with highlights, page notes and a focus timer in one place</td></tr>
+    <tr><td>Remember it</td><td>Anki, Readwise's daily review, NotebookLM flashcards</td><td>A daily review made from <b>your own</b> highlights, which you don't have to type into flashcards</td></tr>
+    <tr><td>Stay focused</td><td>Forest ($3.99 once), Focus To-Do, Spotify playlists</td><td>The timer, the music and the reading material are on the same screen, and a summary appears at the end</td></tr>
+  </table>
+
+  <div class="inked" style="margin-top:3mm">
+    <div class="label" style="font-size:7pt; color:#BDBAB2; margin-bottom:1.6mm">The one-line answer</div>
+    <span style="font-size:13pt; font-weight:700">Don't try to beat Inshorts at news or Spotify at music.</span><br>
+    Beat them at <b>remembering</b>. Each competitor stops at "you read it". Stack keeps going: it brings what you read back to you, and the main thing it should promise is <span class="serif" style="font-size:11pt">"Stack makes you remember what you read."</span>
+  </div>
+
+  <div class="grid3" style="margin-top:3mm">
+    <div class="stat"><div class="n r">2</div><div class="d">big read-later apps shut down (Pocket, Omnivore). Their users are still looking for a new app</div><div class="s">Mozilla, Jul 2025 · ElevenLabs, late 2024</div></div>
+    <div class="stat"><div class="n o">₹0</div><div class="d">what Stack costs to start using. Readwise has no free plan, and Matter and ElevenReader cap theirs</div><div class="s">Prices checked Oct 2026</div></div>
+    <div class="stat"><div class="n bl">5 → 1</div><div class="d">apps a student uses for news, PDFs, notes, focus and music, against one Stack</div><div class="s">Stack's main selling point</div></div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">02 / 13</span></div>
+</section>
+
+<!-- 03 · list part 1 -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">01 · The competitors · part 1</span></div>
+  <h1 class="display">NEWS &amp; READ LATER</h1>
+  <p class="intro">Prices are from the apps' own or review pages in October 2026. <b>Threat</b> = how likely a user is to choose this app over Stack.</p>
+
+  <div class="grp">News apps</div>
+  <table>
+    <tr><th style="width:27mm">App</th><th style="width:30mm">Price</th><th style="width:52mm">Strong at</th><th>Gap Stack fills</th><th style="width:13mm">Threat</th></tr>
+    <tr><td>Inshorts</td><td>Free, with ads</td><td>60-word cards, very fast, Hindi, a big brand in India</td><td>Nothing to keep: no highlights, notes or review. A story is gone once you swipe past it</td><td><span class="tag label t-red">High</span></td></tr>
+    <tr><td>Dailyhunt</td><td>Free, with ads</td><td>Many Indian languages, regional news; says it reaches 285M+ people a day</td><td>Busy, ad-heavy feed. Not built for learning or study</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>Google News</td><td>Free</td><td>Comes on most Android phones, personal feed</td><td>No reader-mode highlights, notes or offline study</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>Feedly</td><td>Free 100 sources · Pro $6.99/mo · AI on Pro+ $12.99</td><td>Power users of RSS, Leo AI filters</td><td>Too expensive for students. AI costs extra. No PDFs or focus</td><td><span class="tag label">Low</span></td></tr>
+    <tr><td>Inoreader</td><td>Free 150 feeds · Pro $7.50/mo</td><td>RSS with AI included in Pro, BYO AI key (Apr 2026)</td><td>A desk tool. No study loop</td><td><span class="tag label">Low</span></td></tr>
+  </table>
+
+  <div class="grp">Read-it-later apps</div>
+  <table>
+    <tr><th style="width:27mm">App</th><th style="width:30mm">Price</th><th style="width:52mm">Strong at</th><th>Gap Stack fills</th><th style="width:13mm">Threat</th></tr>
+    <tr><td>Readwise Reader</td><td>$9.99/mo yearly · $12.99 monthly · no free plan</td><td>The best in the class: highlights, Ghostreader AI, daily review, RSS, PDFs, read aloud</td><td>Costs about ₹10,000 a year. English-first. No focus timer or music. Not built for Indian students</td><td><span class="tag label t-red">High</span></td></tr>
+    <tr><td>Matter</td><td>Free · Premium $8/mo or $60/yr</td><td>Beautiful design, read aloud, newsletters</td><td>Mostly iPhone users. Weak on PDFs. No review loop</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>Instapaper</td><td>Free · Premium $6/mo · student $3/mo</td><td>Clean reading, a long-trusted brand</td><td>Simple highlights only. No AI in your language, no PDFs, no study</td><td><span class="tag label">Low</span></td></tr>
+    <tr><td>Pocket · Omnivore</td><td>Shut down</td><td>Millions of users and years of saved links</td><td><b>An opening:</b> a Pocket and Omnivore import brings in users who are already looking for a new app</td><td><span class="tag label t-blue">Chance</span></td></tr>
+  </table>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">03 / 13</span></div>
+</section>
+
+<!-- 04 · list part 2 -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">01 · The competitors · part 2</span></div>
+  <h1 class="display">STUDY, NOTES, FOCUS</h1>
+  <p class="intro">This group is the real competition for Stack's main users, <b>students and self-learners in India</b>. NotebookLM and the PW Books app are the two to watch most closely.</p>
+
+  <div class="grp">Study and AI</div>
+  <table>
+    <tr><th style="width:27mm">App</th><th style="width:30mm">Price</th><th style="width:52mm">Strong at</th><th>Gap Stack fills</th><th style="width:13mm">Threat</th></tr>
+    <tr><td>NotebookLM</td><td>Free (Google), paid tiers for more use</td><td>Ask questions about PDFs, audio and video overviews, flashcards, quizzes, study guides. Share to it from any app</td><td>Needs the internet and your data goes to Google. No reader to highlight in, no news, no focus timer. It makes new content instead of helping you keep your own</td><td><span class="tag label t-red">Highest</span></td></tr>
+    <tr><td>PW Books app</td><td>Part of PW batches</td><td>Launched July 2026: select text and ask the AI, highlights and notes, audio summaries, PYQs for JEE and NEET</td><td>Works only on PW's own books. Your own PDFs, coaching notes, news and articles aren't included</td><td><span class="tag label t-red">High</span></td></tr>
+    <tr><td>Anki · AnkiDroid</td><td>Free on Android</td><td>The gold standard for spaced repetition, used heavily for NEET and GATE</td><td>You have to make every card by hand. Stack's review uses the highlights you already made</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>ElevenReader</td><td>Free 10 h/mo · Ultra $11/mo</td><td>Very natural voices, PDFs read aloud, 32+ languages</td><td>Listening only, with no notes or review. Stack's Listen mode is free and works offline</td><td><span class="tag label">Low</span></td></tr>
+  </table>
+
+  <div class="grp">Notes and focus</div>
+  <table>
+    <tr><th style="width:27mm">App</th><th style="width:30mm">Price</th><th style="width:52mm">Strong at</th><th>Gap Stack fills</th><th style="width:13mm">Threat</th></tr>
+    <tr><td>Google Keep</td><td>Free</td><td>Comes on most Android phones, fast, and Stack's notes editor is modelled on it</td><td>A note doesn't know where it came from. Stack's notes link back to the page or story</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>Notion · Obsidian</td><td>Free tiers</td><td>Powerful second-brain tools</td><td>Too much setup on a phone. Stack <b>exports</b> to them, so treat them as partners rather than rivals</td><td><span class="tag label t-blue">Partner</span></td></tr>
+    <tr><td>Forest</td><td>$3.99 once · 2M+ paying users</td><td>Planting a tree makes focusing fun, and you can focus with friends</td><td>A timer with nothing to read. Stack's focus session opens the PDF, plays music and sums up the session at the end</td><td><span class="tag label t-org">Mid</span></td></tr>
+    <tr><td>Spotify</td><td>Free · Premium</td><td>Music</td><td>Not a rival. Keep it as an optional link in Settings rather than a headline feature</td><td><span class="tag label t-blue">Partner</span></td></tr>
+  </table>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">04 / 13</span></div>
+</section>
+
+<!-- 05 · matrix -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">02 · Feature by feature</span></div>
+  <h1 class="display">HEAD TO HEAD</h1>
+  <p class="intro">Stack against the five apps that could take its users. <span class="y">●</span> yes &nbsp; <span class="p">◐</span> partly or limited &nbsp; <span class="x">–</span> no. Based on each app's public pages in October 2026.</p>
+
+  <table class="mx">
+    <tr><th style="width:52mm">Feature</th><th>Stack</th><th>Readwise</th><th>Matter</th><th>Inshorts</th><th>NotebookLM</th><th>PW Books</th></tr>
+    <tr><td>Save from any app (share sheet)</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>News feed built in</td><td class="me"><span class="y">●</span></td><td><span class="p">◐</span></td><td><span class="p">◐</span></td><td><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>Reader for your own PDFs</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>Highlights become notes that link to the source</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="p">◐</span></td></tr>
+    <tr><td>Daily review of what you highlighted</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>Quiz made from your material</td><td class="me"><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td></tr>
+    <tr><td>Focus timer with reading and music</td><td class="me"><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>Read aloud</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td></tr>
+    <tr><td>AI on your own documents</td><td class="me"><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td></tr>
+    <tr><td>Indian languages (summaries, UI)</td><td class="me"><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td></tr>
+    <tr><td>Exam material (JEE, NEET, GATE, UPSC)</td><td class="me"><span class="p">◐</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td></tr>
+    <tr><td>Works fully offline, no account</td><td class="me"><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="p">◐</span></td><td><span class="x">–</span></td><td><span class="p">◐</span></td></tr>
+    <tr><td>Free core features</td><td class="me"><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="p">◐</span></td></tr>
+    <tr><td>Open source</td><td class="me"><span class="y">●</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td><td><span class="x">–</span></td></tr>
+    <tr><td>iPhone app</td><td class="me"><span class="x">–</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td><td><span class="y">●</span></td></tr>
+  </table>
+
+  <div class="grid2" style="margin-top:2.4mm">
+    <div class="card"><span class="tag label">Read the table this way</span><h3>Stack's column is the fullest</h3>Only Stack ticks focus, offline-without-account and open source. Readwise comes closest on reading but has no free plan and no focus timer.</div>
+    <div class="card"><span class="tag label t-red">The gaps left</span><h3>Quiz, then exams</h3>Hindi is now in (version 3), and exam papers are half done. The quiz is the last row where NotebookLM and PW clearly beat Stack, and it's what students compare apps on. Page 7 covers it.</div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">05 / 13</span></div>
+</section>
+
+<!-- 06 · strengths / weaknesses -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">03 · An honest look</span></div>
+  <h1 class="display">WHERE STACK STANDS</h1>
+  <p class="intro">What to say loudly, what to fix first, and what can hurt Stack from outside.</p>
+
+  <div class="band b5"><div class="row"><h3>Strengths · say these in every post</h3><span class="label" style="font-size:6.5pt">Keep</span></div>
+    <ul>
+      <li><span><b>The whole loop in one app.</b> Save, read, highlight, review and focus. No competitor has all five</span></li>
+      <li><span><b>Free, offline, no account needed.</b> That matters on cheap phones and patchy mobile data</span></li>
+      <li><span><b>India first:</b> The Hindu, Indian Express, Mint and India Today, plus Sarvam for Hindi, Tamil and Bengali summaries</span></li>
+      <li><span><b>Any PDF on the phone,</b> including coaching notes and PYQs, not only one publisher's books</span></li>
+      <li><span><b>Open source</b> (StackForge). Trust, Hacker News and GitHub reach, and outside contributors</span></li>
+    </ul></div>
+
+  <div class="band b6"><div class="row"><h3>Weaknesses · fix or hide</h3><span class="label" style="font-size:6.5pt">Fix</span></div>
+    <ul>
+      <li><span><b>Too many things at once</b> (now being fixed: the new first screen and tabs, page 9). Still test it on five new people</span></li>
+      <li><span><b>Not on the Play Store yet.</b> The closed test is still running, and a sideloaded APK puts most people off</span></li>
+      <li><span><b>No quiz yet, and exam mode is only half done.</b> Those are the two things students compare apps on</span></li>
+      <li><span><b>Android only.</b> No iPhone app and no browser extension for saving from a laptop</span></li>
+      <li><span><b>Spotify inside the app is fragile</b> ("no active device"), and it's the feature reviewers try first</span></li>
+    </ul></div>
+
+  <div class="grid2">
+    <div class="band b3" style="margin:0"><h3>Opportunities</h3>
+      <ul>
+        <li><span>Pocket and Omnivore users still looking for a new app</span></li>
+        <li><span>Exam season: JEE, NEET and GATE study starts in earnest from Nov to Jan</span></li>
+        <li><span>Telegram study groups where PDFs are already shared, and Stack can import from Telegram</span></li>
+      </ul></div>
+    <div class="band b2" style="margin:0"><h3>Threats</h3>
+      <ul>
+        <li><span>NotebookLM ships features every month and is free</span></li>
+        <li><span>PW's own app keeps PW students inside it</span></li>
+        <li><span>AI bills: one popular week can use up the budget, which is why <code>AI_DAILY_LIMIT</code> is there</span></li>
+      </ul></div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">06 / 13</span></div>
+</section>
+
+<!-- 07 · make it better -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">04 · The product</span></div>
+  <h1 class="display">MAKE IT BETTER</h1>
+  <p class="intro">Ten changes in order. The first five close the gaps in the head-to-head table. <b>Effort</b>: S = a few days, M = about a week, L = several weeks.</p>
+
+  <table>
+    <tr><th style="width:7mm">#</th><th style="width:42mm">Change</th><th>Why it beats the competition</th><th style="width:13mm">Effort</th><th style="width:15mm">Beats</th></tr>
+    <tr><td>1</td><td>Quiz from your highlights</td><td>Add 3 questions a day to the morning review, made by AI from what <b>you</b> highlighted. NotebookLM makes quizzes from whole documents; Stack's come from the lines you chose</td><td class="imp">M</td><td>NotebookLM, Anki</td></tr>
+    <tr><td>2</td><td>Exam shelves</td><td>Ready-made shelves for JEE, NEET, GATE, UPSC and CAT, each with its syllabus as a checklist and your PDFs mapped to topics. "GATE CSE 2027: 42% covered"</td><td class="imp">M</td><td>PW Books</td></tr>
+    <tr><td>3</td><td>"Explain this" on selected text</td><td>Select a line, then tap <b>Explain</b> in English, Hindi or Hinglish. PW has this only for its own books; Stack would have it for every PDF and article</td><td class="imp">S</td><td>PW Books</td></tr>
+    <tr><td>4</td><td>Stack in Hindi</td><td>The whole interface in Hindi, plus Hindi news sources and "Summarise in Hindi". Inshorts and Dailyhunt won India this way</td><td class="imp">M</td><td>Readwise, Matter</td></tr>
+    <tr><td>5</td><td>Import from Pocket, Omnivore, Instapaper</td><td>A CSV or HTML import on the welcome screen, and an English store listing that says "Pocket alternative"</td><td class="imp">S</td><td>Readwise, Matter</td></tr>
+    <tr><td>6</td><td>A clear first 10 seconds</td><td>On first launch, ask "What do you study for?" and open on the Library and Review, not News. Music moves inside Focus</td><td class="imp">S</td><td>Everyone</td></tr>
+    <tr><td>7</td><td>Shareable weekly card</td><td>"This week: 6 h read, 41 highlights, 9-day streak" as an image for WhatsApp and Instagram. Every share is free advertising</td><td class="imp">S</td><td>Forest</td></tr>
+    <tr><td>8</td><td>Home-screen widget</td><td>Today's highlight and the streak on the home screen, so you see Stack every time you unlock the phone</td><td class="imp">M</td><td>Anki, Keep</td></tr>
+    <tr><td>9</td><td>EPUB books and a Chrome extension</td><td>Opens Stack to readers of books and to saving from a laptop, the two things Readwise users would miss most</td><td class="imp">L</td><td>Readwise</td></tr>
+    <tr><td>10</td><td>Study rooms</td><td>Focus together with friends: same timer, see who is studying, shared streaks. Forest's best idea, for study groups</td><td class="imp">L</td><td>Forest</td></tr>
+  </table>
+
+  <div class="card" style="margin-top:2.4mm"><span class="tag label t-org">Also fix before the public launch</span><h3>Small things that cost reviews</h3>Spotify's "no active device" error (or hide Spotify until the App Remote work is done), an "update available" check, Google Drive backup, and a short tour that shows Highlight → Note → Review on the first day.</div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">07 / 13</span></div>
+</section>
+
+<!-- 08 · push it -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">05 · Getting users</span></div>
+  <h1 class="display">PUSH IT</h1>
+  <p class="intro">Students in India live on <b>Telegram, YouTube, Instagram and Reddit</b>, and they share what their friends use. Go there with one message: <span class="serif" style="font-size:11pt">"Stack makes you remember what you read."</span></p>
+
+  <div class="step"><div class="num">1</div><div><span class="tag label t-ink who">Free · now</span><b class="t">Play Store listing that wins searches</b>Title: <b>Stack: Study Notes &amp; PDF Highlighter</b>. The first screenshot shows a highlighted line becoming a note, with the tagline in big text. Use the words students type: "PDF highlighter", "study notes", "read later", "GATE notes", "Pocket alternative". Six screenshots, each with one benefit in big text. A 20-second video: highlight → note → review.</div></div>
+  <div class="step"><div class="num">2</div><div><span class="tag label t-ink who">Free · weekly</span><b class="t">Telegram study groups</b>Find 20 groups for JEE, NEET, GATE and UPSC. Don't spam them: post one useful thing, such as "How I revise PYQs on my phone", showing Stack's Telegram import. Ask each group's admin first.</div></div>
+  <div class="step"><div class="num">3</div><div><span class="tag label t-ink who">Free · 3 a week</span><b class="t">Short videos (Reels, YouTube Shorts)</b>15 to 30 seconds each: "Turn any PDF into a daily quiz", "The study app with a timer, music and your notes", "Inshorts, but you remember it". Film the phone screen; keep the face optional.</div></div>
+  <div class="step"><div class="num">4</div><div><span class="tag label t-ink who">Free · launch week</span><b class="t">Reddit, Hacker News, Product Hunt</b>r/Indian_Academia, r/GATE, r/JEENEETards, r/Pocket and r/androidapps. A "Show HN: open-source study app" post (StackForge). Product Hunt on a Tuesday, with friends ready to give feedback.</div></div>
+  <div class="step"><div class="num">5</div><div><span class="tag label t-ink who">Cheap · Nov–Dec</span><b class="t">Campus ambassadors</b>5 to 10 students in different colleges. Each gets Stack Plus free and a referral link; the top three each month get a ₹1,000 gift card. Ask them to start at their own college's GATE or placement groups.</div></div>
+  <div class="step"><div class="num">6</div><div><span class="tag label t-ink who">Built in</span><b class="t">Growth inside the app</b>The weekly card (page 7), "Invite a friend, both get 1 month of Plus", and a small "Saved with Stack" line when a note is shared.</div></div>
+
+  <h2 class="display">PRICING AGAINST THEM</h2>
+  <div class="grid3">
+    <div class="stat"><div class="n g">Free</div><div class="d">Everything that works offline: news, PDFs, notes, review, focus, Listen mode</div><div class="s">Free forever, so it beats Readwise on cost</div></div>
+    <div class="stat"><div class="n o">₹99/mo</div><div class="d"><b>Stack Plus</b>: AI summaries, Explain, quizzes, sync of big PDFs. ₹699 a year</div><div class="s">Readwise ≈ ₹10,000/yr · Matter ≈ ₹5,000/yr</div></div>
+    <div class="stat"><div class="n bl">₹49/mo</div><div class="d">Student price with a college email, or free for ambassadors</div><div class="s">Instapaper has a student plan too</div></div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">08 / 13</span></div>
+</section>
+
+<!-- 09 · the message -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">06 · The message</span></div>
+  <h1 class="display">STACK IN 10 SECONDS</h1>
+  <p class="intro">New users saw news, music, PDFs and notes and thought Stack was <b>a news-and-music app</b>; <b>highlight → note → review</b> wasn't on the first screen. Now, in 10 seconds, they should see that Stack is for <b>remembering what you read</b>.</p>
+
+  <div class="inked" style="margin-bottom:3mm">
+    <span class="label">The one message · used everywhere</span>
+    <p class="serif" style="font-size:20pt; line-height:1.15; margin:1.6mm 0 2mm">Stack makes you remember what you read.</p>
+    <div class="kv" style="grid-template-columns:24mm 1fr; color:#fff">
+      <span class="label" style="font-size:7pt; color:#BDBAB2">Loop</span><b>Save → Highlight → Remember</b>
+      <span class="label" style="font-size:7pt; color:#BDBAB2">Promise</span><b>Highlight anything. Stack brings it back.</b>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:1mm">
+    <div class="card" style="font-size:7.9pt"><span class="tag label t-red">Before · four different lines</span>
+      <ul>
+        <li>"Scroll less. Stack more." · welcome and Today headline</li>
+        <li>"News, books, music and notes. One app, zero tabs." · welcome</li>
+        <li>"News, your music, PDFs and notes in one place." · app description</li>
+        <li>"Read it. Keep it. Build on it." · README, website, this report</li>
+      </ul>
+    </div>
+    <div class="card" style="font-size:7.9pt"><span class="tag label">Now · one line</span>
+      <ul>
+        <li>Welcome screen, Today, app description, README, website, share card</li>
+        <li>Play listing: <b>Stack: Study Notes &amp; PDF Highlighter</b></li>
+        <li>Short description: "Stack makes you remember what you read. Highlight anything. It comes back."</li>
+        <li>"Scroll less. Stack more." stays only as a small closing line</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="display">WHAT CHANGED IN THE APP</h2>
+  <table class="ten">
+    <tr><th style="width:24mm">Where</th><th style="width:44mm">Before</th><th>Now</th></tr>
+    <tr><td>First screen</td><td>Sign in first, then name and photo</td><td>Three intro cards with a small animation each, and Skip: <b>Save from any app</b> · <b>Select a line, and it becomes a note</b> · <b>Every morning, three come back</b></td></tr>
+    <tr><td>Reading goal</td><td>Not asked</td><td>"What are you reading for?" Exams (GATE, JEE, NEET, UPSC), Work &amp; skills, Staying informed, Just for me. Picks the first news topics and the order of Today</td></tr>
+    <tr><td>First action</td><td>An empty app</td><td><b>Try it</b>: a two-minute sample article that ships with the app (works offline) with one line already highlighted. You highlight one more; both come back in the next morning's review</td></tr>
+    <tr><td>Sign-in</td><td>The first thing asked</td><td>Last: "Keep your notes safe on every device?" after the first note. "Continue without an account" stays</td></tr>
+    <tr><td>Tabs</td><td>News · Music · Today · Library · Notes</td><td><b>Today · Library · Review · Notes · News</b>. Music moved to Focus, the mini player and Settings</td></tr>
+    <tr><td>Today</td><td>Focus timer and headlines first</td><td>The daily review card first ("3 things you highlighted"), then your reading, then news (news first for "Staying informed")</td></tr>
+    <tr><td>Empty screens</td><td>"Blank page. Big ideas pending."</td><td>"Select any line in an article or PDF to make your first note", with a <b>Try it</b> button (Notes, Library, Review)</td></tr>
+    <tr><td>Review timing</td><td>A highlight came back 24 hours after it was made</td><td>Every highlight is in the <b>next morning's</b> review, whatever time it was made</td></tr>
+  </table>
+
+  <div class="band b5" style="margin-top:2mm">
+    <div class="row"><h3>How we'll know it worked</h3><span class="label" style="font-size:6.5pt">Before the public launch</span></div>
+    <ul>
+      <li><span><b>5-second test:</b> show the welcome screen or the listing to five people who've never seen Stack for five seconds, then ask "What does this app do?" If fewer than four say something like "helps me remember what I read", change it and test again.</span></li>
+      <li><span><b>Soft-launch question:</b> "In one sentence, what is Stack for?" If the answers vary a lot, the message still isn't clear.</span></li>
+    </ul>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">09 / 13</span></div>
+</section>
+
+<!-- 10 · 90 days -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">07 · Oct 2026 – Jan 2027</span></div>
+  <h1 class="display">THE NEXT 90 DAYS</h1>
+  <p class="intro">This follows the soft launch plan: the closed test runs until about 24 October and the public launch is in November.</p>
+
+  <div class="band b1"><div class="row"><h3>Days 1–30 · October · during the soft launch</h3><span class="label" style="font-size:6.5pt">Fix the first 10 seconds</span></div>
+    <ul>
+      <li><span>Explain this, Hindi, the widget, EPUB and the new first screen are built (page 11). Ship them to testers, then add #5 <b>Pocket and Omnivore import</b></span></li>
+      <li><span>Hide Spotify, or fix "no active device", before the public listing</span></li>
+      <li><span>Ask every tester the day-14 question: "How would you feel if you could no longer use Stack?"</span></li>
+    </ul></div>
+  <div class="band b2"><div class="row"><h3>Days 31–60 · November · public launch</h3><span class="label" style="font-size:6.5pt">Get noticed</span></div>
+    <ul>
+      <li><span>Ship #1 <b>Quiz from your highlights</b> and #7 <b>the weekly card</b>, the two features people will share</span></li>
+      <li><span>Product Hunt, Show HN and Reddit in the same week; three short videos a week</span></li>
+      <li><span>Recruit 5 to 10 campus ambassadors; launch Stack Plus at ₹99</span></li>
+    </ul></div>
+  <div class="band b3"><div class="row"><h3>Days 61–90 · December · exam season</h3><span class="label" style="font-size:6.5pt">Own a niche</span></div>
+    <ul>
+      <li><span>Ship #2 <b>Exam shelves</b>, starting with GATE (you know it best), then JEE and NEET</span></li>
+      <li><span>Promote <b>Stack in Hindi</b> (already built) in Telegram groups for Hindi-medium students</span></li>
+      <li><span>Look at the numbers below; decide between the Chrome extension and #10 (study rooms) for January</span></li>
+    </ul></div>
+
+  <h2 class="display">NUMBERS THAT SAY IT'S WORKING</h2>
+  <div class="grid4">
+    <div class="stat"><div class="n g">1,000</div><div class="d">installs by the end of December</div><div class="s">Goal from the soft launch plan</div></div>
+    <div class="stat"><div class="n o">25%</div><div class="d">of new users still open Stack on day 7</div><div class="s">Strong for a reading app</div></div>
+    <div class="stat"><div class="n bl">40%</div><div class="d">of weekly users do the daily review at least once</div><div class="s">Shows the "remember" loop works</div></div>
+    <div class="stat"><div class="n r">2%</div><div class="d">of active users pay for Plus</div><div class="s">A normal rate for a free-plus-paid app</div></div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">10 / 13</span></div>
+</section>
+
+<!-- 11 · status today -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">08 · Status on 04.10.2026, 23:30</span></div>
+  <h1 class="display">STACK TODAY</h1>
+  <p class="intro">Checked against the repo tonight: the web build passes, TypeScript and ESLint on <code>src/</code> are clean, and a debug APK was built at 23:17. <b>The app is nearly finished. Committing, building for Play and uploading are what's left.</b></p>
+
+  <div class="grid4">
+    <div class="stat"><div class="n r">≈ 57%</div><div class="d">of the way to public launch</div><div class="s">Up to ~70% if your own checks (next page) are done</div></div>
+    <div class="stat"><div class="n g">95%</div><div class="d">of the app's features are built</div><div class="s"><code>next build</code> passes, 22 routes</div></div>
+    <div class="stat"><div class="n o">5½ / 10</div><div class="d">"Make it better" items done</div><div class="s">Page 7</div></div>
+    <div class="stat"><div class="n bl">3 / 12</div><div class="d">soft-launch gates confirmed</div><div class="s">5 more only you can check</div></div>
+  </div>
+
+  <h2 class="display">HOW THE NUMBER IS MADE</h2>
+  <table>
+    <tr><th style="width:52mm">Area</th><th style="width:16mm">Weight</th><th>What counts</th><th style="width:16mm">Done</th><th style="width:14mm">Score</th></tr>
+    <tr><td>App features</td><td>40%</td><td>Everything in the README: news, PDF reader, notes, review, focus, music, AI, sync, backup</td><td>~95%</td><td>38</td></tr>
+    <tr><td>Improvements</td><td>20%</td><td>The ten changes on page 7</td><td>55%</td><td>11</td></tr>
+    <tr><td>Soft-launch gates</td><td>30%</td><td>The twelve gates in the soft launch plan</td><td>25%</td><td>7.5</td></tr>
+    <tr><td>Saved and shipped</td><td>10%</td><td>Work committed and pushed, build on Play</td><td>0%</td><td>0</td></tr>
+    <tr><td><b>Total</b></td><td></td><td></td><td></td><td><b>≈ 57</b></td></tr>
+  </table>
+
+  <h2 class="display">THE TEN IMPROVEMENTS</h2>
+  <table class="ten">
+    <tr><th style="width:7mm">#</th><th style="width:52mm">Change</th><th style="width:18mm">Status</th><th>In the code</th></tr>
+    <tr><td>3</td><td>"Explain this" on selected text</td><td><span class="tag label">Done</span></td><td><code>ai-explain.tsx</code>, plus a dictionary and translate</td></tr>
+    <tr><td>4</td><td>Stack in Hindi</td><td><span class="tag label">Done</span></td><td><code>i18n.ts</code>, <code>i18n-hi.ts</code>; Sarvam for Hindi summaries</td></tr>
+    <tr><td>6</td><td>A clear first 10 seconds</td><td><span class="tag label">Done</span></td><td>Intro → goal → Try it → profile → account; new tabs (page 9)</td></tr>
+    <tr><td>8</td><td>Home-screen widget</td><td><span class="tag label">Done</span></td><td><code>StackWidget.java</code>, <code>WidgetPlugin.java</code>, <code>widget.ts</code></td></tr>
+    <tr><td>9</td><td>EPUB and a Chrome extension</td><td><span class="tag label t-org">Half</span></td><td>EPUB reader with "Go to" search is done; no extension yet</td></tr>
+    <tr><td>2</td><td>Exam shelves</td><td><span class="tag label t-org">Half</span></td><td>Exam goal and a papers sheet; no syllabus checklist yet</td></tr>
+    <tr><td>7</td><td>Shareable weekly card</td><td><span class="tag label t-org">Half</span></td><td>"This week" card and quote cards exist; sharing the week as an image is unconfirmed</td></tr>
+    <tr><td>1</td><td>Quiz from your highlights</td><td><span class="tag label t-red">Not started</span></td><td>The biggest gap against NotebookLM and PW</td></tr>
+    <tr><td>5</td><td>Pocket and Omnivore import</td><td><span class="tag label t-red">Not started</span></td><td>Small: a few days</td></tr>
+    <tr><td>10</td><td>Study rooms</td><td><span class="tag label t-red">Not started</span></td><td>Large; leave for after launch</td></tr>
+  </table>
+
+  <p class="note" style="margin-top:2mm">Also new since the last commit: free online music from Audius, news preferences, quote cards, the <code>/delete-account</code> page, and new website screenshots in light and dark. In total: 115 changed files and 70 new ones (+4,063 / −1,704 lines).</p>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">11 / 13</span></div>
+</section>
+
+<!-- 12 · what's left -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">09 · From 57% to launch</span></div>
+  <h1 class="display">WHAT'S LEFT</h1>
+  <p class="intro">The twelve soft-launch gates, as far as the repo can show them. <b>You</b> = a dashboard, key or phone only you can reach.</p>
+
+  <table class="ten">
+    <tr><th style="width:7mm">#</th><th style="width:50mm">Gate</th><th style="width:22mm">Status</th><th>What the repo shows</th></tr>
+    <tr><td>3</td><td>Privacy and delete-account pages</td><td><span class="tag label">Done</span></td><td><code>/privacy</code> and <code>/delete-account</code> both build. They must also be live on the website</td></tr>
+    <tr><td>8</td><td>Stack AI is live</td><td><span class="tag label">Done</span></td><td><code>NEXT_PUBLIC_AI_URL</code> is set in <code>.env.local</code></td></tr>
+    <tr><td>9</td><td>Sarvam engine</td><td><span class="tag label">Done</span></td><td>In <code>src/lib/ai.ts</code> and the <code>ai</code> Supabase function</td></tr>
+    <tr><td>1</td><td>Google sign-in on a real phone</td><td><span class="tag label t-blue">You check</span></td><td>Can't be seen from the code</td></tr>
+    <tr><td>2</td><td>Sync between two phones</td><td><span class="tag label t-blue">You check</span></td><td>Can't be seen from the code</td></tr>
+    <tr><td>5</td><td>Play forms and listing</td><td><span class="tag label t-blue">You check</span></td><td>Use the new title: <b>Stack: Study Notes &amp; PDF Highlighter</b></td></tr>
+    <tr><td>10</td><td>Cheap models, daily limit, spending caps</td><td><span class="tag label t-blue">You check</span></td><td>Supabase secrets and the AI dashboards</td></tr>
+    <tr><td>12</td><td>Password-reset emails</td><td><span class="tag label t-blue">You check</span></td><td>Your own SMTP sender in Supabase</td></tr>
+    <tr><td>4</td><td>Signed release build</td><td><span class="tag label t-red">Blocked</span></td><td><code>android/keystore.properties</code> is missing, so <code>build-aab.sh</code> stops. The only <code>.aab</code> is from 29 Sep</td></tr>
+    <tr><td>6</td><td>First build uploaded</td><td><span class="tag label t-red">Late</span></td><td>Was due today, 4 Oct. Every later date moves with it</td></tr>
+    <tr><td>7</td><td>Google sign-in for Play installs</td><td><span class="tag label t-red">Waiting</span></td><td>Needs Play's app-signing SHA-1, which appears after the first upload</td></tr>
+    <tr><td>11</td><td>"Report this answer" on AI replies</td><td><span class="tag label t-red">Not done</span></td><td>Not found in <code>src/</code>. Google Play asks for it in apps that generate AI content</td></tr>
+  </table>
+
+  <div class="band b6" style="margin-top:2.4mm"><div class="row"><h3>Risks right now</h3><span class="label" style="font-size:6.5pt">Fix first</span></div>
+    <ul>
+      <li><span><b>Nothing is saved in git.</b> All the work on page 11 exists only on this laptop</span></li>
+      <li><span><b>8 personal files sit in the repo folder</b> (3 MP3s, a video, a PDF book, 3 JPEGs) and aren't ignored, so a <code>git add .</code> would commit them</span></li>
+      <li><span><b>Version is still 1.0.0 (code 10000).</b> Play rejects a second upload with the same code</span></li>
+    </ul></div>
+
+  <h2 class="display">THE ORDER TO DO IT</h2>
+  <div class="grid2" style="gap:0 2.4mm">
+  <div class="step"><div class="num">1</div><div><span class="tag label t-ink who">Code · tonight · +5%</span><b class="t">Tidy and commit</b>Move the media files out, commit in 2 or 3 logical commits, push <code>website-update-oct</code>.</div></div>
+  <div class="step"><div class="num">2</div><div><span class="tag label t-ink who">You · 5 Oct · +10%</span><b class="t">Keystore, build, upload</b>Restore <code>android/keystore.properties</code>, bump the version, run <code>./build-aab.sh</code>, upload to the internal track, then add Play's SHA-1 in Google Cloud.</div></div>
+  <div class="step"><div class="num">3</div><div><span class="tag label t-ink who">Code · 5–6 Oct · +2.5%</span><b class="t">"Report this answer"</b>Add it to every AI reply, and ship it in the second build.</div></div>
+  <div class="step"><div class="num">4</div><div><span class="tag label t-ink who">You · this week · up to +12%</span><b class="t">Tick the five "You check" gates</b>Then move the soft-launch dates forward by the days lost: testers open about 10–12 Oct.</div></div>
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">12 / 13</span></div>
+</section>
+
+<!-- 13 · sources -->
+<section class="page">
+  <div class="top"><svg width="30" height="30" fill="#111"><use href="#logo"/></svg><span class="label">10 · Where the facts come from</span></div>
+  <h1 class="display">SOURCES</h1>
+  <p class="intro">Checked on 4 October 2026. Prices change, so check each app's page before quoting a number in public.</p>
+  <div class="src">
+    <p><b>Read-later apps after Pocket</b><br><a href="https://www.readless.app/blog/best-read-later-apps-comparison">readless.app/blog/best-read-later-apps-comparison</a></p>
+    <p><b>Readwise Reader pricing 2026</b><br><a href="https://www.readless.app/blog/readwise-reader-pricing-2026">readless.app/blog/readwise-reader-pricing-2026</a></p>
+    <p><b>Readwise Reader review</b><br><a href="https://www.asianefficiency.com/productivity/readwise-reader-review/">asianefficiency.com/productivity/readwise-reader-review</a></p>
+    <p><b>Pocket alternatives (Pocket closed July 2025)</b><br><a href="https://mailist.app/blog/best-pocket-alternatives">mailist.app/blog/best-pocket-alternatives</a></p>
+    <p><b>Read-later apps compared</b><br><a href="https://mailist.app/blog/read-later-apps-comparison">mailist.app/blog/read-later-apps-comparison</a></p>
+    <p><b>Read-it-later comparison (Fabric)</b><br><a href="https://fabric.so/comparison/best-read-it-later-app">fabric.so/comparison/best-read-it-later-app</a></p>
+    <p><b>Feedly vs Inoreader vs NewsBlur 2026</b><br><a href="https://www.readless.app/blog/feedly-vs-inoreader-vs-newsblur-2026">readless.app/blog/feedly-vs-inoreader-vs-newsblur-2026</a></p>
+    <p><b>Inoreader pricing 2026</b><br><a href="https://www.readless.app/blog/inoreader-pricing-2026">readless.app/blog/inoreader-pricing-2026</a></p>
+    <p><b>Dailyhunt reach</b><br><a href="https://techcrunch.com/2021/08/11/india-verse-raises-over-450-million-to-expand-dailyhunt-and-josh-apps-globally">techcrunch.com · VerSe raises $450M (Dailyhunt)</a></p>
+    <p><b>Inshorts</b><br><a href="https://smartads.in/blogs/inshorts-advertising-reaching-mobile-audiences-with-60word-news">smartads.in · Inshorts 60-word news</a> · <a href="https://play.google.com/store/apps/details?id=com.nis.app">Play Store</a></p>
+    <p><b>NotebookLM app</b><br><a href="https://blog.google/technology/ai/notebooklm-app/">blog.google/technology/ai/notebooklm-app</a></p>
+    <p><b>NotebookLM report formats</b><br><a href="https://www.androidauthority.com/notebooklm-new-report-formats-3673677/">androidauthority.com · NotebookLM new report formats</a></p>
+    <p><b>PW Books app launch (July 2026)</b><br><a href="https://www.pw.live/news/pw-books-app-launch-digital-study-books-ai-doubt-solving">pw.live/news/pw-books-app-launch</a></p>
+    <p><b>PW digital preparation kit</b><br><a href="https://www.pw.live/news/pw-vishwas-diwas-digital-preparation-kit-jee-neet-2026">pw.live/news/pw-vishwas-diwas-digital-preparation-kit</a></p>
+    <p><b>Forest pricing</b><br><a href="https://toolradar.com/tools/forest/pricing">toolradar.com/tools/forest/pricing</a></p>
+    <p><b>ElevenReader vs Speechify</b><br><a href="https://www.audeus.com/product-reviews/elevenreader-vs-speechify">audeus.com · ElevenReader review</a></p>
+    <p><b>Earlier Stack research</b><br>docs/ROADMAP.md, docs/stackforge-plan.html (five ways Stack can go), docs/stack-soft-launch.html</p>
+  </div>
+
+  <div class="inked" style="position:absolute; left:13mm; right:13mm; bottom:20mm">
+    <div class="label" style="font-size:7pt; color:#BDBAB2; margin-bottom:1.6mm">How to update this document</div>
+    The source is <code>docs/stack-competition.html</code> in the repo. Ask Claude to "update the competition PDF" and it will edit that file and print it again to <code>~/Desktop/Stack_Competition.pdf</code>, raising the version number on the cover.
+  </div>
+
+  <div class="foot"><span class="label">Stack · the competition · StackForge Labs</span><span class="label">13 / 13</span></div>
+</section>
+</body>
+</html>

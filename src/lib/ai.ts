@@ -5,15 +5,50 @@
 // the answer as it streams. NEXT_PUBLIC_AI_URL is that function's address,
 // https://<project>.supabase.co/functions/v1/ai; without it AI is hidden.
 import { accessToken, cloudConfigured, cloudKey } from "./cloud";
+import { tr, uiLang } from "./i18n";
 
 export type Cite = { page?: number; source?: string; title?: string; cited: string };
 export type AnswerBlock = { text: string; cites: Cite[] };
-export type Answer = { blocks: AnswerBlock[]; cut?: boolean };
-export type AiTask =
+export type Answer = { blocks: AnswerBlock[]; cut?: boolean; engine?: string };
+export type AiTask = (
   | { task: "summary"; title: string; text: string }
   | { task: "tidy"; text: string }
   | { task: "ask"; question: string; sources: { id: string; title: string; text: string }[] }
-  | { task: "pdf"; title: string; pdf: string; question: string; history: { q: string; a: string }[] };
+  | { task: "pdf"; title: string; pdf: string; question: string; history: { q: string; a: string }[] }
+  | { task: "explain"; text: string; context?: string; title?: string }
+) & { lang?: AiLang };
+
+// The language AI answers in (Settings → AI language). Tidy keeps a note's own language.
+export const AI_LANGS = {
+  en: "English",
+  hi: "हिंदी · Hindi",
+  bn: "বাংলা · Bengali",
+  gu: "ગુજરાતી · Gujarati",
+  kn: "ಕನ್ನಡ · Kannada",
+  ml: "മലയാളം · Malayalam",
+  mr: "मराठी · Marathi",
+  od: "ଓଡ଼ିଆ · Odia",
+  pa: "ਪੰਜਾਬੀ · Punjabi",
+  ta: "தமிழ் · Tamil",
+  te: "తెలుగు · Telugu",
+} as const;
+export type AiLang = keyof typeof AI_LANGS;
+const LANG_KEY = "stack.ai.lang";
+export function aiLang(): AiLang {
+  try {
+    const l = localStorage.getItem(LANG_KEY);
+    // Not chosen yet: the app's language (Settings → Language).
+    return l && l in AI_LANGS ? (l as AiLang) : uiLang() === "hi" ? "hi" : "en";
+  } catch {
+    return "en";
+  }
+}
+export function setAiLang(l: AiLang) {
+  try {
+    if (l === "en") localStorage.removeItem(LANG_KEY);
+    else localStorage.setItem(LANG_KEY, l);
+  } catch {}
+}
 
 export class AiError extends Error {
   constructor(
@@ -48,20 +83,31 @@ export function setAiTurnedOn(on: boolean) {
 
 export const aiAvailable = () => aiSetUp() && aiTurnedOn();
 
+// The publishable key goes only to Stack's own Supabase project: when the AI
+// function is hosted in another project, that project's gateway rejects it
+// (the function then has Stack's key as its STACK_SUPABASE_KEY secret).
+function sameProject() {
+  try {
+    return new URL(ENDPOINT).host === new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").host;
+  } catch {
+    return true;
+  }
+}
+
 export async function runAi(body: AiTask, onText?: (textSoFar: string) => void, signal?: AbortSignal): Promise<Answer> {
   const token = await accessToken();
-  if (!token) throw new AiError("signin", "Sign in to use Stack AI.");
+  if (!token) throw new AiError("signin", tr("Sign in to use Stack AI."));
   let res: Response;
   try {
     res = await fetch(ENDPOINT, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}`, apikey: cloudKey() },
-      body: JSON.stringify(body),
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}`, ...(sameProject() ? { apikey: cloudKey() } : {}) },
+      body: JSON.stringify({ lang: aiLang(), ...body }),
       signal,
     });
   } catch {
-    if (signal?.aborted) throw new AiError("bad", "Stopped.");
-    throw new AiError("offline", "Couldn’t reach Stack AI. Check your connection.");
+    if (signal?.aborted) throw new AiError("bad", tr("Stopped."));
+    throw new AiError("offline", tr("Couldn’t reach Stack AI. Check your connection."));
   }
 
   let text = "";
@@ -69,7 +115,7 @@ export async function runAi(body: AiTask, onText?: (textSoFar: string) => void, 
   let error: AiError | null = null;
   const onLine = (line: string) => {
     if (!line.trim()) return;
-    let m: { t: string; v?: string; code?: AiError["code"]; blocks?: AnswerBlock[]; cut?: boolean };
+    let m: { t: string; v?: string; code?: AiError["code"]; blocks?: AnswerBlock[]; cut?: boolean; engine?: string };
     try {
       m = JSON.parse(line);
     } catch {
@@ -77,7 +123,7 @@ export async function runAi(body: AiTask, onText?: (textSoFar: string) => void, 
     }
     if (m.t === "text") onText?.((text += m.v ?? ""));
     else if (m.t === "reset") onText?.((text = ""));
-    else if (m.t === "done") answer = { blocks: m.blocks ?? [], cut: m.cut };
+    else if (m.t === "done") answer = { blocks: m.blocks ?? [], cut: m.cut, engine: m.engine };
     else if (m.t === "error") error = new AiError(m.code ?? "api", m.v ?? "Something went wrong.");
   };
 
@@ -100,17 +146,17 @@ export async function runAi(body: AiTask, onText?: (textSoFar: string) => void, 
     (await res.text()).split("\n").forEach(onLine);
   }
   if (error) throw error;
-  if (!answer) throw new AiError("api", res.ok ? "The answer was cut off. Try again." : `Stack AI error ${res.status}.`);
+  if (!answer) throw new AiError("api", res.ok ? tr("The answer was cut off. Try again.") : tr("Stack AI error {status}.", { status: res.status }));
   return answer;
 }
 
-// Who answers, for the "ask first" sheet (set with the server's AI_PROVIDER).
+// Who answers, for the "ask first" sheet (the engines set on the server, e.g. "Sarvam AI and Google Gemini").
 export const AI_ENGINE = process.env.NEXT_PUBLIC_AI_ENGINE || "an AI service";
 
 export const answerText = (a: Answer) => a.blocks.map((b) => b.text).join("").trim();
 
 // ---- Asking first ----
-// Each kind of AI feature asks once before sending anything to Claude.
+// Each kind of AI feature asks once before sending anything to the AI engine.
 const CONSENT = "stack.ai.ok";
 export function aiConsented(kind: string) {
   try {

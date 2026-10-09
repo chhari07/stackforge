@@ -5,6 +5,7 @@
 // backups), never sent anywhere.
 import { useEffect, useRef } from "react";
 import { emit } from "./db";
+import { dateLocale, tr } from "./i18n";
 
 const KEY = "stack.reading";
 const DAY = 86_400_000;
@@ -75,7 +76,7 @@ export async function getWeek(now = Date.now()): Promise<Week> {
     const t = monday + i * DAY;
     const d = log[dayKey(t)];
     return {
-      label: new Date(t).toLocaleDateString("en-GB", { weekday: "narrow" }),
+      label: new Date(t).toLocaleDateString(dateLocale(), { weekday: "narrow" }),
       minutes: Math.round((d?.ms ?? 0) / 60_000),
       today: t === today.getTime(),
       articles: d?.articles.length ?? 0,
@@ -94,6 +95,17 @@ export async function getWeek(now = Date.now()): Promise<Week> {
   };
 }
 
+/** Reading in one calendar year: minutes, articles read to the end, PDF pages, and days with any reading. */
+export function yearReading(year: number) {
+  const days = Object.entries(read()).filter(([k]) => k.startsWith(`${year}-`));
+  return {
+    minutes: Math.round(days.reduce((s, [, d]) => s + d.ms, 0) / 60_000),
+    articles: days.reduce((s, [, d]) => s + d.articles.length, 0),
+    pages: days.reduce((s, [, d]) => s + d.pages.length, 0),
+    days: days.filter(([, d]) => d.ms >= 60_000 || d.articles.length || d.pages.length).length,
+  };
+}
+
 /** Days with any reading, as timestamps (for streaks and the activity heatmap). */
 export function readingDays(): number[] {
   return Object.entries(read())
@@ -101,7 +113,8 @@ export function readingDays(): number[] {
     .map(([k]) => new Date(`${k}T12:00:00`).getTime());
 }
 
-export const minutesText = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`);
+export const minutesText = (m: number) =>
+  m >= 60 ? tr("{h}h {m}m", { h: Math.floor(m / 60), m: m % 60 }) : tr("{n}m", { n: m });
 
 /**
  * Counts reading time while the page is on screen and in use. After two

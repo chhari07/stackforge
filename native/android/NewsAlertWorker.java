@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -176,6 +177,7 @@ public class NewsAlertWorker extends Worker {
         PendingIntent pi = PendingIntent.getActivity(ctx, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_stack)
+            .setLargeIcon(BitmapFactory.decodeResource(ctx.getResources(), R.drawable.stack_logo))
             .setColor(Color.parseColor("#0A8A3A"))
             .setContentTitle(s.title)
             .setContentText((test ? "Test alert · " : "") + s.source + " · tap to read")

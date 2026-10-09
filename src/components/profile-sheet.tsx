@@ -21,6 +21,7 @@ import { CheckIcon } from "./icons";
 import { NamedIcon } from "./profile-icons";
 import { TopicIcon } from "./topic-icon";
 import { Sheet } from "./sheet";
+import { useT } from "@/lib/i18n";
 
 // Edit profile: photo, name, bio, mood, colour, interests and daily goal.
 // Changes are kept in a draft and saved together with "Save".
@@ -34,6 +35,7 @@ export function ProfileSheet({ open, onClose, profile }: { open: boolean; onClos
 }
 
 function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
+  const tt = useT();
   const [avatar, setAvatar] = useState(profile.avatar);
   const [name, setName] = useState(profile.name ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
@@ -70,7 +72,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
             const picked = await pickImage(384);
             if (picked) setAvatar(picked);
           }}
-          aria-label="Change profile photo"
+          aria-label={tt("Change profile photo")}
           className="relative shrink-0"
         >
           {avatar ? (
@@ -84,7 +86,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
             </span>
           )}
           <span className="label absolute -right-1 -bottom-1 rounded-full bg-music px-2 py-1 text-[9px] text-white">
-            {avatar ? "Edit" : "Add"}
+            {avatar ? tt("Edit") : tt("Add")}
           </span>
         </button>
         <div className="flex min-w-0 grow flex-col gap-1.5">
@@ -93,14 +95,14 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
             id="edit-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="What should Stack call you?"
+            placeholder={tt("What should Stack call you?")}
             autoComplete="name"
             maxLength={40}
             className="h-12 w-full rounded-xl border border-ink/15 bg-card px-4 text-[17px] font-semibold outline-none focus:border-ink"
           />
           {avatar && (
             <button onClick={() => setAvatar(undefined)} className="label self-start text-[9px] text-muted underline">
-              Remove photo
+              {tt("Remove photo")}
             </button>
           )}
         </div>
@@ -117,7 +119,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
           id="edit-bio"
           value={bio}
           onChange={(e) => setBio(e.target.value.replace(/\n/g, " ").slice(0, BIO_MAX))}
-          placeholder="Frontend dev. Reading about AI and old maps."
+          placeholder={tt("Frontend dev. Reading about AI and old maps.")}
           rows={2}
           className="w-full resize-none rounded-xl border border-ink/15 bg-card px-4 py-3 text-[15px] leading-snug outline-none focus:border-ink"
         />
@@ -138,13 +140,13 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
                 }`}
               >
                 <NamedIcon name={m.icon} size={17} />
-                {m.text}
+                {tt(m.text)}
               </button>
             );
           })}
         </div>
-        <p className="label mt-1 text-[9px] text-muted">Or pick an icon and write your own</p>
-        <div role="radiogroup" aria-label="Status icon" className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5">
+        <p className="label mt-1 text-[9px] text-muted">{tt("Or pick an icon and write your own")}</p>
+        <div role="radiogroup" aria-label={tt("Status icon")} className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5">
           {MOOD_ICONS.map((icon) => {
             const on = !!mood && moodIcon(mood) === icon;
             return (
@@ -152,7 +154,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
                 key={icon}
                 role="radio"
                 aria-checked={on}
-                aria-label={icon.replace(/-/g, " ")}
+                aria-label={tt(icon.replace(/-/g, " "))}
                 onClick={() => setMood({ icon, text: mood?.text ?? "" })}
                 className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
                   on ? "bg-ink text-on-ink" : "border border-ink/15"
@@ -164,23 +166,23 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
           })}
         </div>
         <input
-          aria-label="Status"
+          aria-label={tt("Status")}
           value={mood?.text ?? ""}
           onChange={(e) => setMood({ icon: mood ? moodIcon(mood) : "chat", text: e.target.value.slice(0, 32) })}
-          placeholder="Write your own status"
+          placeholder={tt("Write your own status")}
           className="h-11 w-full rounded-xl border border-ink/15 bg-card px-4 text-[15px] outline-none focus:border-ink"
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label>Profile colour</Label>
-        <div role="radiogroup" aria-label="Profile colour" className="flex gap-3">
+        <div role="radiogroup" aria-label={tt("Profile colour")} className="flex gap-3">
           {ACCENTS.map((a) => (
             <button
               key={a.value}
               role="radio"
               aria-checked={accent === a.value}
-              aria-label={a.label}
+              aria-label={tt(a.label)}
               onClick={() => setAccent(a.value)}
               className={`flex size-10 items-center justify-center rounded-full ${a.bg} ${a.text} ${
                 accent === a.value ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""
@@ -194,7 +196,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
 
       <div className="flex flex-col gap-2">
         <Label>Interests</Label>
-        <p className="-mt-1 text-[13px] text-muted">News shows these topics first.</p>
+        <p className="-mt-1 text-[13px] text-muted">{tt("News shows these topics first.")}</p>
         <div className="flex flex-wrap gap-2">
           {TOPICS.filter((t) => t.value !== "top" && t.value !== "mine").map((t) => {
             const on = interests.includes(t.value);
@@ -208,7 +210,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
                 }`}
               >
                 {on ? <CheckIcon size={13} /> : <TopicIcon topic={t.value} size={13} />}
-                {t.label}
+                {tt(t.label)}
               </button>
             );
           })}
@@ -217,7 +219,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
 
       <div className="flex flex-col gap-2">
         <Label>Daily focus goal</Label>
-        <div role="radiogroup" aria-label="Daily focus goal" className="flex flex-wrap gap-2">
+        <div role="radiogroup" aria-label={tt("Daily focus goal")} className="flex flex-wrap gap-2">
           {GOALS.map((g) => (
             <button
               key={g}
@@ -226,7 +228,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
               onClick={() => setGoal(g)}
               className={`label h-8 rounded-full px-3 text-[10px] ${goal === g ? "bg-ink text-on-ink" : "border border-ink/20"}`}
             >
-              {g < 60 ? `${g} min` : `${g / 60} h`}
+              {g < 60 ? tt("{n} min", { n: g }) : tt("{n} h", { n: g / 60 })}
             </button>
           ))}
         </div>
@@ -237,16 +239,17 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
         disabled={saving}
         className="mt-1 h-12 rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save"}
+        {saving ? tt("Saving…") : tt("Save")}
       </button>
     </>
   );
 }
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  const t = useT();
   return (
     <label htmlFor={htmlFor} className="label text-[10px] text-muted">
-      {children}
+      {typeof children === "string" ? t(children) : children}
     </label>
   );
 }

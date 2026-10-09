@@ -11,6 +11,7 @@ import { aiAvailable } from "@/lib/ai";
 import { subscribe } from "@/lib/db";
 import { canGoBack } from "@/lib/nav";
 import { clearSearches, recentSearches, rememberSearch, searchAll, terms, type Hit, type Kind } from "@/lib/search";
+import { useT } from "@/lib/i18n";
 
 type Filter = "all" | Kind;
 
@@ -24,6 +25,7 @@ const KINDS: { value: Kind; label: string; icon: (size: number) => ReactNode; ti
 const kindOf = (k: Kind) => KINDS.find((x) => x.value === k)!;
 
 export default function Search() {
+  const tt = useT();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
@@ -59,10 +61,10 @@ export default function Search() {
   const words = terms(q);
 
   const filters = [
-    { value: "all" as Filter, label: `All ${hits?.length ?? 0}` },
+    { value: "all" as Filter, label: `${tt("All")} ${hits?.length ?? 0}` },
     ...KINDS.filter((k) => counts.get(k.value)).map((k) => ({
       value: k.value as Filter,
-      label: `${k.label} ${counts.get(k.value)}`,
+      label: `${tt(k.label)} ${counts.get(k.value)}`,
       icon: k.icon(14),
     })),
   ];
@@ -74,10 +76,10 @@ export default function Search() {
   };
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16 md:px-10 md:pt-8">
+    <main className="min-h-dvh px-5 pt-5 pb-16">
       <div className="mx-auto max-w-[680px]">
         <div className="flex items-center gap-2">
-          <button aria-label="Back" onClick={back} className="-ml-2.5 flex size-11 shrink-0 items-center justify-center">
+          <button aria-label={tt("Back")} onClick={back} className="-ml-2.5 flex size-11 shrink-0 items-center justify-center">
             <BackIcon size={22} />
           </button>
           <label className="flex h-12 min-w-0 grow items-center gap-2.5 rounded-full border border-ink/15 bg-card px-4 focus-within:border-ink">
@@ -92,12 +94,12 @@ export default function Search() {
               onKeyDown={(e) => e.key === "Enter" && (open(), (e.target as HTMLInputElement).blur())}
               type="search"
               enterKeyHint="search"
-              placeholder="Notes, highlights, articles, PDFs…"
-              aria-label="Search everything"
+              placeholder={tt("Notes, highlights, articles, PDFs…")}
+              aria-label={tt("Search everything")}
               className="h-full min-w-0 grow bg-transparent text-[16px] outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             {q && (
-              <button aria-label="Clear" onClick={() => setQ("")} className="-mr-1.5 flex size-8 items-center justify-center">
+              <button aria-label={tt("Clear")} onClick={() => setQ("")} className="-mr-1.5 flex size-8 items-center justify-center">
                 <CloseIcon size={16} />
               </button>
             )}
@@ -106,14 +108,14 @@ export default function Search() {
 
         {!q.trim() && (
           <>
-            <h1 className="display -ml-1.5 mt-8 text-[clamp(84px,28vw,150px)]">FIND</h1>
+            <h1 className="display -ml-1.5 mt-8 text-[clamp(84px,28vw,150px)]">{tt("FIND")}</h1>
             <p className="mt-3 text-[15px] leading-relaxed text-muted">
-              Everything you’ve kept in Stack, in one search: notes, highlights, saved articles, PDFs and playlists.
+              {tt("Lost a line? It’s in here somewhere.")}
             </p>
             {recent.length > 0 && (
               <>
                 <div className="mt-8 flex items-baseline justify-between">
-                  <h2 className="label text-[11px] font-medium">Recent searches</h2>
+                  <h2 className="label text-[11px] font-medium">{tt("Recent searches")}</h2>
                   <button
                     onClick={() => {
                       clearSearches();
@@ -121,7 +123,7 @@ export default function Search() {
                     }}
                     className="label text-[10px] text-muted underline"
                   >
-                    Clear
+                    {tt("Clear")}
                   </button>
                 </div>
                 <ul className="mt-2">
@@ -152,10 +154,10 @@ export default function Search() {
 
         {hits && hits.length === 0 && (
           <p className="mt-16 text-center text-[16px] text-muted">
-            Nothing matches “{q.trim()}”.
+            {tt("Nothing found for “{q}”.", { q: q.trim() })}
             <br />
             <span className="text-[14px]">
-              {aiAvailable() && q.trim().length >= 3 ? "Try “Ask your Stack” above, or fewer words." : "Try fewer or different words."}
+              {aiAvailable() && q.trim().length >= 3 ? tt("Try “Ask your Stack” above, or fewer words.") : tt("Try fewer words.")}
             </span>
           </p>
         )}
@@ -181,7 +183,7 @@ export default function Search() {
                       </span>
                     )}
                     <span className="label mt-0.5 text-[9px] text-muted">
-                      {k.label.replace(/s$/, "")}
+                      {tt(k.label.replace(/s$/, ""))}
                       {h.meta ? ` · ${h.meta}` : ""}
                     </span>
                   </span>

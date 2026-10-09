@@ -59,7 +59,8 @@ export async function searchAll(q: string): Promise<Hit[]> {
 
   for (const n of notes) {
     const list = (n.checklist ?? []).map((i) => i.text).join(" · ");
-    const body = [n.quote, n.body, list, n.sourceTitle].filter(Boolean).join(" \n");
+    const tags = (n.tags ?? []).map((t) => `#${t}`).join(" ");
+    const body = [n.quote, n.body, list, n.sourceTitle, tags].filter(Boolean).join(" \n");
     const title = n.title || (n.quote ? n.sourceTitle : undefined) || "";
     const s = score(title, body, words);
     if (!s) continue;

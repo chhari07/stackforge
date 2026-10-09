@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { BackIcon } from "@/components/icons";
+import { BackIcon, DiscIcon } from "@/components/icons";
 import { Avatar } from "@/components/avatar";
 import { useAccount } from "@/components/account-provider";
 import { getProfile } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
-import { useSpotify } from "@/components/spotify-provider";
-import { SpotifyLoginNote, SpotifySetup, SpotifyTroubleshooting } from "@/components/spotify-setup";
 import { useToast } from "@/components/toast";
 import { PLAY_BUILD, useIsNative } from "@/lib/platform";
 import { PhoneFiles, useAllFiles } from "@/lib/phone-files";
@@ -21,17 +19,23 @@ import {
   setReminder,
   type Reminder,
 } from "@/lib/reminders";
-import { login, setClientId } from "@/lib/spotify";
 import { getTheme, setTheme, type Theme } from "@/lib/theme";
 import { AppSettings } from "@/lib/app-settings";
 import { BackupSection } from "@/components/backup-section";
 import { NewsAlertsSection } from "@/components/news-alerts-section";
+import { addWidget } from "@/lib/widget";
 import { AiSection } from "@/components/ai-section";
+import { PrivacyRow } from "@/components/privacy-row";
+import { setUiLang, UI_LANGS, useT, useUiLang } from "@/lib/i18n";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const t = useT();
+  const [n, name] = title.split(" — ");
   return (
     <section className="mt-6">
-      <h2 className="label text-[11px] font-medium">{title}</h2>
+      <h2 className="label text-[11px] font-medium">
+        {n} — {t(name)}
+      </h2>
       <div className="mt-2.5 flex flex-col gap-3 rounded-2xl bg-card p-4">
         {children}
       </div>
@@ -72,14 +76,13 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export default function Settings() {
   const native = useIsNative();
-  const sp = useSpotify();
   const toast = useToast();
+  const t = useT();
   const [theme, setThemeState] = useState<Theme>("system");
   const [folder, setFolder] = useState<string | null>(null);
   const [notify, setNotify] = useState<boolean | null>(null);
   const [music, setMusic] = useState<string | null>(null);
   const [reminder, setReminderState] = useState<Reminder | null>(null);
-  const [showSpotifySetup, setShowSpotifySetup] = useState(false);
   const allFiles = useAllFiles();
 
   const refresh = useCallback(() => {
@@ -121,9 +124,9 @@ export default function Settings() {
       const f = await PhoneFiles.pickFolder();
       setFolder(f.name);
       toast({
-        text: `Stack can read PDFs in ${f.name}`,
+        text: t("Stack can read PDFs in {folder}", { folder: f.name }),
         href: "/library",
-        action: "Library",
+        action: t("Library"),
       });
     } catch {
       /* cancelled */
@@ -135,82 +138,94 @@ export default function Settings() {
     setReminderState(getReminder());
     setNotify(await notificationsAllowed());
     if (next.on && !ok)
-      toast({ text: "Notifications are blocked. Tap Allow under Access." });
+      toast({ text: t("Notifications are blocked. Tap Allow under Access.") });
     else if (next.on)
-      toast({ text: `Daily digest at ${pad(next.hour)}:${pad(next.minute)}` });
+      toast({ text: t("Daily digest at {time}", { time: `${pad(next.hour)}:${pad(next.minute)}` }) });
   };
 
   return (
-    <main className="px-5 pt-5 pb-16 md:px-10 md:pt-8">
+    <main className="px-5 pt-5 pb-16">
       <div className="flex h-11 items-center">
         <Link
           href="/"
-          aria-label="Back"
+          aria-label={t("Back")}
           className="-ml-2 flex size-11 items-center justify-center"
         >
           <BackIcon size={22} />
         </Link>
       </div>
-      <h1 className="display mt-2 text-[76px] md:text-[120px]">SETTINGS</h1>
+      <h1 className="display mt-2 text-[76px]">{t("SETTINGS")}</h1>
       <AccountRow />
-      <div className="md:grid md:grid-cols-2 md:items-start md:gap-x-8">
-        <Section title="01 — Appearance">
+      {/* Music left the tab bar: it's background audio for reading and focus. */}
+      <Link href="/music" className="mt-2.5 flex items-center gap-3.5 rounded-2xl bg-card p-4">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-music text-white">
+          <DiscIcon size={22} />
+        </span>
+        <span className="flex min-w-0 grow flex-col gap-0.5">
+          <span className="text-[16px] font-semibold">{t("Music")}</span>
+          <span className="label truncate text-[10px] text-muted">{t("Background audio while you read and focus")}</span>
+        </span>
+        <span className="label text-[10px] underline">{t("Open")}</span>
+      </Link>
+      <div className="">
+        <LanguageSection />
+
+        <Section title="02 — Appearance">
           <div
             role="radiogroup"
-            aria-label="Theme"
+            aria-label={t("Theme")}
             className="grid grid-cols-3 gap-2"
           >
-            {(["system", "light", "dark"] as Theme[]).map((t) => (
+            {(["system", "light", "dark"] as Theme[]).map((th) => (
               <button
-                key={t}
+                key={th}
                 role="radio"
-                aria-checked={theme === t}
+                aria-checked={theme === th}
                 onClick={() => {
-                  setTheme(t);
-                  setThemeState(t);
+                  setTheme(th);
+                  setThemeState(th);
                 }}
                 className={`flex h-20 flex-col items-center justify-center gap-2 rounded-xl border text-[13px] font-semibold ${
-                  theme === t ? "border-ink" : "border-ink/15"
+                  theme === th ? "border-ink" : "border-ink/15"
                 }`}
               >
                 <span
                   aria-hidden
                   className={`flex size-7 overflow-hidden rounded-full border border-ink/20 ${
-                    t === "dark"
+                    th === "dark"
                       ? "bg-[#141413]"
-                      : t === "light"
+                      : th === "light"
                         ? "bg-[#F7F5F0]"
                         : ""
                   }`}
                 >
-                  {t === "system" && (
+                  {th === "system" && (
                     <>
                       <span className="h-full w-1/2 bg-[#F7F5F0]" />
                       <span className="h-full w-1/2 bg-[#141413]" />
                     </>
                   )}
                 </span>
-                {t === "system" ? "Auto" : t === "light" ? "Light" : "Dark"}
+                {t(th === "system" ? "Auto" : th === "light" ? "Light" : "Dark")}
               </button>
             ))}
           </div>
           <p className="text-[12px] text-muted">
-            Auto follows your phone’s dark theme.
+            {t("Auto follows your phone’s dark theme.")}
           </p>
         </Section>
 
-        <Section title="02 — Access">
+        <Section title="03 — Access">
           {!native ? (
             <p className="text-[14px] text-muted">
-              Phone permissions (notifications, music, files) are managed in the
-              Android app.
+              {t("Phone permissions (notifications, music, files) are managed in the Android app.")}
             </p>
           ) : (
             <>
               {!PLAY_BUILD && (
               <AccessRow
-                name="All files"
-                why="Finds every PDF and song on this phone"
+                name={t("All files")}
+                why={t("Finds every PDF and song on this phone")}
                 status={
                   allFiles.granted === null
                     ? "unknown"
@@ -227,14 +242,14 @@ export default function Settings() {
                     }
                     className={small}
                   >
-                    {allFiles.granted ? "Manage" : "Allow"}
+                    {allFiles.granted ? t("Manage") : t("Allow")}
                   </button>
                 }
               />
               )}
               <AccessRow
-                name="Notifications"
-                why="Daily digest and music controls"
+                name={t("Notifications")}
+                why={t("Daily digest and music controls")}
                 status={notify === null ? "unknown" : notify ? "on" : "off"}
                 action={
                   notify ? (
@@ -242,7 +257,7 @@ export default function Settings() {
                       onClick={() => openAndroidSettings("notifications")}
                       className={small}
                     >
-                      Manage
+                      {t("Manage")}
                     </button>
                   ) : (
                     <button
@@ -253,14 +268,14 @@ export default function Settings() {
                       }}
                       className={small}
                     >
-                      Allow
+                      {t("Allow")}
                     </button>
                   )
                 }
               />
               <AccessRow
-                name="Music and audio"
-                why="Play songs stored on this phone"
+                name={t("Music and audio")}
+                why={t("Play songs stored on this phone")}
                 status={
                   music === null
                     ? "unknown"
@@ -274,7 +289,7 @@ export default function Settings() {
                       onClick={() => openAndroidSettings()}
                       className={small}
                     >
-                      Manage
+                      {t("Manage")}
                     </button>
                   ) : (
                     <button
@@ -285,23 +300,23 @@ export default function Settings() {
                       }}
                       className={small}
                     >
-                      Allow
+                      {t("Allow")}
                     </button>
                   )
                 }
               />
               {!allFiles.granted && (
                 <AccessRow
-                  name="PDF folder"
+                  name={t("PDF folder")}
                   why={
                     folder
-                      ? `Reads PDFs in ${folder}`
-                      : "Pick one folder, e.g. Documents"
+                      ? t("Reads PDFs in {folder}", { folder })
+                      : t("Pick one folder, e.g. Documents")
                   }
                   status={folder ? "on" : "off"}
                   action={
                     <button onClick={pickFolder} className={small}>
-                      {folder ? "Change" : "Choose"}
+                      {folder ? t("Change") : t("Choose")}
                     </button>
                   }
                 />
@@ -314,107 +329,33 @@ export default function Settings() {
                   }}
                   className="self-start text-[12px] text-muted underline"
                 >
-                  Remove folder access
+                  {t("Remove folder access")}
                 </button>
               )}
               <button
                 onClick={() => openAndroidSettings()}
                 className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
               >
-                Open Stack in Android settings
+                {t("Open Stack in Android settings")}
               </button>
             </>
-          )}
-        </Section>
-
-        <Section title="03 — Spotify">
-          {PLAY_BUILD && !sp.configured && !showSpotifySetup ? (
-            <>
-              <p className="text-[14px] text-muted">
-                Spotify only lets each app have a few users, so Stack can’t sign
-                you in by itself. If you have a Spotify developer app, add its
-                Client ID to use your playlists here.
-              </p>
-              <button
-                onClick={() => setShowSpotifySetup(true)}
-                className="self-start text-[12px] text-muted underline"
-              >
-                Advanced: use my own Spotify app
-              </button>
-            </>
-          ) : !sp.configured || showSpotifySetup ? (
-            <SpotifySetup compact />
-          ) : sp.connected ? (
-            <>
-              <div className="flex items-center gap-2 text-[15px]">
-                <span className="size-2 rounded-full bg-[#1DB954]" /> Connected
-              </div>
-              <p className="text-[13px] text-muted">
-                Your playlists and Liked Songs are in Music → Spotify.
-              </p>
-              <button
-                onClick={sp.disconnect}
-                className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
-              >
-                Log out of Spotify
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-[14px] text-muted">
-                Your Spotify app is set up. Log in to see your playlists and control playback.
-              </p>
-              <button
-                onClick={login}
-                className="h-12 rounded-full bg-[#1DB954] text-[15px] font-semibold text-black"
-              >
-                Log in with Spotify
-              </button>
-              {sp.error && (
-                <p className="text-[13px] text-music-deep">{sp.error}</p>
-              )}
-              <SpotifyLoginNote />
-              <SpotifyTroubleshooting />
-            </>
-          )}
-          {sp.configured && (
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowSpotifySetup((v) => !v)}
-                className="text-[12px] text-muted underline"
-              >
-                {showSpotifySetup
-                  ? "Hide setup"
-                  : "Change Spotify app (Client ID)"}
-              </button>
-              <button
-                onClick={() => {
-                  setClientId(null);
-                  setShowSpotifySetup(false);
-                  toast({ text: "Spotify app removed" });
-                }}
-                className="text-[12px] text-muted underline"
-              >
-                Reset
-              </button>
-            </div>
           )}
         </Section>
 
         <Section title="04 — Daily digest">
           {!native || !reminder ? (
             <p className="text-[14px] text-muted">
-              The daily digest notification is available in the Android app.
+              {t("The daily digest notification is available in the Android app.")}
             </p>
           ) : (
             <>
               <label className="flex items-center justify-between gap-4">
                 <span className="flex flex-col">
                   <span className="text-[15px] font-semibold">
-                    Morning digest
+                    {t("Morning digest")}
                   </span>
                   <span className="text-[13px] text-muted">
-                    Top story + the PDF you’re reading
+                    {t("Top story + the PDF you’re reading")}
                   </span>
                 </span>
                 <input
@@ -428,7 +369,7 @@ export default function Settings() {
                 />
               </label>
               <label className="flex items-center justify-between">
-                <span className="text-[14px]">Time</span>
+                <span className="text-[14px]">{t("Time")}</span>
                 <input
                   type="time"
                   value={`${pad(reminder.hour)}:${pad(reminder.minute)}`}
@@ -445,14 +386,12 @@ export default function Settings() {
                   const ok = await sendTestNotification();
                   setNotify(await notificationsAllowed());
                   toast({
-                    text: ok
-                      ? "Test notification sent"
-                      : "Notifications are blocked for Stack",
+                    text: ok ? t("Test notification sent") : t("Notifications are blocked for Stack"),
                   });
                 }}
                 className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
               >
-                Send a test notification
+                {t("Send a test notification")}
               </button>
             </>
           )}
@@ -462,35 +401,94 @@ export default function Settings() {
           <NewsAlertsSection />
         </Section>
 
-        <Section title="06 — Stack AI">
+        <Section title="06 — Home screen widget">
+          {!native ? (
+            <p className="text-[14px] text-muted">{t("The home screen widget is available in the Android app.")}</p>
+          ) : (
+            <>
+              <p className="text-[14px] leading-relaxed">
+                {t("Today’s highlight, your streak and the book you’re reading, on your home screen.")}
+              </p>
+              <button
+                onClick={async () => {
+                  const asked = await addWidget().catch(() => false);
+                  if (!asked) toast({ text: t("Hold an empty spot on your home screen, tap Widgets, then pick Stack") });
+                }}
+                className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
+              >
+                {t("Add to home screen")}
+              </button>
+            </>
+          )}
+        </Section>
+
+        <Section title="07 — Stack AI">
           <AiSection />
         </Section>
 
-        <Section title="07 — Backup">
+        <Section title="08 — Backup">
           <BackupSection />
         </Section>
+
+        <section className="mt-6">
+          <h2 className="label text-[11px] font-medium">09 — {t("Privacy")}</h2>
+          <PrivacyRow className="mt-2.5" />
+        </section>
       </div>
       <p className="label mt-8 text-center text-[10px] text-muted">
-        Everything is stored on this device, in your account when you’re signed in, and in backups you save
+        {t("Everything is stored on this device, in your account when you’re signed in, and in backups you save")}
       </p>
     </main>
   );
 }
 
 // Profile and sign-in status, opening the Account screen.
+// The whole app in English or Hindi (lib/i18n.ts).
+function LanguageSection() {
+  const t = useT();
+  const lang = useUiLang();
+  return (
+    <Section title="01 — Language">
+      <div role="radiogroup" aria-label={t("Language")} className="grid grid-cols-2 gap-2">
+        {UI_LANGS.map((l) => (
+          <button
+            key={l.value}
+            role="radio"
+            aria-checked={lang === l.value}
+            lang={l.value}
+            onClick={() => setUiLang(l.value)}
+            className={`flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border ${
+              lang === l.value ? "border-ink" : "border-ink/15"
+            }`}
+          >
+            <span className="text-[17px] font-semibold">{l.label}</span>
+            <span className="label text-[9px] text-muted">{l.hint}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-[12px] text-muted">
+        {t("Menus, buttons and messages. Your notes, books and news stay in the language they’re written in.")}
+      </p>
+    </Section>
+  );
+}
+
 function AccountRow() {
   const { user, sync } = useAccount();
   const [profile] = useStore(getProfile, { id: "me", updatedAt: 0 });
+  const t = useT();
   return (
     <Link href="/account" className="mt-5 flex items-center gap-3.5 rounded-2xl bg-card p-4">
       <Avatar size={48} />
       <span className="flex min-w-0 grow flex-col gap-0.5">
-        <span className="truncate text-[16px] font-semibold">{profile.name || "Your profile"}</span>
+        <span className="truncate text-[16px] font-semibold">{profile.name || t("Your profile")}</span>
         <span className="label truncate text-[10px] text-muted">
-          {user ? `${user.email ?? "Signed in"} · ${sync.state === "error" ? "sync problem" : "synced"}` : "Not signed in · this device only"}
+          {user
+            ? `${user.email ?? t("Signed in")} · ${sync.state === "error" ? t("sync problem") : t("synced")}`
+            : t("Not signed in · this device only")}
         </span>
       </span>
-      <span className="label text-[10px] underline">{user ? "Account" : "Sign in"}</span>
+      <span className="label text-[10px] underline">{user ? t("Account") : t("Sign in")}</span>
     </Link>
   );
 }

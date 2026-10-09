@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="docs/assets/banner.png" alt="Stack: read it, keep it, build on it. News, PDF, music and notes." width="100%">
+  <img src="docs/assets/banner.png" alt="Stack makes you remember what you read. Save, highlight, remember." width="100%">
 </p>
 
 <h1 align="center">StackForge · Stack</h1>
 
 <p align="center">
-  <b>Read it. Keep it. Build on it.</b><br>
-  Tech news, your PDFs, music and notes in one learning app for Android and the web.
+  <b>Stack makes you remember what you read.</b><br>
+  Save → Highlight → Remember. Highlight anything. Stack brings it back. For Android and the web.
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@ brings those highlights back later, so what you read stays with you.
 | **Focus session** | Pick a PDF or article, 15–60 min timer or **Pomodoro** (4 × 25 min with 5-minute breaks and a 15-minute long break), music, quick notes, then a summary (pages, highlights, notes) with a streak |
 | **Daily review** | 3 old highlights a day on a spaced schedule (Got it / Show again soon / Stop), also in the morning notification |
 | **Share to Stack** | Share from Chrome, WhatsApp, YouTube or Files: a small "Saved to Stack" card pops up over the app you're in. Links go to the Library, PDFs to a shelf, text to notes |
-| **Music** | Songs on the phone on a spinning record with the title on its label: background play, Stack-styled notification and lock screen, shuffle, repeat, speed, sleep timer, ±10 s, Up next queue, Play next / Add to queue; your own playlists with cover images, or Spotify |
+| **Music** | Songs on the phone on a spinning record with the title on its label: background play, Stack-styled notification and lock screen, shuffle, repeat, speed, sleep timer, ±10 s, Up next queue, Play next / Add to queue; your own playlists with cover images, and free music online |
 | **Search** | One search across notes, checklists, highlights, saved articles, PDFs and playlists, with filters and recent searches |
 | **Profile** | Photo, bio, status, profile colour, interests (News shows them first) and a daily focus goal. Reader type, streaks, an activity heatmap and 12 badges |
 | **Stack AI** (optional) | Summarize an article, ask questions about a PDF (answers link to pages), "Ask your Stack" across your own notes, and tidy a note. Runs on OpenAI or Claude through Stack's server; asks before sending anything, and one switch in Settings turns it off |
@@ -49,7 +49,7 @@ npm run dev        # http://127.0.0.1:3000
 ```
 
 News, articles, PDFs, notes, focus and review work with no setup and no keys.
-Accounts, Spotify and Stack AI are optional (below).
+Accounts and Stack AI are optional (below).
 
 ## Android app (APK)
 
@@ -95,17 +95,6 @@ Models are set per feature (`OPENAI_MODEL`, `AI_MODEL`, …) and each person get
 [`.env.example`](.env.example) and the diagram in
 [`docs/Stack_AI_Engines.excalidraw`](docs/Stack_AI_Engines.excalidraw).
 Never put a key in `.env.example`: it's in git.
-
-## Spotify (optional)
-
-1. Create an app at https://developer.spotify.com/dashboard (Web API + Web Playback SDK).
-2. Redirect URIs: `http://127.0.0.1:3000/music/callback` and `com.chhari.stack://callback`.
-3. Put the Client ID in `.env.local` (or paste it in the app under Settings), then open **http://127.0.0.1:3000**.
-
-Play/pause/skip needs Spotify Premium; free accounts can browse and "Open in
-Spotify". The unfinished in-app Spotify player (`native/wip/`) needs Spotify's
-App Remote SDK `.aar` in `native/android-libs/`, which isn't included here:
-download it from Spotify's Android SDK releases.
 
 ## How it works
 

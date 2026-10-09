@@ -1,6 +1,7 @@
 import type { SVGProps } from "react";
 
-// The app's five tab icons, copied from stack/src/components/icons.tsx so the
+// The app's tab icons, copied from stack/src/components/icons.tsx and
+// stack-icons.tsx (Review) so the
 // website's tab bar looks exactly like the one people will see in the app.
 
 type P = SVGProps<SVGSVGElement> & { size?: number };
@@ -44,5 +45,14 @@ export const NoteIcon = (p: P) => (
   <svg {...stroke(p)}>
     <path d="M6 3h9l4 4v14H6z" />
     <path d="M9 12h7M9 16h7" />
+  </svg>
+);
+export const ReviewIcon = (p: P) => (
+  <svg {...stroke(p)}>
+    <path d="M4 12a8 8 0 0 1 13.7-5.6" />
+    <path d="M18 3v4h-4" />
+    <path d="M20 12a8 8 0 0 1-13.7 5.6" />
+    <path d="M6 21v-4h4" />
+    <path d="M12 12h.01" />
   </svg>
 );

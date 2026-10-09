@@ -12,7 +12,7 @@ const AI_ENGINE = process.env.NEXT_PUBLIC_AI_ENGINE || "our AI provider";
 
 export default function Privacy() {
   return (
-    <PolicyPage title="PRIVACY" updated="1 October 2026">
+    <PolicyPage title="PRIVACY" updated="2 October 2026">
       <p>
         Stack is a reading and notes app made by StackForge Labs. It works fully on your device without an account.
         This page explains what Stack stores, what leaves your device, and how to delete it.
@@ -46,8 +46,7 @@ export default function Privacy() {
       <PolicySection title="News and music">
         <p>
           News is fetched from public news sites and feeds. If you turn on breaking-news alerts, Stack checks those
-          feeds in the background; nothing about you is sent. Music on your phone is played from your phone. If you
-          connect Spotify, Spotify’s own privacy policy applies to that connection.
+          feeds in the background; nothing about you is sent. Music on your phone is played from your phone.
         </p>
         <p>
           Video news plays in YouTube’s privacy-enhanced player: when you play a video, your device loads it from
@@ -55,6 +54,17 @@ export default function Privacy() {
         </p>
         <p>
           Listen mode reads articles and PDFs aloud with your phone’s own text-to-speech; the text stays on your device.
+        </p>
+      </PolicySection>
+
+      <PolicySection title="Word meanings">
+        <p>
+          When you tap Meaning on a word, that word (and nothing else) is sent from your device to Wiktionary for its
+          English definition and to MyMemory for its Hindi meaning. Their privacy policies apply to those requests.
+          When you translate a news story, its title and text are sent from your device to Google Translate (or to
+          MyMemory if Google can’t be reached) and the translation comes straight back.
+          Share cards are drawn on your device and go only to the app you choose to share them with. On the website,
+          a news story’s picture may be fetched for its card through our server, which keeps no record of it.
         </p>
       </PolicySection>
 

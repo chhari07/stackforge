@@ -176,3 +176,10 @@ export const MenuIcon = (p: P) => (
     <path d="M3 8h18M3 12h18M3 16h18" />
   </svg>
 );
+// Settings. With className="gear" it turns as it appears and when pressed (globals.css).
+export const GearIcon = (p: P) => (
+  <svg {...stroke(p, 1.6)}>
+    <path d="M10.28 5.11L10.58 2.51L13.42 2.51L13.72 5.11L15.66 5.91L17.71 4.28L19.72 6.29L18.09 8.34L18.89 10.28L21.49 10.58L21.49 13.42L18.89 13.72L18.09 15.66L19.72 17.71L17.71 19.72L15.66 18.09L13.72 18.89L13.42 21.49L10.58 21.49L10.28 18.89L8.34 18.09L6.29 19.72L4.28 17.71L5.91 15.66L5.11 13.72L2.51 13.42L2.51 10.58L5.11 10.28L5.91 8.34L4.28 6.29L6.29 4.28L8.34 5.91z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);

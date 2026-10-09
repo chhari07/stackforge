@@ -10,6 +10,7 @@ import { linkId } from "./news";
 import { inspectPdf } from "./pdf";
 import { loadArticle } from "./platform";
 import { safeImage } from "./use-news";
+import { tr } from "./i18n";
 
 export type SharedItem =
   | { kind: "text"; text: string; subject?: string }
@@ -70,7 +71,7 @@ export async function importShared(item: SharedItem): Promise<ShareResult> {
       const pdfId = await addPdf(file, { title, pages, shelf: "Shared" }, cover);
       return { kind: "pdf", pdfId, title, pages };
     } catch {
-      return { kind: "error", message: "That file couldn’t be opened as a PDF." };
+      return { kind: "error", message: tr("That file couldn’t be opened as a PDF.") };
     } finally {
       ShareIn.removeFile({ path: item.path }).catch(() => {});
     }

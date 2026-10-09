@@ -13,7 +13,7 @@ export function StatusScrim() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-[45] h-[env(safe-area-inset-top)] bg-paper md:left-[var(--rail)]"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[45] h-[env(safe-area-inset-top)] bg-paper"
     />
   );
 }

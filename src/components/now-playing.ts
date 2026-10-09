@@ -1,11 +1,10 @@
 "use client";
 
-import { art as spArt, artists } from "@/lib/spotify";
 import { useLocalMusic } from "./local-music-provider";
-import { useSpotify } from "./spotify-provider";
+import { useOnlineMusic } from "./online-music-provider";
 
 export type NowPlaying = {
-  source: "local" | "spotify";
+  source: "local" | "online";
   title: string;
   artist: string;
   art?: string | null;
@@ -19,12 +18,11 @@ export type NowPlaying = {
 };
 
 // One "now playing" for the mini player and the PDF reader pill: whatever is
-// playing, preferring music on the phone, then Spotify.
+// playing, preferring music on the phone, then online music.
 export function useNowPlaying(): NowPlaying | null {
   const local = useLocalMusic();
-  const sp = useSpotify();
+  const online = useOnlineMusic();
   const l = local.state;
-  const track = sp.connected ? sp.player?.item : null;
 
   const fromLocal: NowPlaying | null = l.uri
     ? {
@@ -42,23 +40,23 @@ export function useNowPlaying(): NowPlaying | null {
       }
     : null;
 
-  const fromSpotify: NowPlaying | null = track
+  const fromOnline: NowPlaying | null = online.track
     ? {
-        source: "spotify",
-        title: track.name,
-        artist: artists(track),
-        art: spArt(track.album.images),
-        playing: !!sp.player?.is_playing,
-        position: sp.progress,
-        duration: track.duration_ms,
-        device: sp.player?.device?.name ?? "Spotify",
-        toggle: sp.toggle,
-        next: sp.next,
-        previous: sp.previous,
+        source: "online",
+        title: online.track.title,
+        artist: online.track.artist,
+        art: online.track.art,
+        playing: online.playing,
+        position: online.position,
+        duration: online.duration,
+        device: "Online",
+        toggle: online.toggle,
+        next: online.next,
+        previous: online.previous,
       }
     : null;
 
   if (fromLocal?.playing) return fromLocal;
-  if (fromSpotify?.playing) return fromSpotify;
-  return fromLocal ?? fromSpotify;
+  if (fromOnline?.playing) return fromOnline;
+  return fromLocal ?? fromOnline;
 }

@@ -8,14 +8,12 @@ import { SITE } from "@/lib/site";
 // One page, in the same order people meet things in the app, so nothing on
 // the site is new to them when they open Stack:
 // welcome (hero) → first minute (the app's own onboarding) → the five tabs,
-// in tab-bar order, with real screens → local first → join → questions.
+// in tab-bar order, with real screens → Hindi and Indian news → focus and
+// music → local first → join → questions.
 // Names and button labels are the app's own words.
 
 // Staggered load delays, as classes so no inline styles are needed.
 const LETTER_DELAYS = ["[animation-delay:350ms]", "[animation-delay:420ms]", "[animation-delay:490ms]", "[animation-delay:560ms]", "[animation-delay:630ms]"];
-
-// Bar heights for the mini player's level meter, as classes (no inline styles).
-const WEEK_BARS = ["h-[60%]", "h-[30%]", "h-[85%]", "h-[50%]", "h-[95%]", "h-[25%]", "h-[70%]"];
 
 // Each tab's title in the type the app uses for that screen's own header:
 // condensed caps for Today, News and Music, the serif for Library and Notes.
@@ -26,10 +24,11 @@ const HEADINGS = {
 
 // The app's first launch (stack/src/app/welcome/page.tsx), step by step.
 const FIRST_MINUTE = [
-  { n: "01", title: "Open Stack", body: "The logo stacks itself up, block by block, and you’re on the welcome screen." },
-  { n: "02", title: "Sign in, or don’t", body: "Continue with Google or email to sync between devices, or tap “Continue without an account”. Everything works either way." },
-  { n: "03", title: "Make it yours", body: "Add your name and a photo, so Stack knows what to call you. You can skip this and do it later." },
-  { n: "04", title: "Get started", body: "Tap “Get started” and you land on Today, the first of the five tabs below." },
+  { n: "01", title: "Three cards", body: "Save from any app. Select a line, and it becomes a note. Every morning, three come back. Or tap Skip." },
+  { n: "02", title: "What are you reading for?", body: "Exams (GATE, JEE, NEET, UPSC), work and skills, staying informed, or just for you. Stack sets up Today and your news around it." },
+  { n: "03", title: "Try it", body: "A two-minute article opens with one line already highlighted. Select one more line and tap Highlight. Tomorrow morning, both come back." },
+  { n: "04", title: "Make it yours", body: "Add your name and a photo, so Stack knows what to call you. You can skip this and do it later." },
+  { n: "05", title: "Keep your notes safe?", body: "Only now does Stack offer an account, to back up and sync your notes. “Continue without an account” works just as well." },
 ];
 
 // The five tabs, in the app's order. The ids match the tab bar (tab-nav.tsx).
@@ -46,79 +45,81 @@ const TOUR: {
   {
     id: "today",
     title: "TODAY",
-    lead: "Your day on one screen: the top story, what you’re reading, your latest notes and the daily review.",
+    lead: "Every day starts with what you highlighted, then what you’re reading, then the news.",
     points: [
-      "Top story and more stories to swipe through",
-      "Continue reading: the PDFs you have open",
-      "Daily review: 3 old highlights each morning, with “Open where you read it”",
+      "Daily review first: “3 things you highlighted”",
+      "Pick up where you left off: the PDFs and books you have open",
       "A focus card to start a timer or Pomodoro",
       "This week: time read, articles finished and PDF pages, a bar for each day",
+      "Reading for exams or work? Your reading comes before the news",
     ],
     text: "text-music-text",
     dot: "bg-music",
     heading: "display",
-    shot: { light: "/screens/today-light.png", dark: "/screens/today-dark.png", alt: "The Today tab with the top story, PDFs in progress and recent notes" },
-  },
-  {
-    id: "news",
-    title: "NEWS",
-    lead: "12 topics from trusted sources, including Video, plus any site or RSS feed you add under My feeds.",
-    points: [
-      "Flash cards or a list, with the date and time on every story",
-      "Video news from BBC, Al Jazeera, DW, Reuters, WION, NDTV and India Today",
-      "Save a story to read it in a clean reader mode, even offline",
-      "Select any line to highlight it or keep it as a note",
-      "Breaking-news alerts for the topics you pick, at most one an hour",
-    ],
-    text: "text-news-text",
-    dot: "bg-news",
-    heading: "display",
-    shot: { light: "/screens/news-light.png", dark: "/screens/news-dark.png", alt: "The News tab showing stories as swipeable flash cards" },
-  },
-  {
-    id: "music",
-    title: "MUSIC",
-    lead: "Songs on your phone and your own playlists, for reading or a focus session.",
-    points: [
-      "A spinning record with the song title on its label",
-      "Keeps playing in the background, with Stack’s own notification and lock screen",
-      "Shuffle, repeat, speed, sleep timer and an Up next queue",
-      "Playlists with your own cover images",
-    ],
-    text: "text-music-text",
-    dot: "bg-music",
-    heading: "display",
-    shot: { light: "/screens/music-light.png", dark: "/screens/music-dark.png", alt: "The Music tab with songs from the phone" },
+    shot: { light: "/screens/today-light.png", dark: "/screens/today-dark.png", alt: "The Today tab with the daily review card, the focus card, this week and the PDFs in progress" },
   },
   {
     id: "library",
-    title: "LIBRARY",
-    lead: "Your PDFs and saved articles on coloured shelves. Share anything to Stack and it lands here.",
+    title: "BOOKS",
+    lead: "Your PDFs, books and saved articles on coloured shelves. Share anything to Stack and it lands here.",
     points: [
+      "PDFs and EPUB books, with highlights, sticky notes, handwriting and reading time left",
       "Share from Chrome, WhatsApp or Files: a “Saved to Stack” card pops up",
       "Import PDFs from Telegram: forward them to your bot, then pick which to add",
-      "PDF reader with highlights, page notes and reading time left",
+      "Every PDF on your phone, found for you, ready to add",
       "Listen: articles and PDFs read aloud, with the same controls as music",
     ],
     text: "text-pdf-deep",
     dot: "bg-pdf",
     heading: "serif",
-    shot: { light: "/screens/library-light.png", dark: "/screens/library-dark.png", alt: "The Library tab with coloured shelves of PDFs" },
+    shot: { light: "/screens/library-light.png", dark: "/screens/library-dark.png", alt: "The Library tab with coloured shelves of PDFs and Import from Telegram" },
+  },
+  {
+    id: "review",
+    title: "RECALL",
+    lead: "Every highlight comes back the next morning. A few seconds each, and what you read stays with you.",
+    points: [
+      "Three a day, picked from what you highlighted",
+      "“Got it” pushes it out: 3 days, then longer each time. “Show again soon” brings it back tomorrow",
+      "Words you looked up with Meaning come back too, with “Show meaning”",
+      "Open where you read it, or share it as a card",
+      "A streak for each day you finish the review",
+    ],
+    text: "text-news-text",
+    dot: "bg-news",
+    heading: "display",
+    shot: { light: "/screens/review-light.png", dark: "/screens/review-dark.png", alt: "The Review tab showing a highlight to recall, with Got it and Show again soon" },
   },
   {
     id: "notes",
     title: "Notes",
     lead: "Every highlight becomes a note that remembers where it came from, next to the notes you write yourself.",
     points: [
-      "Titles, checklists, colours and pins",
       "Each highlight shows its source: the article, or the PDF and page",
+      "Titles, checklists, colours, tags, pins and reminders",
       "One search across notes, highlights, articles and PDFs",
       "Export to Markdown for Obsidian, Notion or any editor",
     ],
     text: "text-ink",
     dot: "bg-ink",
     heading: "serif",
-    shot: { light: "/screens/notes-light.png", dark: "/screens/notes-dark.png", alt: "The Notes tab with notes and saved highlights" },
+    shot: { light: "/screens/notes-light.png", dark: "/screens/notes-dark.png", alt: "The Notes tab showing saved article highlights" },
+  },
+  {
+    id: "news",
+    title: "NEWS",
+    lead: "12 topics from trusted sources, video news, and any site or RSS feed you add under My feeds.",
+    points: [
+      "Flash cards or a list, with the date and time on every story",
+      "Read any story in Hindi, or in 19 more languages, with one tap",
+      "Today’s paper: free official sources, from PIB and DD News to Hindi e-papers",
+      "Save a story to read it in a clean reader mode, even offline",
+      "Breaking-news alerts for the topics you pick, at most one an hour",
+    ],
+    text: "text-news-text",
+    dot: "bg-news",
+    heading: "display",
+    shot: { light: "/screens/news-light.png", dark: "/screens/news-dark.png", alt: "The News tab with today’s posts" },
   },
 ];
 
@@ -126,6 +127,10 @@ const FAQ = [
   {
     q: "What is a soft launch?",
     a: "Stack is finished enough to use every day, and we're opening it to a small group first. Testers get the Android app early through Google Play's closed test, and their feedback shapes the public release.",
+  },
+  {
+    q: "How do I install the APK?",
+    a: "Open the download link on your Android phone, tap the download icon in Google Drive, then open the file. If Android asks, allow your browser or Files app to install unknown apps, then tap Install. When Stack reaches the Play Store, it will update from there.",
   },
   { q: "Is it free?", a: "Yes. Stack is free and open source. Testers will also get Stack Plus free for a year when it arrives." },
   { q: "Do I need an account?", a: "No. Stack works fully offline on your phone. Signing in is only for syncing between devices." },
@@ -136,6 +141,18 @@ const FAQ = [
   {
     q: "Can I get my notes out?",
     a: "Anytime. Export your notes and highlights to Markdown (each with a link to where you read it), or save a full backup file from Settings.",
+  },
+  {
+    q: "Is Stack in Hindi?",
+    a: "Yes. Settings → Language switches the whole app to Hindi: every menu, button and message. Your notes, books and news stay in the language they’re written in.",
+  },
+  {
+    q: "Can it translate the news?",
+    a: "Yes. Open any story and tap हिंदी under “Read in”, or pick from 19 more languages, including Bengali, Marathi, Tamil, Telugu, Urdu, Spanish and Japanese. Tap “English (original)” to switch back.",
+  },
+  {
+    q: "Where do the newspapers come from?",
+    a: "Today’s paper only links to official, free sources: PIB, News On AIR, DD News, Yojana and Kurukshetra, today’s print editions of The Hindu and The Indian Express, and the Hindi papers’ own e-paper sites. Stack never copies anyone’s paper.",
   },
   { q: "Can I turn AI off?", a: "Yes. Stack AI is optional, asks before sending anything, and one switch in Settings turns it off completely." },
   {
@@ -170,8 +187,8 @@ export default function Home() {
             <Logo size={28} />
             <span className="display text-2xl">STACK</span>
           </a>
-          <a href="#join" className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink transition hover:opacity-90">
-            Join<span className="max-sm:hidden"> the soft launch</span>
+          <a href={SITE.apk} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-on-ink transition hover:opacity-90">
+            Download<span className="max-sm:hidden"> the app</span>
           </a>
         </div>
       </header>
@@ -181,6 +198,8 @@ export default function Home() {
         <Problem />
         <FirstMinute />
         <Tour />
+        <ForIndia />
+        <FocusMusic />
         <LocalFirst />
         <Join />
         <Questions />
@@ -228,14 +247,17 @@ function Hero() {
           </h1>
 
           <p className="rise mt-6 max-w-xl text-lg text-prose [animation-delay:900ms] sm:text-xl">
-            News, your PDFs, music and notes in one place. Highlight what matters, and Stack brings it back so you{" "}
-            <mark className="marker font-semibold">remember what you read</mark>.
+            <mark className="marker font-semibold">Highlight anything. Stack brings it back.</mark> Save an article or a
+            PDF, select the lines that matter, and every morning three of them come back. Save → Highlight → Remember.
           </p>
 
           <div className="rise mt-9 flex flex-wrap items-center gap-3 [animation-delay:1050ms]">
-            <a href="#join" className="group inline-flex h-14 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-on-ink shadow-[0_10px_28px_rgba(0,0,0,.18)] transition hover:opacity-90">
+            <a href={SITE.apk} target="_blank" rel="noopener noreferrer" className="group inline-flex h-14 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-semibold text-on-ink shadow-[0_10px_28px_rgba(0,0,0,.18)] transition hover:opacity-90">
+              Download for Android
+              <span aria-hidden="true" className="transition group-hover:translate-y-0.5">↓</span>
+            </a>
+            <a href="#join" className="inline-flex h-14 items-center rounded-full border border-ink/15 bg-card px-7 text-[15px] font-semibold transition hover:border-ink">
               Join the soft launch
-              <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
             </a>
             <a href="#first-minute" className="inline-flex h-14 items-center rounded-full border border-ink/15 bg-card px-7 text-[15px] font-semibold transition hover:border-ink">
               See the app
@@ -243,7 +265,7 @@ function Hero() {
           </div>
 
           <ul className="rise label mt-8 flex flex-wrap gap-2 text-[11px] [animation-delay:1200ms]">
-            {["Free", "Open source", "Works offline", "No ads"].map((t, i) => (
+            {["Free", "Open source", "Works offline", "No ads", "हिंदी में भी"].map((t, i) => (
               <li key={t} className={`rounded-full px-3.5 py-2 ${i === 0 ? "bg-ink text-on-ink" : "border border-ink/15 text-ink"}`}>
                 {t}
               </li>
@@ -280,26 +302,17 @@ function Hero() {
             Saved to Stack
           </div>
 
-          {/* The app's mini player (stack/src/components/mini-player.tsx) */}
+          {/* The app's music bar (stack/src/components/mini-player.tsx): a slim pill */}
           <div
             aria-hidden="true"
-            className="float absolute -right-14 bottom-[12%] flex h-[62px] w-64 items-center gap-3 rounded-[14px] bg-card px-2.5 shadow-[0_18px_40px_rgb(0_0_0/0.16)] [animation-delay:1900ms,3.5s] max-sm:-right-4 max-sm:w-56"
+            className="float absolute -right-14 bottom-[12%] flex h-[46px] w-60 items-center gap-2.5 rounded-full bg-card pr-1.5 pl-3 shadow-[0_18px_40px_rgb(0_0_0/0.16)] [animation-delay:1900ms,3.5s] max-sm:-right-4 max-sm:w-52"
           >
-            <span className="grid size-[42px] shrink-0 place-items-center rounded-md bg-music text-white">
-              <span className="flex h-3.5 items-end gap-[3px]">
-                {WEEK_BARS.slice(0, 3).map((h) => (
-                  <span key={h} className={`w-[3px] rounded-full bg-white ${h}`} />
-                ))}
-              </span>
-            </span>
-            <span className="flex min-w-0 grow flex-col gap-0.5">
-              <span className="truncate text-[13px] font-semibold">Focus mix</span>
-              <span className="label truncate text-[9px] text-muted">From your phone · 1:24</span>
-            </span>
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-music text-white">
+            <span className="size-[22px] shrink-0 rounded-[5px] bg-music" />
+            <span className="min-w-0 grow truncate text-[13px] font-semibold">Deep Work</span>
+            <span className="grid size-9 shrink-0 place-items-center">
               <span className="flex gap-[3px]">
-                <span className="h-3 w-[3px] rounded-sm bg-white" />
-                <span className="h-3 w-[3px] rounded-sm bg-white" />
+                <span className="h-3 w-[3px] rounded-sm bg-ink" />
+                <span className="h-3 w-[3px] rounded-sm bg-ink" />
               </span>
             </span>
           </div>
@@ -336,16 +349,24 @@ function Problem() {
 function FirstMinute() {
   return (
     <section id="first-minute" className="scroll-mt-16 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-      <div className="reveal">
-        <p className="label text-xs text-muted">When you open the app</p>
-        <h2 className="display mt-3 text-6xl sm:text-8xl">YOUR FIRST MINUTE</h2>
-        <p className="mt-5 max-w-2xl text-lg text-prose">The same four steps you’ll see on your phone, in the same order.</p>
+      <div className="grid items-center gap-12 md:grid-cols-[1fr_240px]">
+        <div className="reveal">
+          <p className="label text-xs text-muted">When you open the app</p>
+          <h2 className="display mt-3 text-6xl sm:text-8xl">YOUR FIRST MINUTE</h2>
+          <p className="mt-5 max-w-2xl text-lg text-prose">
+            The same five steps you’ll see on your phone, in the same order. You make your first highlight before
+            Stack asks for anything.
+          </p>
+        </div>
+        <div className="reveal-phone mx-auto w-full max-w-[220px]">
+          <PhoneShot light="/screens/welcome-light.png" dark="/screens/welcome-dark.png" alt="Stack’s first screen: Stack makes you remember what you read, with the first of three cards, Save from any app" />
+        </div>
       </div>
-      <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {FIRST_MINUTE.map((s, i) => (
           <li key={s.n} className="reveal relative rounded-2xl bg-card p-6 shadow-[0_8px_24px_rgba(0,0,0,.05)]">
             <p className="label text-[11px] font-medium text-muted">Step {s.n}</p>
-            <h3 className="mt-8 text-2xl font-extrabold tracking-tight">{s.title}</h3>
+            <h3 className="mt-8 text-xl font-extrabold tracking-tight">{s.title}</h3>
             <p className="mt-2 text-muted">{s.body}</p>
             {i < FIRST_MINUTE.length - 1 && (
               <span aria-hidden="true" className="label absolute -right-3 top-1/2 z-10 hidden size-6 -translate-y-1/2 place-items-center rounded-full bg-ink text-[11px] text-on-ink lg:grid">
@@ -367,7 +388,8 @@ function Tour() {
           <p className="label text-xs text-muted">Inside the app</p>
           <h2 id="tour-title" className="display mt-3 text-6xl sm:text-8xl">FIVE TABS</h2>
           <p className="mt-5 max-w-2xl text-lg text-prose">
-            Stack has the same five tabs at the bottom of every screen. Here’s what’s in each one, in the same order.
+            Stack has the same five tabs at the bottom of every screen: the loop first (Today, Library, Review,
+            Notes), the news last. Here’s what’s in each one, in the same order.
           </p>
         </div>
       </div>
@@ -378,7 +400,7 @@ function Tour() {
       </div>
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 sm:pb-28 md:mt-12 md:grid-cols-[88px_1fr]">
-        {/* Tablets and computers: a rail on the left, like the app on a tablet. */}
+        {/* Tablets and computers: the app's tab bar, standing up on the left. */}
         <div className="hidden md:block">
           <div className="sticky top-28">
             <TabNav layout="rail" />
@@ -412,6 +434,95 @@ function Tour() {
               </div>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Made for India: the whole app in Hindi, any story translated, and today's
+// paper from official free sources. Screens from the app in Hindi.
+function ForIndia() {
+  const shots = [
+    { light: "/screens/hindi-light.png", dark: "/screens/hindi-dark.png", alt: "Stack’s Today screen in Hindi", label: "Settings → Language → हिंदी" },
+    { light: "/screens/translate-light.png", dark: "/screens/translate-dark.png", alt: "A news story translated into Hindi in the reader", label: "Read in: हिंदी" },
+    { light: "/screens/paper-light.png", dark: "/screens/paper-dark.png", alt: "The Today’s paper sheet with PIB, News On AIR, DD News and Hindi e-papers", label: "News → Today’s paper" },
+  ];
+  return (
+    <section id="india" className="scroll-mt-16 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+      <div className="reveal grid gap-8 md:grid-cols-[1fr_1fr] md:items-end">
+        <div>
+          <p className="label text-xs text-muted">Made in India, for India</p>
+          {/* Devanagari needs normal letter-spacing and room for its vowel signs. */}
+          <h2 lang="hi" className="mt-4 text-6xl leading-[1.25] font-extrabold sm:text-8xl">
+            हिंदी में भी
+          </h2>
+        </div>
+        <ul className="grid gap-3 text-prose">
+          <li className="flex gap-3">
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-music" aria-hidden="true" />
+            <span><b>The whole app in Hindi.</b> Every menu, button and message, with one switch in Settings.</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-news" aria-hidden="true" />
+            <span><b>Any story, in your language.</b> Hindi with one tap, or 19 more languages, from Bengali to Japanese.</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-pdf" aria-hidden="true" />
+            <span><b>Today’s paper.</b> PIB, AIR, DD News, Yojana and the Hindi e-papers, straight from their official sites.</span>
+          </li>
+          <li className="flex gap-3">
+            <span className="mt-2 size-2 shrink-0 rounded-full bg-blue" aria-hidden="true" />
+            <span><b>Summaries in Indian languages.</b> Stack AI answers in Hindi, Bengali, Tamil, Telugu and six more.</span>
+          </li>
+        </ul>
+      </div>
+      <div className="mt-14 grid gap-10 sm:grid-cols-3">
+        {shots.map((s) => (
+          <figure key={s.light} className="reveal-phone mx-auto w-full max-w-[240px]">
+            <PhoneShot light={s.light} dark={s.dark} alt={s.alt} />
+            <figcaption className="label mt-4 text-center text-[11px] text-muted">{s.label}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Music isn't a tab any more: it plays behind your reading and your focus sessions.
+function FocusMusic() {
+  return (
+    <section id="focus" className="scroll-mt-16 border-y border-line bg-paper-2">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-28 md:grid-cols-[1fr_auto]">
+        <div className="reveal">
+          <p className="label text-xs text-muted">While you read</p>
+          <h2 className="display mt-3 text-6xl sm:text-8xl">FOCUS &amp; MUSIC</h2>
+          <p className="mt-5 max-w-xl text-lg text-prose">
+            Pick one thing and give it 25 minutes. Music plays in the background, in a slim bar above the tabs, and
+            pauses on your breaks.
+          </p>
+          <ul className="mt-6 grid max-w-lg divide-y divide-line rounded-2xl bg-card px-4 shadow-[0_8px_24px_rgba(0,0,0,.05)]">
+            {[
+              "15, 25, 45 or 60 minutes, or Pomodoro rounds with breaks",
+              "Capture a thought without leaving the page; it’s saved to Notes",
+              "A summary at the end: minutes, pages, highlights and notes",
+              "Songs on your phone, or free music online",
+              "Shuffle, repeat, speed, sleep timer and an Up next queue",
+            ].map((p) => (
+              <li key={p} className="flex gap-3 py-3 text-prose">
+                <span className="mt-2 size-2 shrink-0 rounded-full bg-music" aria-hidden="true" />
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex justify-center gap-5">
+          <div className="reveal-phone w-[200px] sm:w-[220px]">
+            <PhoneShot light="/screens/focus-light.png" dark="/screens/focus-dark.png" alt="The Focus screen: pick what to read, how long, and music" />
+          </div>
+          <div className="reveal-phone hidden w-[200px] translate-y-10 sm:block sm:w-[220px]">
+            <PhoneShot light="/screens/music-light.png" dark="/screens/music-dark.png" alt="The Music screen with free music online" />
+          </div>
         </div>
       </div>
     </section>
@@ -464,7 +575,21 @@ function Join() {
             </li>
           ))}
         </ul>
-        <div className="mt-10 rounded-2xl bg-paper-2 p-6">
+        <div className="mt-10 rounded-2xl bg-ink p-6 text-on-ink">
+          <p className="label text-[11px] font-medium">Try it now</p>
+          <p className="mt-3 opacity-80">
+            Don’t want to wait for the invite? Download the Android app (APK) from Google Drive and install it today.
+          </p>
+          <a
+            href={SITE.apk}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-paper px-6 text-[15px] font-semibold text-ink transition hover:opacity-90"
+          >
+            Download Stack (APK) <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+        <div className="mt-4 rounded-2xl bg-paper-2 p-6">
           <p className="label text-[11px] font-medium">What happens next</p>
           <ol className="mt-4 grid gap-3">
             {[

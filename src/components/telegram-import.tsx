@@ -6,6 +6,7 @@ import { Logo } from "./logo";
 import { useToast } from "./toast";
 import { CheckIcon, ExternalIcon } from "./icons";
 import { RefreshIcon } from "./stack-icons";
+import { ConnectionDot, type DotState } from "./connection-dot";
 import { addPdf } from "@/lib/db";
 import { inspectPdf } from "@/lib/pdf";
 import { fileSize } from "@/lib/phone-files";
@@ -17,12 +18,16 @@ import {
   downloadPdf,
   getBot,
   getPdfList,
+  getStatus,
   markImported,
+  onStatusChange,
   MAX_BYTES,
   TelegramError,
   type TelegramBot,
   type TelegramPdf,
+  type TelegramStatus,
 } from "@/lib/telegram";
+import { useT } from "@/lib/i18n";
 
 const TG_BLUE = "#2AABEE";
 
@@ -39,6 +44,7 @@ type Link = "idle" | "connecting" | "connected" | "error";
 
 // Stack ⟷ Telegram, with the connection drawn between them.
 function ConnectionArt({ state, botName }: { state: Link; botName?: string }) {
+  const t = useT();
   const line =
     state === "connected" ? "var(--color-news)" : state === "error" ? "var(--color-music)" : "currentColor";
   return (
@@ -88,10 +94,10 @@ function ConnectionArt({ state, botName }: { state: Link; botName?: string }) {
         </span>
       </div>
       <p role="status" aria-live="polite" className="label text-center text-[10px] text-muted">
-        {state === "idle" && "Not connected"}
-        {state === "connecting" && "Connecting to Telegram…"}
-        {state === "connected" && `Connected to ${botName ?? "your bot"}`}
-        {state === "error" && "Couldn’t connect"}
+        {state === "idle" && t("Not connected")}
+        {state === "connecting" && t("Connecting to Telegram…")}
+        {state === "connected" && t("Connected to {bot}", { bot: botName ?? t("your bot") })}
+        {state === "error" && t("Couldn’t connect")}
       </p>
     </div>
   );
@@ -101,6 +107,7 @@ type Progress = Record<string, { stage: "waiting" | "downloading" | "adding" | "
 
 // Library → "Import from Telegram": connect a bot, then pick PDFs to import.
 export function TelegramImport() {
+  const t = useT();
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [bot, setBot] = useState<TelegramBot | null>(null);
@@ -113,13 +120,24 @@ export function TelegramImport() {
   const [shelf, setShelf] = useState("Telegram");
   const [progress, setProgress] = useState<Progress>({});
   const [importing, setImporting] = useState(false);
+  const [status, setStatus] = useState<TelegramStatus | null>(null);
 
   useEffect(() => {
     const b = getBot();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBot(b);
-    if (b) setLink("connected");
+    if (b) setLink(getStatus()?.state === "rejected" ? "error" : "connected");
+    setStatus(getStatus());
+    // The app-open check runs elsewhere; keep the dot in step with it.
+    return onStatusChange(() => {
+      const s = getStatus();
+      setStatus(s);
+      if (getBot()) setLink(s?.state === "rejected" ? "error" : "connected");
+    });
   }, []);
+
+  const rejected = status?.state === "rejected";
+  const dot: DotState = rejected ? "lost" : status?.state === "unreachable" ? "unreachable" : "ok";
 
   const check = useCallback(async (b: TelegramBot) => {
     setChecking(true);
@@ -175,7 +193,7 @@ export function TelegramImport() {
         done.push(d.id);
         set({ stage: "done" });
       } catch (e) {
-        set({ stage: "failed", error: e instanceof TelegramError ? e.message : "This file couldn’t be opened as a PDF" });
+        set({ stage: "failed", error: e instanceof TelegramError ? e.message : t("This file couldn’t be opened as a PDF") });
       }
     }
     await markImported(done);
@@ -183,11 +201,36 @@ export function TelegramImport() {
     setPicked(new Set());
     setImporting(false);
     if (done.length) {
-      toast({ text: `Imported ${done.length} PDF${done.length === 1 ? "" : "s"} to “${shelf.trim() || "Telegram"}”` });
+      toast({ text: t(done.length === 1 ? "Imported {n} PDF to “{shelf}”" : "Imported {n} PDFs to “{shelf}”", { n: done.length, shelf: shelf.trim() || "Telegram" }) });
     }
   };
 
   const botHandle = bot ? `@${bot.username}` : "";
+
+  const tokenForm = (
+    <>
+      <input
+        aria-label={t("Bot token")}
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+        placeholder="123456789:AAH…"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        className="h-12 rounded-xl border border-ink/15 bg-paper px-3.5 font-mono text-[13px]"
+      />
+      {error && <p className="text-[13px] text-music-deep">{error}</p>}
+      <button
+        onClick={doConnect}
+        disabled={link === "connecting" || !token.trim()}
+        className="flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white disabled:opacity-50"
+        style={{ background: TG_BLUE }}
+      >
+        <PlaneIcon size={18} /> {link === "connecting" ? t("Connecting…") : bot ? t("Reconnect") : t("Connect")}
+      </button>
+    </>
+  );
 
   return (
     <>
@@ -199,9 +242,18 @@ export function TelegramImport() {
           <PlaneIcon size={22} className="-ml-0.5" />
         </span>
         <span className="flex min-w-0 grow flex-col gap-0.5">
-          <span className="text-[15px] font-semibold">Import from Telegram</span>
-          <span className="label truncate text-[10px] text-muted">
-            {bot ? `Connected · ${botHandle}` : "Connect a bot, forward PDFs, pick what to add"}
+          <span className="text-[15px] font-semibold">{t("Import from Telegram")}</span>
+          <span className="label flex items-center gap-1.5 truncate text-[10px] text-muted">
+            {bot && <ConnectionDot state={dot} />}
+            <span className="truncate">
+              {!bot
+                ? t("Connect a bot, forward PDFs, pick what to add")
+                : rejected
+                  ? t("{bot} · token stopped working · Reconnect", { bot: botHandle })
+                  : dot === "unreachable"
+                    ? t("Connected · {bot} · can’t reach Telegram", { bot: botHandle })
+                    : t("Connected · {bot}", { bot: botHandle })}
+            </span>
           </span>
         </span>
       </button>
@@ -214,36 +266,28 @@ export function TelegramImport() {
             <div className="mt-5 flex flex-col gap-3">
               <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[14px] leading-relaxed">
                 <li>
-                  In Telegram, open{" "}
+                  {t("In Telegram, open")}{" "}
                   <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="font-semibold underline">
                     @BotFather
                   </a>{" "}
-                  and send <b>/newbot</b>. Give it any name.
+                  {t("and send /newbot. Give it any name.")}
                 </li>
-                <li>Copy the token it gives you and paste it here.</li>
-                <li>Forward PDFs to your new bot, then pick them in Stack.</li>
+                <li>{t("Copy the token it gives you and paste it here.")}</li>
+                <li>{t("Forward PDFs to your new bot, then pick them in Stack.")}</li>
               </ol>
-              <input
-                aria-label="Bot token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                placeholder="123456789:AAH…"
-                autoComplete="off"
-                spellCheck={false}
-                className="h-12 rounded-xl border border-ink/15 bg-paper px-3.5 font-mono text-[13px]"
-              />
-              {error && <p className="text-[13px] text-music-deep">{error}</p>}
-              <button
-                onClick={doConnect}
-                disabled={link === "connecting" || !token.trim()}
-                className="flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white disabled:opacity-50"
-                style={{ background: TG_BLUE }}
-              >
-                <PlaneIcon size={18} /> {link === "connecting" ? "Connecting…" : "Connect"}
-              </button>
+              {tokenForm}
               <p className="text-[12px] leading-relaxed text-muted">
-                The token stays on this device. Stack only reads what you send to your bot.
+                {t("The token stays on this device. Stack only reads what you send to your bot.")}
               </p>
+            </div>
+          )}
+
+          {bot && rejected && (
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-music-tint p-4">
+              <p className="text-[14px] leading-relaxed text-music-deep">
+                {t("Telegram stopped accepting {bot}’s token (it was probably revoked in @BotFather). Send /token to @BotFather, pick {bot}, and paste the new token. Your PDF list is kept.", { bot: botHandle })}
+              </p>
+              {tokenForm}
             </div>
           )}
 
@@ -257,10 +301,10 @@ export function TelegramImport() {
                   className="flex h-11 grow items-center justify-center gap-2 rounded-full text-[14px] font-semibold text-white"
                   style={{ background: TG_BLUE }}
                 >
-                  Open {botHandle} <ExternalIcon size={14} />
+                  {t("Open {site}", { site: botHandle })} <ExternalIcon size={14} />
                 </a>
                 <button
-                  aria-label="Check for new PDFs"
+                  aria-label={t("Check for new PDFs")}
                   onClick={() => check(bot)}
                   disabled={checking || importing}
                   className="flex size-11 items-center justify-center rounded-full border border-ink/15"
@@ -269,14 +313,18 @@ export function TelegramImport() {
                 </button>
               </div>
               <p className="text-[13px] leading-relaxed text-muted">
-                Forward PDFs to {botHandle} from any chat or channel, then come back here.
+                {t("Forward PDFs to {bot} from any chat or channel, then come back here.", { bot: botHandle })}
               </p>
-              {error && <p className="text-[13px] text-music-deep">{error}</p>}
+              {error && !rejected && (
+                <p className="flex items-center gap-2 text-[13px] text-pdf-deep">
+                  <ConnectionDot state="unreachable" /> {error}
+                </p>
+              )}
 
-              {pdfs === null && <p className="label text-[10px] text-muted">Checking Telegram…</p>}
+              {pdfs === null && <p className="label text-[10px] text-muted">{t("Checking Telegram…")}</p>}
               {pdfs?.length === 0 && (
                 <p className="rounded-xl bg-paper px-4 py-5 text-center text-[14px] text-muted">
-                  No PDFs yet. Forward one to {botHandle} and tap ↻.
+                  {t("No PDFs yet. Forward one to {bot} and tap ↻.", { bot: botHandle })}
                 </p>
               )}
 
@@ -284,7 +332,7 @@ export function TelegramImport() {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="label text-[10px] text-muted">
-                      {pdfs.length} PDF{pdfs.length === 1 ? "" : "s"} · {picked.size} selected
+                      {t(pdfs.length === 1 ? "{n} PDF · {s} selected" : "{n} PDFs · {s} selected", { n: pdfs.length, s: picked.size })}
                     </span>
                     {importable.length > 0 && (
                       <button
@@ -292,7 +340,7 @@ export function TelegramImport() {
                         disabled={importing}
                         className="label h-8 text-[10px] underline"
                       >
-                        {allPicked ? "Select none" : "Select all"}
+                        {allPicked ? t("Select none") : t("Select all")}
                       </button>
                     )}
                   </div>
@@ -319,7 +367,7 @@ export function TelegramImport() {
                             <span className="flex min-w-0 grow flex-col gap-0.5">
                               <span className="truncate text-[14px] font-semibold">{d.name.replace(/\.pdf$/i, "")}</span>
                               <span className="label truncate text-[9px] text-muted">
-                                {d.imported ? "In your Library · " : big ? "Over 20 MB · " : ""}
+                                {d.imported ? `${t("In your Library")} · ` : big ? `${t("Over 20 MB")} · ` : ""}
                                 {d.size ? `${fileSize(d.size)} · ` : ""}
                                 {d.from} · {newsTime(d.date)}
                               </span>
@@ -335,10 +383,10 @@ export function TelegramImport() {
                                     />
                                   </span>
                                   <span className="label shrink-0 text-[9px] text-muted">
-                                    {pr.stage === "waiting" && "Waiting"}
+                                    {pr.stage === "waiting" && t("Waiting")}
                                     {pr.stage === "downloading" && `${Math.round((pr.p ?? 0) * 100)}%`}
-                                    {pr.stage === "adding" && "Adding…"}
-                                    {pr.stage === "failed" && "Failed"}
+                                    {pr.stage === "adding" && t("Adding…")}
+                                    {pr.stage === "failed" && t("Failed")}
                                   </span>
                                 </span>
                               )}
@@ -358,7 +406,7 @@ export function TelegramImport() {
                   {picked.size > 0 && (
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center justify-between gap-3">
-                        <span className="text-[14px]">Shelf</span>
+                        <span className="text-[14px]">{t("Shelf")}</span>
                         <input
                           value={shelf}
                           onChange={(e) => setShelf(e.target.value)}
@@ -370,7 +418,7 @@ export function TelegramImport() {
                         disabled={importing}
                         className="flex h-12 items-center justify-center rounded-full bg-ink text-[15px] font-semibold text-on-ink disabled:opacity-60"
                       >
-                        {importing ? "Importing…" : `Import ${picked.size} PDF${picked.size === 1 ? "" : "s"}`}
+                        {importing ? t("Importing…") : t(picked.size === 1 ? "Import {n} PDF" : "Import {n} PDFs", { n: picked.size })}
                       </button>
                     </div>
                   )}
@@ -384,12 +432,12 @@ export function TelegramImport() {
                   setPdfs(null);
                   setPicked(new Set());
                   setLink("idle");
-                  toast({ text: "Disconnected from Telegram" });
+                  toast({ text: t("Disconnected from Telegram") });
                 }}
                 disabled={importing}
                 className="mt-2 text-[13px] text-muted underline"
               >
-                Disconnect {botHandle}
+                {t("Disconnect {bot}", { bot: botHandle })}
               </button>
             </div>
           )}

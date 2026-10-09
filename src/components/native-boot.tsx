@@ -9,9 +9,13 @@ import { isNative } from "@/lib/platform";
 import { countPage } from "@/lib/nav";
 import { importShared, RESULT_KEY, resultTitle, ShareIn, type ShareResult } from "@/lib/share-in";
 import { useToast } from "./toast";
-import { scheduleDigest } from "@/lib/reminders";
+import { scheduleDigest, scheduleNoteReminders } from "@/lib/reminders";
 import { applyNewsAlerts } from "@/lib/news-alerts";
 import { applyTheme, watchSystemTheme } from "@/lib/theme";
+import { subscribe } from "@/lib/db";
+import { updateWidget } from "@/lib/widget";
+import { checkInBackground } from "@/lib/telegram";
+import { tr } from "@/lib/i18n";
 
 const Splash = registerPlugin<{ hide(): Promise<void> }>("Splash");
 
@@ -29,6 +33,24 @@ export function NativeBoot() {
     applyTheme();
     return watchSystemTheme();
   }, []);
+
+  // Telegram import: collect PDFs forwarded to the bot when Stack opens or
+  // comes back, before Telegram drops them (it keeps them about a day).
+  useEffect(() => {
+    const run = () =>
+      checkInBackground()
+        .then((n) => {
+          if (n) toast({ text: `${n} new PDF${n === 1 ? "" : "s"} from Telegram`, href: "/library" });
+        })
+        .catch(() => {});
+    const timer = setTimeout(run, 3000); // after the first screen settles
+    const onVisible = () => document.visibilityState === "visible" && run();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [toast]);
 
   useEffect(() => {
     if (!isNative()) return;
@@ -56,6 +78,18 @@ export function NativeBoot() {
     applyNewsAlerts().catch(() => {});
     scheduleDigest().catch(() => {});
 
+    // Home screen widget and note reminders: refresh now, and a moment after anything is saved.
+    updateWidget().catch(() => {});
+    scheduleNoteReminders().catch(() => {});
+    let widgetTimer: ReturnType<typeof setTimeout>;
+    const offWidget = subscribe(() => {
+      clearTimeout(widgetTimer);
+      widgetTimer = setTimeout(() => {
+        updateWidget().catch(() => {});
+        scheduleNoteReminders().catch(() => {});
+      }, 1500);
+    });
+
     // Share to Stack: import what the share card saved, at launch, when Stack
     // comes back to the front, and when a share arrives while it's open.
     // One import at a time, so an item is never saved twice.
@@ -74,7 +108,10 @@ export function NativeBoot() {
           router.push(`/share?t=${Date.now()}`);
         } else if (last && last.kind !== "error") {
           toast({
-            text: items.length > 1 ? `${items.length} items saved from other apps` : `Saved “${resultTitle(last)}”`,
+            text:
+              items.length > 1
+                ? tr("{n} items saved from other apps", { n: items.length })
+                : tr("Saved “{title}”", { title: resultTitle(last) }),
             href: last.kind === "note" ? "/notes" : "/library",
           });
         }
@@ -84,6 +121,8 @@ export function NativeBoot() {
     const shared = ShareIn.addListener("shared", importInbox);
     const resumed = App.addListener("resume", importInbox);
     return () => {
+      clearTimeout(widgetTimer);
+      offWidget();
       sub.then((s) => s.remove());
       opened.then((s) => s.remove());
       shared.then((s) => s.remove());

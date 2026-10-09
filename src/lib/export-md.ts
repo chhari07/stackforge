@@ -35,9 +35,10 @@ const quote = (s: string) =>
 
 function noteBody(n: Note) {
   const out: string[] = [];
-  if (n.quote) out.push(quote(n.quote) + (n.page ? ` (p. ${n.page})` : ""));
+  if (n.quote) out.push(quote(n.quote) + (n.page ? ` (${n.sourceLabel === "EPUB" ? "ch." : "p."} ${n.page})` : ""));
   if (n.body?.trim()) out.push(n.body.trim());
   if (n.checklist?.length) out.push(n.checklist.map((c) => `- [${c.done ? "x" : " "}] ${c.text}`).join("\n"));
+  if (n.tags?.length) out.push(n.tags.map((t) => `#${t.replace(/\s+/g, "-")}`).join(" "));
   return out.join("\n\n");
 }
 

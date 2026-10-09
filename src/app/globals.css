@@ -35,17 +35,8 @@
 
 :root {
   color-scheme: light;
-  /* Just above the bottom tab bar (its height grows with the phone's gesture bar) */
-  --above-tabs: calc(81px + max(env(safe-area-inset-bottom), 12px));
-  --rail: 0px;
-}
-
-/* Tablets: the bottom tab bar becomes a left rail (NavRail). */
-@media (min-width: 768px) {
-  :root {
-    --rail: 96px;
-    --above-tabs: calc(20px + env(safe-area-inset-bottom));
-  }
+  /* Just above the floating tab bar (it sits higher on phones with a gesture bar) */
+  --above-tabs: calc(70px + max(env(safe-area-inset-bottom), 12px));
 }
 
 /* Dark theme: Settings → Appearance sets data-theme; "system" follows the phone. */
@@ -101,12 +92,12 @@
 }
 
 html {
-  background: var(--color-desk);
+  background: var(--color-paper);
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--color-desk);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
@@ -159,11 +150,6 @@ html {
   flex-shrink: 0;
   scroll-snap-align: start;
 }
-@media (min-width: 768px) {
-  .rail {
-    scroll-padding-inline: 40px;
-  }
-}
 
 /* A full screen below the status bar (the layout already pads for it), for
    pages with a button pinned to the bottom. */
@@ -186,6 +172,10 @@ html {
 ::highlight(stack-pdf) {
   background-color: rgb(242 162 70 / 0.38);
 }
+/* What a search in the book found */
+::highlight(stack-find) {
+  background-color: rgb(78 158 230 / 0.45);
+}
 
 /* Readable article body */
 .prose-stack {
@@ -207,6 +197,28 @@ html {
 }
 .prose-stack h2 {
   font-size: 22px;
+}
+/* EPUB chapters (components/epub-reader.tsx): sizes follow the reader's text size */
+.book h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+.book p,
+.book div + div {
+  margin-top: 0.9em;
+}
+.book h2 {
+  font-size: 1.3em;
+}
+.book h3 {
+  font-size: 1.12em;
+}
+.book img {
+  display: block;
+  margin-inline: auto;
+  border-radius: 4px;
 }
 .prose-stack h3 {
   font-size: 19px;
@@ -505,7 +517,27 @@ html {
   animation: tg-shake 380ms ease-in-out;
 }
 
+/* Settings gear (Today header): half a turn as it appears, a
+   quarter turn while pressed. */
+@keyframes gear-turn {
+  from {
+    transform: rotate(-180deg);
+  }
+}
+.gear {
+  animation: gear-turn 900ms cubic-bezier(0.3, 0.7, 0.4, 1) 250ms backwards;
+  transition: transform 350ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+a:hover > .gear,
+a:active > .gear {
+  transform: rotate(90deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .gear {
+    animation: none;
+    transition: none;
+  }
   .tg-flow,
   .tg-fly,
   .tg-pulse,
@@ -568,4 +600,95 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .ribbon-drop { animation: none; }
   .sticky-paper { transition: none; }
+}
+
+/* Long song names slide sideways (components/marquee.tsx): hold at the start,
+   slide one copy's width, and loop onto the second copy without a jump. */
+@keyframes marquee {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  animation: marquee linear infinite;
+}
+.marquee-box:active .marquee {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-box {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .marquee {
+    animation: none;
+  }
+  .marquee-copy {
+    display: none;
+  }
+}
+
+/* ---- First launch: the three intro cards (components/intro-cards.tsx) ---- */
+/* ① Save from any app: a page drops onto the stack */
+@keyframes intro-save {
+  0%, 12% { transform: translate(70px, -60px) rotate(14deg); opacity: 0; }
+  40% { opacity: 1; }
+  62%, 100% { transform: none; opacity: 1; }
+}
+.intro-save {
+  animation: intro-save 2600ms cubic-bezier(.2, .8, .2, 1) infinite;
+}
+/* ② Select a line: the marker sweeps, then the note pops up */
+@keyframes intro-mark {
+  0%, 10% { transform: scaleX(0); }
+  45%, 100% { transform: scaleX(1); }
+}
+.intro-mark {
+  transform-origin: left center;
+  animation: intro-mark 2600ms ease-in-out infinite;
+}
+@keyframes intro-note {
+  0%, 50% { transform: translateY(10px) scale(.92); opacity: 0; }
+  68%, 100% { transform: none; opacity: 1; }
+}
+.intro-note {
+  animation: intro-note 2600ms cubic-bezier(.2, .8, .2, 1) infinite;
+}
+/* ③ Every morning, three come back: the cards rise one by one */
+@keyframes intro-rise {
+  0%, 8% { transform: translateY(26px); opacity: 0; }
+  30%, 100% { transform: none; opacity: 1; }
+}
+.intro-rise {
+  animation: intro-rise 2800ms cubic-bezier(.2, .8, .2, 1) infinite;
+}
+@keyframes intro-sun {
+  from { transform: translateY(18px); }
+  to { transform: none; }
+}
+.intro-sun {
+  animation: intro-sun 1400ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-save,
+  .intro-mark,
+  .intro-note,
+  .intro-rise,
+  .intro-sun {
+    animation: none;
+  }
+}
+
+/* Hindi (Settings → Language): Devanagari needs no letter-spacing, and its
+   vowel signs need room above and below the line. */
+:lang(hi) .label {
+  letter-spacing: 0;
+}
+:lang(hi) .display {
+  letter-spacing: 0;
+  line-height: 1.15;
 }

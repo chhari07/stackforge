@@ -2,18 +2,24 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { ChevronLeft, ChevronRight, ClockIcon, NoteIcon, PauseIcon, PlayIcon } from "@/components/icons";
+import { ChevronLeft, ChevronRight, ClockIcon, NoteIcon, PauseIcon, PlayIcon, SearchIcon } from "@/components/icons";
+import { FindSheet, type FindSource } from "@/components/book-find";
+import { useAiExplain } from "@/components/ai-explain";
 import { SelectionToolbar } from "@/components/selection-toolbar";
 import { QuoteNoteSheet } from "@/components/quote-note-sheet";
+import { WordSheet } from "@/components/word-sheet";
+import { QuoteCardSheet } from "@/components/quote-card-sheet";
+import { wordCard, type CardText } from "@/lib/quote-card";
 import { useNowPlaying } from "@/components/now-playing";
 import { useFocus, useTick } from "@/components/focus-provider";
 import { clockText, remainingMs } from "@/lib/focus";
 import { useToast } from "@/components/toast";
-import { addNote, getNotes, getPdf, updatePdf, type Note, type PdfMeta } from "@/lib/db";
+import { addNote, getNotes, getPdf, getPdfs, updatePdf, type Note, type PdfMeta } from "@/lib/db";
+import { EpubReader } from "@/components/epub-reader";
 import { useStore } from "@/lib/use-store";
-import { openPdf, pdfjs } from "@/lib/pdf";
+import { openPdf, pdfOutline, pdfPageText, pdfjs } from "@/lib/pdf";
 import { markPageRead, useReadingTimer } from "@/lib/reading";
 import { ListenButton } from "@/components/listen-button";
 import { paintHighlights } from "@/lib/highlights";
@@ -22,6 +28,9 @@ import { ContrastIcon, NoteAddIcon } from "@/components/stack-icons";
 import { BookmarkIcon } from "@/components/icons";
 import { BookmarkSheet, Ribbon, Stickies, StickySheet, ViewSheet, pageFilter, patchPdf } from "@/components/pdf-extras";
 import { AiPdfButton } from "@/components/ai-pdf-chat";
+import { InkLayer, InkPad, InkToolbar, PenIcon, useInk, usePen } from "@/components/ink";
+import type { Stroke } from "@/lib/ink";
+import { useT } from "@/lib/i18n";
 
 const MIN_PER_PAGE = 1.5; // rough reading pace for the "time left" pill
 
@@ -29,12 +38,29 @@ export default function Page() {
   // useSearchParams needs a Suspense boundary.
   return (
     <Suspense>
-      <PdfReader />
+      <Reader />
     </Suspense>
   );
 }
 
+// PDFs and EPUB books share this address; which reader opens depends on the file.
+function Reader() {
+  const params = useSearchParams();
+  const id = params.get("id") ?? "";
+  const [format, setFormat] = useState<"pdf" | "epub" | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getPdfs().then((all) => alive && setFormat(all.find((p) => p.id === id)?.format ?? "pdf"));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  if (!format) return null;
+  return format === "epub" ? <EpubReader key={id} id={id} startPage={Number(params.get("page")) || 0} /> : <PdfReader />;
+}
+
 function PdfReader() {
+  const t = useT();
   const params = useSearchParams();
   const id = params.get("id") ?? "";
   const startPage = Number(params.get("page")) || 0;
@@ -51,11 +77,32 @@ function PdfReader() {
   const [zoom, setZoom] = useState(1);
   const [rendered, setRendered] = useState(0); // bumps after each page paint
   const [noteQuote, setNoteQuote] = useState<string | null>(null);
+  const [word, setWord] = useState<string | null>(null);
+  const [explain, explainSheet] = useAiExplain({ kind: "pdf", title: meta?.title, label: `PDF · ${t("p. {n}", { n: page })}`, href: `/library/read?id=${id}&page=${page}` });
+  const [sharing, setSharing] = useState<CardText | null>(null); // what the Share sheet is showing
   const [notes] = useStore(getNotes, []);
   const [size, setSize] = useState({ w: 0, h: 0 }); // the painted page, in CSS pixels
-  const [panel, setPanel] = useState<"view" | "bookmarks" | "sticky" | null>(null);
+  const [panel, setPanel] = useState<"view" | "bookmarks" | "sticky" | "find" | null>(null);
+  const [found, setFound] = useState<string | null>(null); // words from a search, marked on the page
   const [editing, setEditing] = useState<Note | null>(null); // the sticky being changed
   const [showStickies, setShowStickies] = useState(true);
+  const [drawing, setDrawing] = useState(false); // handwriting on the page (components/ink.tsx)
+  const [pen, setPen] = usePen();
+
+  // This page's handwriting, saved with the PDF (meta.ink, by page number).
+  const ink = useInk(
+    meta?.ink?.[page] ?? [],
+    (strokes: Stroke[]) =>
+      setMeta((m) => {
+        if (!m) return m;
+        const all = { ...m.ink };
+        if (strokes.length) all[page] = strokes;
+        else delete all[page];
+        updatePdf(m.id, { ink: all });
+        return { ...m, ink: all };
+      }),
+    `${id}:${page}:${!!meta}`,
+  );
 
   const wrap = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -144,16 +191,34 @@ function PdfReader() {
   }, [id, page, meta]);
 
   const pageNotes = notes.filter((n) => n.pdfId === id && n.page === page);
-  const quotesKey = pageNotes.map((n) => n.quote).join("\u0000");
+  const quotesKey = pageNotes.map((n) => (n.word ? "" : n.quote)).join("\u0000");
   useEffect(() => {
     paintHighlights(
       "stack-pdf",
       textRef.current,
-      pageNotes.filter((n) => n.quote).map((n) => n.quote!),
+      pageNotes.filter((n) => n.quote && !n.word).map((n) => n.quote!),
     );
     return () => paintHighlights("stack-pdf", null, []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rendered, quotesKey]);
+
+  // What a search found is marked on the page it was found on.
+  useEffect(() => {
+    paintHighlights("stack-find", found ? textRef.current : null, found ? [found] : []);
+    return () => paintHighlights("stack-find", null, []);
+  }, [rendered, found]);
+
+  // Search, contents and "go to page" (components/book-find.tsx).
+  const findSource = useMemo<FindSource | null>(
+    () =>
+      doc && {
+        pages: doc.numPages,
+        unit: "p.",
+        pageText: (p) => pdfPageText(doc, p),
+        outline: () => pdfOutline(doc),
+      },
+    [doc],
+  );
 
   const total = doc?.numPages ?? meta?.pages ?? 1;
   const go = useCallback(
@@ -171,7 +236,7 @@ function PdfReader() {
   useEffect(() => {
     const el = sheet.current;
     const box = wrap.current;
-    if (!el || !box || !doc) return;
+    if (!el || !box || !doc || drawing) return;
     let start: { x: number; y: number; atLeft: boolean; atRight: boolean } | null = null;
     let axis: "x" | "y" | null = null;
     const selecting = () => window.getSelection()?.isCollapsed === false;
@@ -251,7 +316,7 @@ function PdfReader() {
       el.removeEventListener("touchcancel", onCancel);
       settle(false);
     };
-  }, [doc, page, total, zoom, go]);
+  }, [doc, page, total, zoom, go, drawing]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -276,22 +341,40 @@ function PdfReader() {
       page,
       href: `/library/read?id=${id}&page=${page}`,
     });
-    toast({ text: `Saved to Notes · p. ${page}`, href: "/notes" });
+    toast({ text: t("Saved to Notes · p. {n}", { n: page }), href: "/notes" });
   };
 
-  const listed = pageNotes.filter((n) => n.body && !n.sticky); // stickies are on the page already
+  const saveWord = async (w: string, meaning: string) => {
+    if (!meta) return;
+    await addNote({
+      kind: "pdf",
+      word: true,
+      quote: w,
+      body: meaning,
+      sourceTitle: meta.title,
+      sourceLabel: "PDF",
+      pdfId: id,
+      page,
+      href: `/library/read?id=${id}&page=${page}`,
+    });
+    toast({ text: t("“{word}” saved to My words", { word: w }), href: "/notes" });
+  };
+
+  const listed = pageNotes.filter((n) => n.body && !n.sticky && !n.word); // stickies are on the page already
   const marked = !!meta?.bookmarks?.some((b) => b.page === page);
 
   const minutesLeft = Math.round((total - page) * MIN_PER_PAGE);
   const left =
-    minutesLeft >= 60 ? `${Math.floor(minutesLeft / 60)}:${String(minutesLeft % 60).padStart(2, "0")}` : `${minutesLeft}m`;
+    minutesLeft >= 60
+      ? `${Math.floor(minutesLeft / 60)}:${String(minutesLeft % 60).padStart(2, "0")}`
+      : t("{n}m", { n: minutesLeft });
 
   if (missing) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-4 px-8 text-center">
-        <p className="font-serif text-[24px] italic">This PDF isn’t on this device.</p>
+        <p className="font-serif text-[24px] italic">{t("This PDF isn’t on this device.")}</p>
         <Link href="/library" className="label rounded-full bg-ink px-5 py-3 text-[11px] text-on-ink">
-          Back to Library
+          {t("Back to Library")}
         </Link>
       </main>
     );
@@ -299,18 +382,18 @@ function PdfReader() {
 
   return (
     <main className="min-h-dvh bg-paper pb-40">
-      <div className="sticky top-0 z-20 -mt-[env(safe-area-inset-top)] bg-paper px-5 pt-[calc(env(safe-area-inset-top)+20px)] md:px-[max(24px,calc((100%-880px)/2))]">
+      <div className="sticky top-0 z-20 -mt-[env(safe-area-inset-top)] bg-paper px-[max(20px,calc((100%-880px)/2))] pt-[calc(env(safe-area-inset-top)+20px)]">
         <div className="flex h-11 items-center gap-1">
-          <Link href="/library" aria-label="Back to library" className="-ml-2 flex size-11 items-center justify-center">
+          <Link href="/library" aria-label={t("Back to library")} className="-ml-2 flex size-11 items-center justify-center">
             <ChevronLeft size={22} />
           </Link>
           <span className="label grow truncate text-center text-[10px]">
-            {meta?.title ?? "Loading…"} · p. {page}
+            {meta?.title ?? t("Loading…")} · {t("p. {n}", { n: page })}
           </span>
           {!focusing && meta && (
             <Link
               href={`/focus?kind=pdf&id=${id}&title=${encodeURIComponent(meta.title)}`}
-              aria-label="Start a focus session with this PDF"
+              aria-label={t("Start a focus session with this PDF")}
               className="flex size-11 items-center justify-center"
             >
               <ClockIcon size={20} />
@@ -318,17 +401,25 @@ function PdfReader() {
           )}
           {meta && doc && (
             <ListenButton
-              label="Listen from this page"
-              title={`${meta.title} · from p. ${page}`}
+              label={t("Listen from this page")}
+              title={`${meta.title} · ${t("from p. {n}", { n: page })}`}
               source="PDF"
               getText={() => pdfText(doc, page, Math.min(doc.numPages, page + 29))}
             />
           )}
           {meta && <AiPdfButton id={id} title={meta.title} page={page} onPage={setPage} />}
-          <button aria-label="Bookmarks" onClick={() => setPanel("bookmarks")} className="flex size-11 items-center justify-center">
+          <button
+            aria-label={drawing ? t("Stop drawing") : t("Draw and write on the page")}
+            aria-pressed={drawing}
+            onClick={() => setDrawing((d) => !d)}
+            className={`flex size-11 items-center justify-center rounded-full ${drawing ? "bg-ink text-on-ink" : ""}`}
+          >
+            <PenIcon size={20} />
+          </button>
+          <button aria-label={t("Bookmarks")} onClick={() => setPanel("bookmarks")} className="flex size-11 items-center justify-center">
             <BookmarkIcon size={20} filled={marked} />
           </button>
-          <button aria-label="Page view: contrast, zoom and cover" onClick={() => setPanel("view")} className="flex size-11 items-center justify-center">
+          <button aria-label={t("Page view: contrast, zoom and cover")} onClick={() => setPanel("view")} className="flex size-11 items-center justify-center">
             <ContrastIcon size={21} />
           </button>
         </div>
@@ -337,7 +428,7 @@ function PdfReader() {
         </div>
       </div>
 
-      <div ref={wrap} className="mx-auto mt-4 overflow-x-auto px-3 md:max-w-[880px] md:px-6">
+      <div ref={wrap} className="mx-auto mt-4 max-w-[880px] overflow-x-auto px-3">
         {/* At normal size a sideways drag belongs to the page turn, not to the browser's panning. */}
         <div
           ref={sheet}
@@ -346,6 +437,7 @@ function PdfReader() {
         >
           <canvas ref={canvasRef} className="block" style={{ filter: pageFilter(meta?.view) }} />
           <div ref={textRef} className="textLayer" />
+          {!drawing && <InkLayer strokes={ink.strokes} w={size.w} h={size.h} className="z-[1]" />}
           {showStickies && (
             <Stickies
               notes={pageNotes.filter((n) => n.sticky)}
@@ -358,6 +450,19 @@ function PdfReader() {
             />
           )}
           {marked && <Ribbon key={page} onClick={() => setPanel("bookmarks")} />}
+          {drawing && size.w > 0 && (
+            <InkPad
+              strokes={ink.strokes}
+              onChange={ink.change}
+              w={size.w}
+              h={size.h}
+              pen={pen}
+              onPan={(dx, dy) => {
+                window.scrollBy(0, -dy);
+                if (wrap.current) wrap.current.scrollLeft -= dx;
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -381,46 +486,61 @@ function PdfReader() {
           disabled={page <= 1}
           className="label flex h-11 items-center gap-1 rounded-full border border-ink/15 px-4 text-[10px] disabled:opacity-30"
         >
-          <ChevronLeft size={14} /> Prev
+          <ChevronLeft size={14} /> {t("Prev")}
         </button>
-        <span className="label text-[10px] text-muted">
-          {page} / {total}
-        </span>
+        <button
+          onClick={() => setPanel("find")}
+          aria-label={t("Page {n} of {total}. Search, contents and go to page", { n: page, total })}
+          className="label flex h-11 items-center gap-2 rounded-full border border-ink/15 px-4 text-[10px]"
+        >
+          <SearchIcon size={14} /> {page} / {total}
+        </button>
         <button
           onClick={() => go(1)}
           disabled={page >= total}
           className="label flex h-11 items-center gap-1 rounded-full border border-ink/15 px-4 text-[10px] disabled:opacity-30"
         >
-          Next <ChevronRight size={14} />
+          {t("Next")} <ChevronRight size={14} />
         </button>
       </div>
 
+      {drawing && (
+        <InkToolbar
+          pen={pen}
+          onPen={setPen}
+          ink={ink}
+          onClear={() => ink.strokes.length && ink.change([])}
+          onDone={() => setDrawing(false)}
+          className="fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),16px)] z-40 mx-auto max-w-[460px] shadow-[0_8px_24px_rgba(0,0,0,.25)]"
+        />
+      )}
+
       {/* Reading-time + music pill from the design */}
-      <div className="fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),24px)] z-30 mx-auto flex h-[60px] max-w-[448px] md:left-[calc(var(--rail)+16px)] items-center gap-2.5 rounded-full bg-ink pr-2 pl-[18px] text-on-ink">
+      <div hidden={drawing} className="fixed inset-x-4 bottom-[max(env(safe-area-inset-bottom),24px)] z-30 mx-auto flex h-[60px] max-w-[448px] items-center gap-2.5 rounded-full bg-ink pr-2 pl-[18px] text-on-ink">
         {focusing && focus ? (
           // During a focus session the pill counts down the session instead.
-          <Link href="/focus" aria-label="Focus session" className="flex items-center gap-2.5">
+          <Link href="/focus" aria-label={t("Focus session")} className="flex items-center gap-2.5">
             <span className={`size-2 rounded-full ${focus.pausedAt ? "bg-pdf" : "animate-pulse bg-music"}`} />
             <span className="text-[15px] font-semibold tabular-nums">{clockText(remainingMs(focus, tick))}</span>
-            <span className="label text-[9px] text-on-ink/65">{focus.pausedAt ? "paused" : "focus"}</span>
+            <span className="label text-[9px] text-on-ink/65">{focus.pausedAt ? t("paused") : t("focus")}</span>
           </Link>
         ) : (
           <>
             <ClockIcon size={18} />
             <span className="text-[15px] font-semibold">{left}</span>
-            <span className="label text-[9px] text-on-ink/65">left</span>
+            <span className="label text-[9px] text-on-ink/65">{t("left")}</span>
           </>
         )}
         <span className="mx-1 h-[26px] w-px bg-on-ink/20" />
         <Link href="/music" className="flex min-w-0 grow items-center gap-2">
           <span className={`size-2 shrink-0 rounded-full ${now?.playing ? "bg-music" : "bg-[#6B6862]"}`} />
           <span className="label truncate text-[10px]">
-            {now ? `${now.title} · ${now.artist}` : "Add music"}
+            {now ? `${now.title} · ${now.artist}` : t("Add music")}
           </span>
         </Link>
         {now && (
           <button
-            aria-label={now.playing ? "Pause music" : "Play music"}
+            aria-label={now.playing ? t("Pause music") : t("Play music")}
             onClick={now.toggle}
             className="flex size-11 shrink-0 items-center justify-center rounded-full bg-music text-white"
           >
@@ -430,7 +550,8 @@ function PdfReader() {
       </div>
 
       <button
-        aria-label="Add a sticky note to this page"
+        hidden={drawing}
+        aria-label={t("Add a sticky note to this page")}
         onClick={() => {
           setEditing(null);
           setShowStickies(true);
@@ -466,11 +587,39 @@ function PdfReader() {
         </>
       )}
 
+      <FindSheet
+        open={panel === "find"}
+        onClose={() => setPanel(null)}
+        source={findSource}
+        page={page}
+        onPage={(p) => {
+          setPage(p);
+          window.scrollTo({ top: 0 });
+        }}
+        onFound={setFound}
+      />
       <SelectionToolbar
         container={textRef}
         accent="text-pdf-deep"
+        onExplain={explain}
         onHighlight={(t) => save(t)}
         onNote={(t) => setNoteQuote(t)}
+        onMeaning={setWord}
+        onShare={(text) => setSharing({ text, quoted: true, title: meta?.title, label: `PDF · ${t("p. {n}", { n: page })}` })}
+      />
+      <QuoteCardSheet card={sharing} onClose={() => setSharing(null)} />
+      {explainSheet}
+      <WordSheet
+        word={word}
+        onClose={() => setWord(null)}
+        onSave={(w, meaning) => {
+          saveWord(w, meaning);
+          setWord(null);
+        }}
+        onShare={(w, meaning) => {
+          setWord(null);
+          setSharing(wordCard(w, meaning, meta?.title));
+        }}
       />
       <QuoteNoteSheet
         quote={noteQuote}
@@ -488,14 +637,6 @@ function PdfReader() {
 // The text of pages `from`..`to`, for Listen mode.
 async function pdfText(doc: PDFDocumentProxy, from: number, to: number) {
   const pages: string[] = [];
-  for (let i = from; i <= to; i++) {
-    const content = await (await doc.getPage(i)).getTextContent();
-    pages.push(
-      content.items
-        .map((it) => ("str" in it ? it.str + (it.hasEOL ? "\n" : " ") : ""))
-        .join("")
-        .replace(/-\n(?=[a-z])/g, ""),
-    );
-  }
+  for (let i = from; i <= to; i++) pages.push(await pdfPageText(doc, i));
   return pages.join("\n\n");
 }

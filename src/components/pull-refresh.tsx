@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Logo } from "./logo";
+import { useT } from "@/lib/i18n";
 
 const TRIGGER = 72; // px of pull (after resistance) that starts a refresh
 const MAX = 110;
@@ -83,6 +84,7 @@ export function usePullToRefresh(
 // The Stack logo in a bubble at the top of the screen: it builds up block by
 // block as you pull, then keeps stacking while the refresh runs.
 export function RefreshLogo({ pull, busy }: { pull: number; busy: boolean }) {
+  const t = useT();
   const shown = busy || pull > 0;
   const y = busy ? 56 : pull * 0.8;
   const ready = pull >= TRIGGER;
@@ -90,8 +92,8 @@ export function RefreshLogo({ pull, busy }: { pull: number; busy: boolean }) {
     <div
       aria-hidden={!busy}
       role={busy ? "status" : undefined}
-      aria-label={busy ? "Refreshing news" : undefined}
-      className="pointer-events-none fixed inset-x-0 top-[env(safe-area-inset-top)] z-40 flex justify-center md:left-[var(--rail)]"
+      aria-label={busy ? t("Refreshing news") : undefined}
+      className="pointer-events-none fixed inset-x-0 top-[env(safe-area-inset-top)] z-40 flex justify-center"
     >
       <div
         style={{
@@ -105,7 +107,7 @@ export function RefreshLogo({ pull, busy }: { pull: number; busy: boolean }) {
           size={26}
           loop={busy}
           built={busy ? undefined : pull / TRIGGER}
-          title="Refresh"
+          title={t("Refresh")}
         />
       </div>
     </div>
