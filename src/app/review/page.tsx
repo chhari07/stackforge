@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BackIcon, CheckIcon, ExternalIcon } from "@/components/icons";
-import { canGoBack } from "@/lib/nav";
+import { CheckIcon, ExternalIcon } from "@/components/icons";
 import { grade, reviewStreak, todaysReview, type Grade } from "@/lib/review";
 import { useStore } from "@/lib/use-store";
 import { getNotes } from "@/lib/db";
@@ -15,10 +13,10 @@ import { QuoteCardSheet } from "@/components/quote-card-sheet";
 import { cardOf } from "@/lib/quote-card";
 import { pageLabel } from "@/components/note-card";
 import { TabBar } from "@/components/tab-bar";
+import { TopBar } from "@/components/top-bar";
 import { useT } from "@/lib/i18n";
 
 export default function Review() {
-  const router = useRouter();
   const [{ items, done }, ready] = useStore(todaysReview, { items: [], done: [] });
   const [notes, notesReady] = useStore(getNotes, []);
   const fresh = notesReady && !notes.some((n) => n.quote); // no highlights yet
@@ -26,7 +24,6 @@ export default function Review() {
   const [shown, setShown] = useState<string | null>(null); // the word whose meaning is showing
   const [card, setCard] = useState<Note | null>(null);
   const t = useT();
-  const back = () => (canGoBack() ? router.back() : router.push("/"));
 
   const left = items.filter((n) => !done.includes(n.id));
   const current = left[0];
@@ -40,22 +37,14 @@ export default function Review() {
   };
 
   return (
-    <main className="screen flex flex-col px-5 pt-5 pb-[calc(var(--above-tabs)+16px)]">
-      <div className="flex h-8 items-center justify-between">
-        <button aria-label={t("Back")} onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
-          <BackIcon size={22} />
-        </button>
-        {current && (
-          <span className="label text-[10px]">
-            {position} / {items.length}
-          </span>
-        )}
-      </div>
+    <main className="screen flex flex-col px-5 pt-1 pb-[calc(var(--above-tabs)+16px)]">
+      <TopBar />
 
       <div className="mx-auto flex w-full max-w-[600px] grow flex-col">
         <h1 className="display -ml-1.5 mt-3 text-[clamp(84px,28vw,150px)]">{t("RECALL")}</h1>
         <p className="label mt-2.5 text-[10px] text-muted">
           {t("Daily review")} · {items.length ? t("{n} highlights today", { n: items.length }) : t("no highlights today")}
+          {current && ` · ${position} / ${items.length}`}
         </p>
 
         {/* Progress dots */}

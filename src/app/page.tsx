@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { TabBar } from "@/components/tab-bar";
-import { Logo } from "@/components/logo";
+import { TopBar } from "@/components/top-bar";
 import { MiniPlayer } from "@/components/mini-player";
 import { HeroStory, StoryCard } from "@/components/story";
 import { NoteCard } from "@/components/note-card";
-import { Avatar } from "@/components/avatar";
 import { PdfCover } from "@/components/pdf-cover";
 import { getNotes, getPdfs } from "@/lib/db";
 import { useStore } from "@/lib/use-store";
@@ -15,7 +14,7 @@ import { useNews } from "@/lib/use-news";
 import { dayStamp, greeting } from "@/lib/format";
 import { getProfile, newsFirst } from "@/lib/profile";
 import { SAMPLE_HREF } from "@/lib/sample";
-import { ClockIcon, GearIcon, PlayIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { ClockIcon, PlayIcon, PlusIcon } from "@/components/icons";
 import { NotifyPrompt } from "@/components/notify-prompt";
 import { WeekCard } from "@/components/week-card";
 import { useFocus, useTick } from "@/components/focus-provider";
@@ -153,26 +152,9 @@ export default function Today() {
   const rail = "rail -mx-5 mt-2 gap-3 px-5";
 
   return (
-    <main className="px-5 pt-5 pb-[180px]">
-      <div className="flex h-8 items-center justify-between">
-        <Logo size={30} animate className="-ml-1.5" />
-        <div className="-mr-2.5 flex items-center">
-          <Link href="/search" aria-label={t("Search everything")} className="flex size-11 items-center justify-center">
-            <SearchIcon size={22} />
-          </Link>
-          <Link href="/account" aria-label={t("Your account")} className="flex size-11 items-center justify-center">
-            <Avatar size={30} />
-          </Link>
-          <Link
-            href="/settings"
-            aria-label={t("Settings")}
-            className="flex size-11 items-center justify-center"
-          >
-            <GearIcon size={22} className="gear" />
-          </Link>
-        </div>
-      </div>
-      <h1 className="display -ml-2.5 mt-2.5 text-[clamp(96px,33vw,150px)]">
+    <main className="px-5 pt-1 pb-[180px]">
+      <TopBar animate />
+      <h1 className="display -ml-2.5 mt-1 text-[clamp(96px,33vw,150px)]">
         STACK
       </h1>
       <p className="mt-3 font-serif text-[19px] leading-snug italic">{t("Stack makes you remember what you read.")}</p>

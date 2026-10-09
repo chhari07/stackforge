@@ -25,6 +25,7 @@ import { BackupSection } from "@/components/backup-section";
 import { NewsAlertsSection } from "@/components/news-alerts-section";
 import { addWidget } from "@/lib/widget";
 import { AiSection } from "@/components/ai-section";
+import { PrivacyRow } from "@/components/privacy-row";
 import { setUiLang, UI_LANGS, useT, useUiLang } from "@/lib/i18n";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -428,6 +429,11 @@ export default function Settings() {
         <Section title="08 — Backup">
           <BackupSection />
         </Section>
+
+        <section className="mt-6">
+          <h2 className="label text-[11px] font-medium">09 — {t("Privacy")}</h2>
+          <PrivacyRow className="mt-2.5" />
+        </section>
       </div>
       <p className="label mt-8 text-center text-[10px] text-muted">
         {t("Everything is stored on this device, in your account when you’re signed in, and in backups you save")}

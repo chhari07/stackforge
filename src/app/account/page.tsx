@@ -12,6 +12,7 @@ import { BackIcon } from "@/components/icons";
 import { canGoBack } from "@/lib/nav";
 import { noteTime } from "@/lib/format";
 import { SignOutIcon, SyncIcon } from "@/components/stack-icons";
+import { PrivacyRow } from "@/components/privacy-row";
 import { useT } from "@/lib/i18n";
 
 export default function Account() {
@@ -137,6 +138,9 @@ export default function Account() {
             <SignInPanel />
           </div>
         )}
+
+        <h2 className="label mt-9 text-[11px] font-medium">{t("Privacy")}</h2>
+        <PrivacyRow className="mt-3" />
       </div>
 
       <Sheet

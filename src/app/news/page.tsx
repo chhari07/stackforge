@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TabBar } from "@/components/tab-bar";
+import { TopBar } from "@/components/top-bar";
 import { Chips } from "@/components/sheet";
 import { HeroStory, StoryRow, StorySkeleton } from "@/components/story";
 import { NewsCards } from "@/components/news-cards";
@@ -147,10 +148,11 @@ export default function News() {
       ref={page}
       className={
         cards
-          ? "flex h-[calc(100dvh-env(safe-area-inset-top))] flex-col px-5 pt-5 pb-[calc(var(--above-tabs)-10px)]"
-          : "px-5 pt-5 pb-[120px]"
+          ? "flex h-[calc(100dvh-env(safe-area-inset-top))] flex-col px-5 pt-1 pb-[calc(var(--above-tabs)-10px)]"
+          : "px-5 pt-1 pb-[120px]"
       }
     >
+      <TopBar />
       <div className="flex h-11 shrink-0 items-center justify-between">
         <div className="flex items-center gap-1.5">
           <button

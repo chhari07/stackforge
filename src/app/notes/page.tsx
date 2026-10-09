@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { TabBar } from "@/components/tab-bar";
-import { Logo } from "@/components/logo";
+import { TopBar } from "@/components/top-bar";
 import { Chips, Sheet } from "@/components/sheet";
 import { useToast } from "@/components/toast";
 import { DownloadIcon } from "@/components/stack-icons";
@@ -77,9 +77,9 @@ export default function Notes() {
   const sourcesToday = new Set(today.map((n) => n.sourceTitle).filter(Boolean)).size;
 
   return (
-    <main className="px-5 pt-5 pb-[180px]">
-      <div className="flex h-8 items-center justify-between">
-        <Logo size={26} className="-ml-1" />
+    <main className="px-5 pt-1 pb-[180px]">
+      <TopBar />
+      <div className="flex h-8 items-center justify-end">
         <div className="flex items-center gap-1">
           <span className="label text-[10px]">
             {t("{n} notes · {s} sources today", { n: notes.length, s: sourcesToday })}

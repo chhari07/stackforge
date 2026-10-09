@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { TabBar } from "@/components/tab-bar";
+import { TopBar } from "@/components/top-bar";
 import { PdfCover } from "@/components/pdf-cover";
 import { Sheet } from "@/components/sheet";
 import { useToast } from "@/components/toast";
@@ -111,7 +112,8 @@ export default function Library() {
   };
 
   return (
-    <main className="min-h-dvh bg-paper-2 px-5 pt-7 pb-[190px]">
+    <main className="min-h-dvh bg-paper-2 px-5 pt-1 pb-[190px]">
+      <TopBar className="bg-paper-2" />
       <div className="flex flex-col items-center">
         <span className="text-[15px] font-semibold">{t("My Library")}</span>
         <h1 className="font-serif text-[66px] leading-none font-medium tracking-[-0.01em]">{t("BOOKS")}</h1>
