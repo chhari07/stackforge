@@ -227,6 +227,16 @@ if (!manifest.includes(".StackWidget")) {
     </application>`,
   );
 }
+// "Save for later" on a breaking-news alert (NewsSaveReceiver).
+if (!manifest.includes(".NewsSaveReceiver")) {
+  manifest = manifest.replace(
+    "</application>",
+    `    <receiver
+            android:name=".NewsSaveReceiver"
+            android:exported="false" />
+    </application>`,
+  );
+}
 // Background music service with its media notification.
 if (!manifest.includes(".PlaybackService")) {
   manifest = manifest.replace(

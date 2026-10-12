@@ -8,15 +8,15 @@ import { PdfCover } from "@/components/pdf-cover";
 import { Sheet } from "@/components/sheet";
 import { useToast } from "@/components/toast";
 import { ChevronLeft, ChevronRight, CloseIcon } from "@/components/icons";
-import { addPdf, deletePdf, getPdfs, getSaved, toggleSaved, type PdfMeta } from "@/lib/db";
+import { addPdf, deletePdf, getPdfs, getSaved, type PdfMeta } from "@/lib/db";
 import { useStore } from "@/lib/use-store";
 import { SAMPLE_HREF } from "@/lib/sample";
 import { inspectPdf } from "@/lib/pdf";
 import { inspectEpub, isEpub } from "@/lib/epub";
-import { safeImage } from "@/lib/use-news";
 import { PhoneShelf } from "@/components/phone-shelf";
 import { TelegramImport } from "@/components/telegram-import";
 import { getOfflineIndex } from "@/lib/offline";
+import { SavedNews } from "@/components/saved-news";
 import { useT } from "@/lib/i18n";
 
 // Translucent acrylic shelves from the Books reference, one colour per shelf.
@@ -112,8 +112,8 @@ export default function Library() {
   };
 
   return (
-    <main className="min-h-dvh bg-paper-2 px-5 pt-1 pb-[190px]">
-      <TopBar className="bg-paper-2" />
+    <main className="min-h-dvh px-(--gutter) pt-1 pb-[190px]">
+      <TopBar />
       <div className="flex flex-col items-center">
         <span className="text-[15px] font-semibold">{t("My Library")}</span>
         <h1 className="font-serif text-[66px] leading-none font-medium tracking-[-0.01em]">{t("BOOKS")}</h1>
@@ -182,46 +182,7 @@ export default function Library() {
       <TelegramImport />
       <PhoneShelf added={fromPhone} onPick={choose} />
 
-      <section className="mt-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[16px] font-semibold">{t("Saved articles")}</h2>
-          <span className="text-[13px] text-muted">{t("{n} saved", { n: saved.length })}</span>
-        </div>
-        {saved.length === 0 ? (
-          <p className="mt-2 text-[13px] text-muted">{t("Bookmark a story. It waits here for you.")}</p>
-        ) : (
-          <div className="rail -mx-5 mt-2.5 gap-3.5 px-5">
-            {saved.map((a) => {
-              const img = safeImage(a.image);
-              return (
-                <div key={a.id} className="relative shrink-0">
-                  <Link
-                    href={`/read?id=${a.id}`}
-                    className="relative flex h-[142px] w-[98px] flex-col justify-end overflow-hidden bg-soft p-2 text-white shadow-[0_4px_10px_rgba(0,0,0,.18)]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {img && <img src={img} alt="" className="absolute inset-0 size-full object-cover opacity-40" />}
-                    <span className="relative line-clamp-4 text-[11px] leading-tight font-semibold">{a.title}</span>
-                    <span className="label relative mt-1 text-[7px] text-[#BDBAB2]">
-                      {a.source}
-                      {offline[a.id]?.keep ? ` · ${t("offline")}` : ""}
-                    </span>
-                  </Link>
-                  {editing && (
-                    <button
-                      aria-label={t("Remove {name}", { name: a.title })}
-                      onClick={() => toggleSaved(a)}
-                      className="absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full bg-ink text-on-ink"
-                    >
-                      <CloseIcon size={14} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <SavedNews saved={saved} offline={offline} />
 
       <input
         ref={input}

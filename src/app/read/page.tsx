@@ -13,7 +13,7 @@ import { QuoteCardSheet } from "@/components/quote-card-sheet";
 import { storyCard, wordCard, type CardText } from "@/lib/quote-card";
 import { AiSummary } from "@/components/ai-summary";
 import { useToast } from "@/components/toast";
-import { addNote, getNotes, getSaved, toggleSaved } from "@/lib/db";
+import { addNote, getNotes, getSaved, toggleSaved, updateSaved } from "@/lib/db";
 import { useStore } from "@/lib/use-store";
 import { paintHighlights } from "@/lib/highlights";
 import { safeImage } from "@/lib/use-news";
@@ -136,6 +136,11 @@ function Reader() {
   }, [article, id]);
 
   const isSaved = saved.some((s) => s.id === id);
+  // Opening a saved story marks its Library card as read.
+  const unread = saved.some((s) => s.id === id && !s.readAt);
+  useEffect(() => {
+    if (unread) updateSaved(id, { readAt: Date.now() }).catch(() => {});
+  }, [unread, id]);
   // What the news list knew about this story (headline, image, summary).
   const [listed] = useState<Story | null>(() => {
     try {
@@ -197,7 +202,17 @@ function Reader() {
 
   const bookmark = async () => {
     if (!article) return;
-    const now = await toggleSaved({ id, title: title ?? article.title, source: article.source, image: img });
+    const now = await toggleSaved({
+      id,
+      title: title ?? article.title,
+      source: article.source,
+      image: img,
+      topic: listed?.topic,
+      summary: listed?.summary,
+      url: article.url || listed?.url,
+      readMinutes: article.readMinutes || listed?.readMinutes,
+      readAt: Date.now(), // saved while reading it
+    });
     // Saved articles stay readable offline.
     if (now && article.html) await cacheArticle(article, true);
     toast(now ? { text: t("Stacked. Read it anytime, even offline."), href: "/library" } : { text: t("Removed from saved") });

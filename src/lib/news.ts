@@ -2,9 +2,11 @@
 // - Tech topics: Hacker News (Algolia search API) and dev.to
 // - Everything else: RSS feeds from BBC, The Hindu, Times of India, Indian
 //   Express, Al Jazeera, Mint and The Guardian.
-// - Video: news channels' public YouTube feeds (no API key).
+// - Video: Indian news channels' public YouTube feeds (no API key).
 // The website runs this on the server (/api/news); the Android app runs it
 // directly, since it has no server.
+
+import { INDIA_CHANNELS } from "./live";
 
 export type Topic =
   | "top"
@@ -52,6 +54,7 @@ export type Story = {
   points?: number;
   comments?: number;
   video?: string; // YouTube video id (Video topic); plays on /watch
+  topic?: Topic; // the topic it was listed under (set by loadNews)
 };
 
 const REVALIDATE = 300; // seconds
@@ -84,11 +87,20 @@ const FEEDS: Partial<Record<Topic, Feed[]>> = {
   health: [BBC("news/health")],
 };
 
-// Topics that can send breaking-news alerts (RSS topics), and their feeds.
-export const ALERT_TOPICS: Topic[] = ["top", "india", "world", "business", "science", "sports", "entertainment", "health"];
+// Topics that can send breaking-news alerts, and their feeds. Tech and AI are
+// read from Hacker News in the app, which has no RSS of breaking stories, so
+// their alerts come from these RSS feeds (sites reader mode can open).
+export const ALERT_TOPICS: Topic[] = ["top", "india", "world", "tech", "ai", "business", "science", "sports", "entertainment", "health"];
+const ALERT_ONLY: Partial<Record<Topic, Feed[]>> = {
+  tech: [BBC("news/technology"), { source: "The Guardian", url: "https://www.theguardian.com/technology/rss" }],
+  ai: [{ source: "The Guardian", url: "https://www.theguardian.com/technology/artificialintelligenceai/rss" }],
+};
+/** The feeds the alert check reads, each with the topic it alerts as (a feed in two topics alerts as the first). */
 export const alertFeeds = (topics: Topic[]) => {
   const seen = new Set<string>();
-  return topics.flatMap((t) => FEEDS[t] ?? []).filter((f) => !seen.has(f.url) && seen.add(f.url));
+  return topics
+    .flatMap((topic) => (ALERT_ONLY[topic] ?? FEEDS[topic] ?? []).map((f) => ({ ...f, topic })))
+    .filter((f) => !seen.has(f.url) && seen.add(f.url));
 };
 
 // Reader mode may only fetch pages from these sites (plus HN-linked pages,
@@ -411,19 +423,9 @@ async function tech(topic: TechTopic, fresh: boolean) {
 
 // ---- Video: news channels on YouTube ----
 
-const CHANNELS: { source: string; id: string }[] = [
-  { source: "BBC News", id: "UC16niRr50-MSBwiO3YDb3RA" },
-  { source: "Al Jazeera", id: "UCNye-wNBqNL5ZzHSJj3l8Bg" },
-  { source: "DW News", id: "UCknLrEdhRCp1aegoMqRaCZg" },
-  { source: "Reuters", id: "UChqUTb7kYRX8-EiaN3XFrSQ" },
-  { source: "WION", id: "UC_gUM8rL-Lrg6O3adPW9K1g" },
-  { source: "NDTV", id: "UCZFMm1mMw0F81Z37aaEzTUA" },
-  { source: "India Today", id: "UCYPvAwZP8pZhSMW8qs7cVCw" },
-];
-
 export const isVideoId = (id: string) => /^[\w-]{11}$/.test(id);
 
-function parseChannel(xml: string, source: string): Story[] {
+export function parseChannel(xml: string, source: string): Story[] {
   const out: Story[] = [];
   for (const m of xml.matchAll(/<entry[\s>][\s\S]*?<\/entry>/gi)) {
     const entry = m[0];
@@ -452,9 +454,11 @@ function parseChannel(xml: string, source: string): Story[] {
 
 async function videos(fresh: boolean): Promise<Story[]> {
   const lists = await Promise.all(
-    CHANNELS.map(async (c) => {
+    // Indian news channels only (lib/live.ts); your own channels are added on the device.
+    // Read when called: live.ts and this file import each other.
+    INDIA_CHANNELS.map(async (c) => {
       const xml = await fetchText(`https://www.youtube.com/feeds/videos.xml?channel_id=${c.id}`, fresh);
-      return xml ? parseChannel(xml, c.source).slice(0, 8) : [];
+      return xml ? parseChannel(xml, c.name).slice(0, 8) : [];
     }),
   );
   return lists

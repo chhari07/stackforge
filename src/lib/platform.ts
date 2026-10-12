@@ -20,16 +20,18 @@ export async function loadNews(topic: Topic, fresh = false): Promise<Story[]> {
     const { loadMyFeeds } = await import("./feeds");
     return loadMyFeeds(fresh);
   }
+  // Each story remembers its topic, so saving it can file it in that folder.
+  const tag = (stories: Story[]) => stories.map((s) => (s.topic ? s : { ...s, topic }));
   if (isNative()) {
     const { getNews } = await import("./news");
-    return getNews(topic, fresh);
+    return tag(await getNews(topic, fresh));
   }
   const res = await fetch(
     `/api/news?topic=${topic}${fresh ? "&fresh=1" : ""}`,
     fresh ? { cache: "no-store" } : undefined,
   );
   if (!res.ok) throw new Error(`news ${res.status}`);
-  return (await res.json()).stories;
+  return tag((await res.json()).stories);
 }
 
 // Straight from the network.

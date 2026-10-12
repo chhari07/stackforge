@@ -37,6 +37,10 @@ export type Note = {
   word?: boolean; // a word saved from "Meaning": quote is the word, body its meaning
   sourceTitle?: string;
   sourceLabel?: string; // "Hacker News", "dev.to"…
+  author?: string; // a book's author, for highlights imported from Kindle or Readwise
+  sourceUrl?: string; // the original on the web, when it isn't one of Stack's own articles
+  loc?: number; // Kindle location, when there's no page number
+  importKey?: string; // set on imported highlights, so importing again skips them (lib/import.ts)
   href?: string; // where tapping the note takes you inside Stack
   articleId?: string;
   pdfId?: string;
@@ -69,6 +73,14 @@ export type SavedArticle = {
   image?: string;
   savedAt: number;
   shared?: boolean; // came in through "Share to Stack"
+  // The card in Library → Saved news (older saves have none of these):
+  topic?: string; // news topic it was saved from (lib/news.ts Topic): files it in that folder
+  folder?: string; // a folder the reader made; wins over the topic folder
+  summary?: string;
+  url?: string; // the original page
+  readMinutes?: number;
+  readAt?: number; // first opened; unopened cards show as unread
+  via?: "alert"; // saved from a breaking-news notification
 };
 
 export const uid = () =>
@@ -99,6 +111,14 @@ export async function addNote(note: Omit<Note, "id" | "createdAt">) {
   await track("notes", full.id);
   emit();
   return full;
+}
+
+// Many notes at once (an import): one write, one sync batch.
+export async function addNotes(notes: Note[]) {
+  if (!notes.length) return;
+  await update<Note[]>("notes", (all) => [...(all ?? []), ...notes]);
+  await track("notes", notes.map((n) => n.id));
+  emit();
 }
 
 export async function getNote(id: string) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { App } from "@capacitor/app";
 import { registerPlugin } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
@@ -10,12 +10,13 @@ import { countPage } from "@/lib/nav";
 import { importShared, RESULT_KEY, resultTitle, ShareIn, type ShareResult } from "@/lib/share-in";
 import { useToast } from "./toast";
 import { scheduleDigest, scheduleNoteReminders } from "@/lib/reminders";
-import { applyNewsAlerts } from "@/lib/news-alerts";
+import { applyNewsAlerts, importAlertSaves, NewsAlertsNative } from "@/lib/news-alerts";
 import { applyTheme, watchSystemTheme } from "@/lib/theme";
 import { subscribe } from "@/lib/db";
 import { updateWidget } from "@/lib/widget";
 import { checkInBackground } from "@/lib/telegram";
-import { tr } from "@/lib/i18n";
+import { countVisit } from "@/lib/visit";
+import { tr, useUiLang } from "@/lib/i18n";
 
 const Splash = registerPlugin<{ hide(): Promise<void> }>("Splash");
 
@@ -28,10 +29,37 @@ export function NativeBoot() {
 
   useEffect(() => countPage(path), [path]);
 
+  // Notifications speak the app's language: when it changes, write the
+  // scheduled ones again and give the news alerts their new words.
+  const lang = useUiLang();
+  const firstLang = useRef(true);
+  useEffect(() => {
+    if (firstLang.current) {
+      firstLang.current = false; // start-up does this below
+      return;
+    }
+    if (!isNative()) return;
+    applyNewsAlerts().catch(() => {});
+    scheduleDigest().catch(() => {});
+    scheduleNoteReminders().catch(() => {});
+  }, [lang]);
+
   // Theme: status bar colour, and follow the phone in "system" mode (web too).
   useEffect(() => {
     applyTheme();
     return watchSystemTheme();
+  }, []);
+
+  // Anonymous daily visitor count (no personal info: see lib/visit.ts), once
+  // the first screen has settled. Also when Stack comes back on a new day.
+  useEffect(() => {
+    const timer = setTimeout(countVisit, 4000);
+    const onVisible = () => document.visibilityState === "visible" && countVisit();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // Telegram import: collect PDFs forwarded to the bot when Stack opens or
@@ -78,7 +106,8 @@ export function NativeBoot() {
     applyNewsAlerts().catch(() => {});
     scheduleDigest().catch(() => {});
 
-    // Home screen widget and note reminders: refresh now, and a moment after anything is saved.
+    // Home screen widget, note reminders and the daily highlights: refresh now,
+    // and a moment after anything is saved.
     updateWidget().catch(() => {});
     scheduleNoteReminders().catch(() => {});
     let widgetTimer: ReturnType<typeof setTimeout>;
@@ -87,6 +116,7 @@ export function NativeBoot() {
       widgetTimer = setTimeout(() => {
         updateWidget().catch(() => {});
         scheduleNoteReminders().catch(() => {});
+        scheduleDigest(undefined, { withNews: false }).catch(() => {});
       }, 1500);
     });
 
@@ -119,13 +149,28 @@ export function NativeBoot() {
     };
     importInbox();
     const shared = ShareIn.addListener("shared", importInbox);
-    const resumed = App.addListener("resume", importInbox);
+
+    // "Save for later" on a news alert: add those stories to the Library
+    // (card now, full story for offline reading next).
+    const importSaves = () =>
+      importAlertSaves()
+        .then((n) => {
+          if (n) toast({ text: n === 1 ? tr("Saved to your Library") : tr("{n} stories saved to your Library", { n }), href: "/library" });
+        })
+        .catch(() => {});
+    importSaves();
+    const alertSaved = NewsAlertsNative.addListener("saved", importSaves);
+    const resumed = App.addListener("resume", () => {
+      importInbox();
+      importSaves();
+    });
     return () => {
       clearTimeout(widgetTimer);
       offWidget();
       sub.then((s) => s.remove());
       opened.then((s) => s.remove());
       shared.then((s) => s.remove());
+      alertSaved.then((s) => s.remove());
       resumed.then((s) => s.remove());
     };
   }, [router, toast]);
