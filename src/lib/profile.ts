@@ -8,6 +8,9 @@ import { track } from "./sync-state";
 import type { Topic } from "./news";
 
 export type Accent = "ink" | "news" | "music" | "pdf" | "blue";
+// Designs for the profile cover, drawn in the profile colour (components/profile-banner.tsx).
+export const BANNER_STYLES = ["blocks", "lines", "dots", "waves", "plain"] as const;
+export type BannerStyle = (typeof BANNER_STYLES)[number];
 // Status icons (drawn in components/stack-icons.tsx, mapped in components/profile-icons.tsx).
 export const MOOD_ICONS = [
   "reading", "in-the-zone", "learning", "writing", "building", "break", "night-owl", "offline",
@@ -21,6 +24,8 @@ export type Profile = {
   id: "me";
   name?: string;
   avatar?: string; // small JPEG data URL (lib/image.ts)
+  banner?: string; // the cover photo over the profile, a 3:1 JPEG data URL
+  bannerStyle?: BannerStyle; // the cover's design when there's no photo
   bio?: string; // one line under the name
   mood?: Mood; // "what I'm up to", shown as a chip
   accent?: Accent; // the profile cover and initials colour

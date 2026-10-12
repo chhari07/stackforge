@@ -13,46 +13,36 @@ import {
   type MeStats,
 } from "@/lib/me-stats";
 import { TOPICS } from "@/lib/news";
-import { DEFAULT_GOAL, accentOf, getProfile, moodIcon, type Profile } from "@/lib/profile";
+import { DEFAULT_GOAL, getProfile, moodIcon, type Profile } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
 import { Avatar } from "./avatar";
 import { NamedIcon } from "./profile-icons";
 import { TopicIcon } from "./topic-icon";
 import { ProfileSheet } from "./profile-sheet";
+import { ProfileBanner } from "./profile-banner";
 import { Sheet } from "./sheet";
 import { ShareIcon } from "./icons";
 import { QuoteCardSheet } from "./quote-card-sheet";
 import { dateLocale, useT } from "@/lib/i18n";
 
-// The top of the YOU page: a cover in your colour, photo, name, status, bio,
+// The top of the YOU page: your banner (a photo, or a design in your colour), photo, name, status, bio,
 // interests and your reader type, with "Edit profile".
 export function ProfileHero() {
   const t = useT();
   const [profile] = useStore(getProfile, { id: "me", updatedAt: 0 } as Profile);
   const [stats] = useStore(getMeStats, EMPTY_STATS);
   const [editing, setEditing] = useState(false);
-  const accent = accentOf(profile.accent);
 
   return (
     <section className="overflow-hidden rounded-[26px] bg-card">
-      <div className={`relative h-24 ${accent.bg}`}>
-        {/* A quiet pattern of stacked blocks, like the logo. */}
-        <svg aria-hidden className={`absolute inset-0 h-full w-full opacity-15 ${accent.text}`}>
-          <defs>
-            <pattern id="blocks" width="28" height="28" patternUnits="userSpaceOnUse">
-              <rect x="3" y="3" width="10" height="10" rx="2" fill="currentColor" />
-              <rect x="17" y="17" width="8" height="8" rx="2" fill="currentColor" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#blocks)" />
-        </svg>
+      <ProfileBanner banner={profile.banner} design={profile.bannerStyle} accent={profile.accent} className="aspect-[3/1] max-h-48 w-full">
         <button
           onClick={() => setEditing(true)}
-          className="absolute top-3 right-3 h-9 rounded-full bg-paper/90 px-4 text-[13px] font-semibold text-ink"
+          className="absolute top-3 right-3 h-9 rounded-full bg-paper/90 px-4 text-[13px] font-semibold text-ink shadow-[0_2px_8px_rgba(0,0,0,.25)]"
         >
           {t("Edit profile")}
         </button>
-      </div>
+      </ProfileBanner>
       <div className="relative -mt-10 flex flex-col gap-2 px-5 pb-5">
         <button onClick={() => setEditing(true)} aria-label={t("Edit profile")} className="self-start rounded-full ring-4 ring-card">
           <Avatar size={84} />

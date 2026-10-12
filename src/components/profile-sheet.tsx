@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { pickImage } from "@/lib/image";
+import { pickFile } from "@/lib/image";
 import { TOPICS, type Topic } from "@/lib/news";
 import {
   ACCENTS,
+  BANNER_STYLES,
   BIO_MAX,
   DEFAULT_GOAL,
   GOALS,
@@ -14,6 +15,7 @@ import {
   moodIcon,
   saveProfile,
   type Accent,
+  type BannerStyle,
   type Mood,
   type Profile,
 } from "@/lib/profile";
@@ -21,9 +23,11 @@ import { CheckIcon } from "./icons";
 import { NamedIcon } from "./profile-icons";
 import { TopicIcon } from "./topic-icon";
 import { Sheet } from "./sheet";
+import { ImageCropper } from "./image-cropper";
+import { ProfileBanner } from "./profile-banner";
 import { useT } from "@/lib/i18n";
 
-// Edit profile: photo, name, bio, mood, colour, interests and daily goal.
+// Edit profile: banner, photo, name, bio, mood, colour, interests and daily goal.
 // Changes are kept in a draft and saved together with "Save".
 export function ProfileSheet({ open, onClose, profile }: { open: boolean; onClose: () => void; profile: Profile }) {
   return (
@@ -37,6 +41,14 @@ export function ProfileSheet({ open, onClose, profile }: { open: boolean; onClos
 function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
   const tt = useT();
   const [avatar, setAvatar] = useState(profile.avatar);
+  const [banner, setBanner] = useState(profile.banner);
+  const [design, setDesign] = useState<BannerStyle>(profile.bannerStyle ?? "blocks");
+  // A picked photo waiting to be framed.
+  const [framing, setFraming] = useState<{ file: File; kind: "avatar" | "banner" } | null>(null);
+  const frame = async (kind: "avatar" | "banner") => {
+    const file = await pickFile();
+    if (file) setFraming({ file, kind });
+  };
   const [name, setName] = useState(profile.name ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
   const [mood, setMood] = useState<Mood | undefined>(profile.mood);
@@ -53,6 +65,8 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
     setSaving(true);
     await saveProfile({
       avatar,
+      banner,
+      bannerStyle: design,
       name: name.trim() || undefined,
       bio: bio.trim() || undefined,
       mood: mood?.text.trim() ? { icon: moodIcon(mood), text: mood.text.trim() } : undefined,
@@ -66,47 +80,92 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
 
   return (
     <>
-      <div className="flex items-center gap-4">
-        <button
-          onClick={async () => {
-            const picked = await pickImage(384);
-            if (picked) setAvatar(picked);
-          }}
-          aria-label={tt("Change profile photo")}
-          className="relative shrink-0"
-        >
-          {avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt="" className="size-[76px] rounded-full object-cover" />
-          ) : (
-            <span
-              className={`flex size-[76px] items-center justify-center rounded-full text-[29px] font-bold ${colour.bg} ${colour.text}`}
-            >
-              {initials(name)}
+      {/* The cover and photo as they'll look on the profile. */}
+      <div className="flex flex-col">
+        <ProfileBanner banner={banner} design={design} accent={accent} className="aspect-[3/1] rounded-2xl">
+          <div className="absolute top-2 right-2 flex gap-1.5">
+            {banner && (
+              <button onClick={() => setBanner(undefined)} className="h-8 rounded-full bg-paper/90 px-3 text-[12px] font-semibold text-ink shadow-[0_2px_8px_rgba(0,0,0,.25)]">
+                {tt("Remove")}
+              </button>
+            )}
+            <button onClick={() => frame("banner")} className="h-8 rounded-full bg-paper/90 px-3 text-[12px] font-semibold text-ink shadow-[0_2px_8px_rgba(0,0,0,.25)]">
+              {banner ? tt("Change banner") : tt("Add banner photo")}
+            </button>
+          </div>
+        </ProfileBanner>
+        <div className="-mt-9 flex items-end gap-4 px-3">
+          <button onClick={() => frame("avatar")} aria-label={tt("Change profile photo")} className="relative shrink-0 rounded-full ring-4 ring-paper">
+            {avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatar} alt="" className="size-[76px] rounded-full object-cover" />
+            ) : (
+              <span
+                className={`flex size-[76px] items-center justify-center rounded-full text-[29px] font-bold ${colour.bg} ${colour.text}`}
+              >
+                {initials(name)}
+              </span>
+            )}
+            <span className="label absolute -right-1 -bottom-1 rounded-full bg-music px-2 py-1 text-[9px] text-white">
+              {avatar ? tt("Edit") : tt("Add")}
             </span>
-          )}
-          <span className="label absolute -right-1 -bottom-1 rounded-full bg-music px-2 py-1 text-[9px] text-white">
-            {avatar ? tt("Edit") : tt("Add")}
-          </span>
-        </button>
-        <div className="flex min-w-0 grow flex-col gap-1.5">
-          <Label htmlFor="edit-name">Name</Label>
-          <input
-            id="edit-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={tt("What should Stack call you?")}
-            autoComplete="name"
-            maxLength={40}
-            className="h-12 w-full rounded-xl border border-ink/15 bg-card px-4 text-[17px] font-semibold outline-none focus:border-ink"
-          />
+          </button>
           {avatar && (
-            <button onClick={() => setAvatar(undefined)} className="label self-start text-[9px] text-muted underline">
+            <button onClick={() => setAvatar(undefined)} className="label mb-1 text-[9px] text-muted underline">
               {tt("Remove photo")}
             </button>
           )}
         </div>
       </div>
+
+      {!banner && (
+        <div className="flex flex-col gap-2">
+          <Label>Banner design</Label>
+          <div role="radiogroup" aria-label={tt("Banner design")} className="no-scrollbar bleed flex gap-2 overflow-x-auto">
+            {BANNER_STYLES.map((d) => (
+              <button
+                key={d}
+                role="radio"
+                aria-checked={design === d}
+                aria-label={tt(DESIGN_NAMES[d])}
+                onClick={() => setDesign(d)}
+                className={`flex shrink-0 flex-col items-center gap-1 rounded-xl p-1 ${design === d ? "ring-2 ring-ink" : ""}`}
+              >
+                <ProfileBanner design={d} accent={accent} className="h-10 w-[72px] rounded-lg" />
+                <span className="label text-[9px] text-muted">{tt(DESIGN_NAMES[d])}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[12px] text-muted">{tt("Drawn in your profile colour. Or add your own banner photo above.")}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="edit-name">Name</Label>
+        <input
+          id="edit-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={tt("What should Stack call you?")}
+          autoComplete="name"
+          maxLength={40}
+          className="h-12 w-full rounded-xl border border-ink/15 bg-card px-4 text-[17px] font-semibold outline-none focus:border-ink"
+        />
+      </div>
+
+      <ImageCropper
+        file={framing?.file ?? null}
+        aspect={framing?.kind === "banner" ? 3 : 1}
+        round={framing?.kind === "avatar"}
+        width={framing?.kind === "banner" ? 1200 : 384}
+        title={framing?.kind === "banner" ? "Frame your banner" : "Frame your photo"}
+        onClose={() => setFraming(null)}
+        onDone={(url) => {
+          if (framing?.kind === "banner") setBanner(url);
+          else setAvatar(url);
+          setFraming(null);
+        }}
+      />
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
@@ -127,7 +186,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
 
       <div className="flex flex-col gap-2">
         <Label>Right now</Label>
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+        <div className="no-scrollbar bleed flex gap-2 overflow-x-auto">
           {MOODS.map((m) => {
             const on = !!mood && moodIcon(mood) === m.icon && mood.text === m.text;
             return (
@@ -146,7 +205,7 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
           })}
         </div>
         <p className="label mt-1 text-[9px] text-muted">{tt("Or pick an icon and write your own")}</p>
-        <div role="radiogroup" aria-label={tt("Status icon")} className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5">
+        <div role="radiogroup" aria-label={tt("Status icon")} className="no-scrollbar bleed flex gap-1.5 overflow-x-auto">
           {MOOD_ICONS.map((icon) => {
             const on = !!mood && moodIcon(mood) === icon;
             return (
@@ -244,6 +303,14 @@ function Form({ profile, onDone }: { profile: Profile; onDone: () => void }) {
     </>
   );
 }
+
+const DESIGN_NAMES: Record<BannerStyle, string> = {
+  blocks: "Blocks",
+  lines: "Lines",
+  dots: "Dots",
+  waves: "Waves",
+  plain: "Plain",
+};
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   const t = useT();

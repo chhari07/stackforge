@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { pickImage } from "@/lib/image";
+import { pickFile } from "@/lib/image";
 import { getProfile, saveProfile } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
 import { Avatar } from "./avatar";
+import { ImageCropper } from "./image-cropper";
 import { useT } from "@/lib/i18n";
 
 // Photo + name. Saves as you go.
@@ -12,6 +13,7 @@ export function ProfileEditor() {
   const t = useT();
   const [profile, ready] = useStore(getProfile, { id: "me", updatedAt: 0 });
   const [name, setName] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null); // picked, waiting to be framed
 
   // Fill the field once the stored (or synced) profile arrives.
   useEffect(() => {
@@ -19,10 +21,7 @@ export function ProfileEditor() {
     if (ready) setName(profile.name ?? "");
   }, [ready, profile.name]);
 
-  const choosePhoto = async () => {
-    const avatar = await pickImage(384);
-    if (avatar) await saveProfile({ avatar });
-  };
+  const choosePhoto = async () => setPhoto(await pickFile());
 
   return (
     <div className="flex items-center gap-4">
@@ -52,6 +51,18 @@ export function ProfileEditor() {
           </button>
         )}
       </div>
+      <ImageCropper
+        file={photo}
+        aspect={1}
+        round
+        width={384}
+        title="Frame your photo"
+        onClose={() => setPhoto(null)}
+        onDone={async (avatar) => {
+          setPhoto(null);
+          await saveProfile({ avatar });
+        }}
+      />
     </div>
   );
 }
