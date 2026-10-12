@@ -27,6 +27,7 @@ import { addWidget } from "@/lib/widget";
 import { AiSection } from "@/components/ai-section";
 import { PrivacyRow } from "@/components/privacy-row";
 import { setUiLang, UI_LANGS, useT, useUiLang } from "@/lib/i18n";
+import { setWifiOnly, wifiOnly } from "@/lib/channels";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const t = useT();
@@ -140,11 +141,11 @@ export default function Settings() {
     if (next.on && !ok)
       toast({ text: t("Notifications are blocked. Tap Allow under Access.") });
     else if (next.on)
-      toast({ text: t("Daily digest at {time}", { time: `${pad(next.hour)}:${pad(next.minute)}` }) });
+      toast({ text: t("Daily highlights at {time}", { time: `${pad(next.hour)}:${pad(next.minute)}` }) });
   };
 
   return (
-    <main className="px-5 pt-5 pb-16">
+    <main className="px-(--gutter) pt-5 pb-16">
       <div className="flex h-11 items-center">
         <Link
           href="/"
@@ -249,7 +250,7 @@ export default function Settings() {
               )}
               <AccessRow
                 name={t("Notifications")}
-                why={t("Daily digest and music controls")}
+                why={t("Daily highlights and music controls")}
                 status={notify === null ? "unknown" : notify ? "on" : "off"}
                 action={
                   notify ? (
@@ -342,20 +343,20 @@ export default function Settings() {
           )}
         </Section>
 
-        <Section title="04 — Daily digest">
+        <Section title="04 — Daily highlights">
           {!native || !reminder ? (
             <p className="text-[14px] text-muted">
-              {t("The daily digest notification is available in the Android app.")}
+              {t("The daily highlights notification is available in the Android app.")}
             </p>
           ) : (
             <>
               <label className="flex items-center justify-between gap-4">
                 <span className="flex flex-col">
                   <span className="text-[15px] font-semibold">
-                    {t("Morning digest")}
+                    {t("Daily highlights")}
                   </span>
                   <span className="text-[13px] text-muted">
-                    {t("Top story + the PDF you’re reading")}
+                    {t("Today’s highlights to remember, then the book you’re reading")}
                   </span>
                 </span>
                 <input
@@ -401,7 +402,11 @@ export default function Settings() {
           <NewsAlertsSection />
         </Section>
 
-        <Section title="06 — Home screen widget">
+        <Section title="06 — Live news">
+          <LiveNewsSettings />
+        </Section>
+
+        <Section title="07 — Home screen widget">
           {!native ? (
             <p className="text-[14px] text-muted">{t("The home screen widget is available in the Android app.")}</p>
           ) : (
@@ -422,16 +427,16 @@ export default function Settings() {
           )}
         </Section>
 
-        <Section title="07 — Stack AI">
+        <Section title="08 — Stack AI">
           <AiSection />
         </Section>
 
-        <Section title="08 — Backup">
+        <Section title="09 — Backup">
           <BackupSection />
         </Section>
 
         <section className="mt-6">
-          <h2 className="label text-[11px] font-medium">09 — {t("Privacy")}</h2>
+          <h2 className="label text-[11px] font-medium">10 — {t("Privacy")}</h2>
           <PrivacyRow className="mt-2.5" />
         </section>
       </div>
@@ -444,6 +449,32 @@ export default function Settings() {
 
 // Profile and sign-in status, opening the Account screen.
 // The whole app in English or Hindi (lib/i18n.ts).
+// Live news and videos (lib/channels.ts): hold them back on mobile data.
+function LiveNewsSettings() {
+  const t = useT();
+  const [on, setOn] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setOn(wifiOnly()), []);
+  return (
+    <label className="flex items-center justify-between gap-4">
+      <span className="flex flex-col">
+        <span className="text-[15px] font-semibold">{t("Videos on Wi-Fi only")}</span>
+        <span className="text-[13px] text-muted">{t("On mobile data, live news and videos wait until you tap Play anyway")}</span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        checked={on}
+        onChange={(e) => {
+          setWifiOnly(e.target.checked);
+          setOn(e.target.checked);
+        }}
+        className="h-7 w-12 shrink-0 cursor-pointer appearance-none rounded-full bg-rule transition-colors before:block before:size-6 before:translate-x-0.5 before:rounded-full before:bg-white before:shadow before:transition-transform checked:bg-music checked:before:translate-x-[22px]"
+      />
+    </label>
+  );
+}
+
 function LanguageSection() {
   const t = useT();
   const lang = useUiLang();

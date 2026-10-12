@@ -48,7 +48,7 @@ function Share() {
   };
 
   return (
-    <main className="screen flex flex-col px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)]">
+    <main className="screen flex flex-col px-(--gutter) pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)]">
       <div className="flex h-8 items-center">
         <Logo size={28} className="-ml-1" />
       </div>

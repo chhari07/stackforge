@@ -12,9 +12,9 @@ const AI_ENGINE = process.env.NEXT_PUBLIC_AI_ENGINE || "our AI provider";
 
 export default function Privacy() {
   return (
-    <PolicyPage title="PRIVACY" updated="2 October 2026">
+    <PolicyPage title="PRIVACY" updated="11 October 2026">
       <p>
-        Stack is a reading and notes app made by StackForge Labs. It works fully on your device without an account.
+        Stack is a reading and notes app made by StackForge Labs. Reading, notes, highlights and PDFs work fully on your device without an account; Stack AI needs one.
         This page explains what Stack stores, what leaves your device, and how to delete it.
       </p>
 
@@ -28,18 +28,20 @@ export default function Privacy() {
 
       <PolicySection title="If you sign in (optional)">
         <p>
-          Signing in with Google or an email address turns on sync. We then store your <b>email address</b>,{" "}
+          Signing in with Google or an email address turns on sync and Stack AI. We then store your <b>email address</b>,{" "}
           <b>name and photo</b> (from Google, which you can change), and the things you choose to keep in Stack: notes,
           highlights, saved articles, playlists, focus history, your profile and, where available, PDF files. They
           are stored in Supabase and are sent over encrypted connections.
         </p>
       </PolicySection>
 
-      <PolicySection title="AI features (optional)">
+      <PolicySection title="AI features (signed in, optional)">
         <p>
-          When you use Summarize, Ask this PDF, Ask your Stack or Tidy note, the text needed for that request is sent
-          to {AI_ENGINE} to produce the answer. Stack asks before the first use of each feature, and you can turn Stack
-          AI off completely in Settings. We don’t use your content to train models and don’t sell it.
+          Stack AI is available when you’re signed in. When you use Summarize, Explain, Ask this PDF, Ask your Stack or
+          Tidy note, the text needed for that request is sent through Stack’s server to {AI_ENGINE} to produce the
+          answer. Your account is used only to apply a daily limit per person; we keep a count of requests per day,
+          not the requests themselves. Stack asks before the first use of each feature, and you can turn Stack AI off
+          completely in Settings. We don’t use your content to train models and don’t sell it.
         </p>
       </PolicySection>
 
@@ -51,6 +53,11 @@ export default function Privacy() {
         <p>
           Video news plays in YouTube’s privacy-enhanced player: when you play a video, your device loads it from
           YouTube (Google), and Google’s privacy policy applies to that request.
+        </p>
+        <p>
+          To show which Indian news channels are live and what’s trending in India, Stack reads those channels’ public
+          YouTube pages and Google Trends’ public feed (on the website, through our server, which keeps no record).
+          Nothing about you is sent with them. YouTube channels you add are kept in Stack and synced if you’re signed in.
         </p>
         <p>
           Listen mode reads articles and PDFs aloud with your phone’s own text-to-speech; the text stays on your device.
@@ -73,6 +80,16 @@ export default function Privacy() {
           If you connect a Telegram bot to import PDFs, its token is stored only on your device (it isn’t synced or
           put in backups). Stack talks to Telegram directly to list and download the PDFs you forward to that bot; we
           never see them. Telegram’s privacy policy applies to your bot and chats. Disconnect removes the token.
+        </p>
+      </PolicySection>
+
+      <PolicySection title="Visitor count">
+        <p>
+          Once a day, Stack tells our server that it was opened: a random id made on your device, whether it’s the
+          app or the website, the app version and whether you’re signed in. Without an account, that’s all: it isn’t
+          linked to you, your phone or your IP address. If you’re signed in, the visit is also linked to your account,
+          so we can see which accounts use the Android app or the website and when they last opened Stack. Nothing you
+          read or write is sent. Deleting your account removes that link.
         </p>
       </PolicySection>
 

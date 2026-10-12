@@ -99,7 +99,7 @@ function PlaylistScreen() {
   };
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+60px)]">
+    <main className="min-h-dvh px-(--gutter) pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+60px)]">
       <div className="flex h-8 items-center justify-between">
         <button aria-label={tt("Back")} onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
           <BackIcon size={22} />

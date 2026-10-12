@@ -81,7 +81,7 @@ public class BackupPlugin extends Plugin {
         call.resolve();
     }
 
-    /** Hands a PNG (base64 in "data") to another app, with "text" as its caption. The file sits in the app's cache, readable only by the app picked. */
+    /** Hands a file (base64 in "data", a PNG unless "mime" says otherwise) to another app, with "text" as its caption. The file sits in the app's cache, readable only by the app picked. */
     @PluginMethod
     public void shareImage(PluginCall call) {
         String data = call.getString("data");
@@ -102,7 +102,8 @@ public class BackupPlugin extends Plugin {
             }
             Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", file);
             Intent send = new Intent(Intent.ACTION_SEND);
-            send.setType("image/png");
+            // Cards are PNGs; "Share PDF" sends the PDF with its notes.
+            send.setType(call.getString("mime", "image/png"));
             send.putExtra(Intent.EXTRA_STREAM, uri);
             String text = call.getString("text");
             if (text != null && !text.isEmpty()) send.putExtra(Intent.EXTRA_TEXT, text);

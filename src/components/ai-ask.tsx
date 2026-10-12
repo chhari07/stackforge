@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { aiAvailable, runAi, type Answer } from "@/lib/ai";
+import { runAi, type Answer } from "@/lib/ai";
 import { relevant, type Passage } from "@/lib/search";
-import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
+import { AiErrorNote, AiLabel, AnswerView, useAiConsent, useAiState } from "./ai-kit";
 import { SparkleIcon } from "./stack-icons";
 import { useT } from "@/lib/i18n";
 
@@ -17,6 +17,7 @@ export function AiAsk({ question }: { question: string }) {
   const [error, setError] = useState<unknown>(null);
   const [sources, setSources] = useState<Passage[]>([]);
   const [confirm, consentSheet] = useAiConsent();
+  const ai = useAiState();
   const stop = useRef<AbortController | null>(null);
 
   // A new question clears the old answer.
@@ -26,7 +27,8 @@ export function AiAsk({ question }: { question: string }) {
     setAsked(null);
   }, [question]);
 
-  if (!aiAvailable() || question.trim().length < 3) return null;
+  // Signed out, it stays hidden (Stack AI is for signed-in people: components/ai-kit.tsx).
+  if (ai !== "on" || question.trim().length < 3) return null;
 
   const run = async () => {
     const q = question.trim();

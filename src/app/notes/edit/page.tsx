@@ -45,8 +45,8 @@ import {
   type NoteColor,
 } from "@/lib/db";
 import { noteTime } from "@/lib/format";
-import { AiError, aiAvailable, answerText, runAi } from "@/lib/ai";
-import { useAiConsent } from "@/components/ai-kit";
+import { AiError, answerText, runAi } from "@/lib/ai";
+import { useAiConsent, useAiState } from "@/components/ai-kit";
 import { BellIcon, SparkleIcon } from "@/components/stack-icons";
 import { LinkedNotes, ReminderSheet, TagRow, allTags } from "@/components/note-extras";
 import { remindText, upcoming } from "@/lib/reminders";
@@ -280,6 +280,7 @@ function Editor() {
   // Stack AI tidies the note: title, clean wording, bullets or a checklist. Undo puts it back.
   const [tidying, setTidying] = useState(false);
   const [confirmAi, aiSheet] = useAiConsent();
+  const ai = useAiState(); // Tidy shows only when signed in
   const tidy = async () => {
     const before = draft;
     const list = (before.checklist ?? []).map((i) => `[${i.done ? "x" : " "}] ${i.text}`).join("\n");
@@ -448,8 +449,20 @@ function Editor() {
             {note.href && (
               <Link href={note.href} className="label flex items-center gap-1.5 self-start text-[10px] underline">
                 {note.sourceTitle ?? t("Open source")}
-                {note.page ? ` · ${pageLabel(note)}` : ""} <ExternalIcon size={12} />
+                {pageLabel(note) ? ` · ${pageLabel(note)}` : ""} <ExternalIcon size={12} />
               </Link>
+            )}
+            {/* Imported from Kindle or Readwise: the book, and the original when it's on the web. */}
+            {!note.href && note.importKey && (
+              <a
+                href={note.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`label flex items-center gap-1.5 self-start text-[10px] ${note.sourceUrl ? "underline" : ""}`}
+              >
+                {[note.sourceTitle, note.author, pageLabel(note), note.sourceLabel].filter(Boolean).join(" · ")}
+                {note.sourceUrl && <ExternalIcon size={12} />}
+              </a>
             )}
           </div>
         )}
@@ -612,7 +625,7 @@ function Editor() {
           <span className="label grow text-center text-[10px] opacity-60">
             {edited ? t("Edited {when}", { when: noteTime(edited) }) : t("New note")}
           </span>
-          {aiAvailable() && !note?.quote && (
+          {ai === "on" && !note?.quote && (
             <button aria-label={t("Tidy with Stack AI")} onClick={tidy} disabled={tidying} className={`${iconBtn} disabled:animate-pulse`}>
               <SparkleIcon size={20} />
             </button>

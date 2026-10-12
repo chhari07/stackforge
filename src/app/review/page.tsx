@@ -37,7 +37,7 @@ export default function Review() {
   };
 
   return (
-    <main className="screen flex flex-col px-5 pt-1 pb-[calc(var(--above-tabs)+16px)]">
+    <main className="screen flex flex-col px-(--gutter) pt-1 pb-[calc(var(--above-tabs)+16px)]">
       <TopBar />
 
       <div className="mx-auto flex w-full max-w-[600px] grow flex-col">
@@ -99,7 +99,7 @@ export default function Review() {
               )}
               <figcaption className="label text-[10px] text-muted">
                 {current.sourceTitle ?? t("Highlight")}
-                {current.page ? ` · ${pageLabel(current)}` : ""} · {noteTime(current.createdAt)}
+                {pageLabel(current) ? ` · ${pageLabel(current)}` : ""} · {noteTime(current.createdAt)}
               </figcaption>
             </figure>
             <div className="mt-3 flex items-center justify-between">

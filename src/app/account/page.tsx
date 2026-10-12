@@ -67,7 +67,7 @@ export default function Account() {
             : t("Not synced yet");
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16">
+    <main className="min-h-dvh px-(--gutter) pt-5 pb-16">
       <div className="flex h-8 items-center">
         <button aria-label={t("Back")} onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
           <BackIcon size={22} />
@@ -132,7 +132,7 @@ export default function Account() {
           <div className="mt-3 flex flex-col gap-4">
             {configured && (
               <p className="text-[15px] leading-relaxed text-muted">
-                {t("Sign in to keep your notes, PDFs and playlists safe and on every device. Anything already on this phone is added to your account.")}
+                {t("Sign in to use Stack AI and to keep your notes, PDFs and playlists safe and on every device. Anything already on this phone is added to your account.")}
               </p>
             )}
             <SignInPanel />

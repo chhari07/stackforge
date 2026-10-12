@@ -37,7 +37,7 @@ export function PlaylistsRail({ onNew }: { onNew: () => void }) {
   return (
     <>
       <h2 className="label mt-6 text-[11px] font-medium text-music-text">{tt("Your playlists")}</h2>
-      <div role="list" aria-label={tt("Your playlists")} className="rail -mx-5 mt-3 gap-3 px-5">
+      <div role="list" aria-label={tt("Your playlists")} className="rail bleed mt-3 gap-3">
         <button
           onClick={onNew}
           className="flex w-[120px] flex-col gap-1.5 text-left"

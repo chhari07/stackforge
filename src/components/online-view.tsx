@@ -261,7 +261,7 @@ export function OnlineView() {
         </div>
 
         {!query.trim() && (
-          <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
+          <div className="bleed mt-3 flex gap-2 overflow-x-auto pb-1">
             {[null, ...GENRES].map((g) => (
               <button
                 key={g ?? "all"}

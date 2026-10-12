@@ -24,6 +24,7 @@ import { useToast } from "./toast";
 import { InkLayer, InkPad, InkToolbar, useInk, usePen } from "./ink";
 import type { Stroke } from "@/lib/ink";
 import { useT } from "@/lib/i18n";
+import { STICKY_PAPER, STICKY_WIDTH, stickyPaper } from "@/lib/pdf-share";
 
 // Ink on a sticky is thicker than on the page: the sticky is much smaller.
 const STICKY_INK = 2.7;
@@ -284,14 +285,10 @@ export function BookmarkSheet({
 
 // ---- Sticky notes ----
 // Paper colours stay the same in the dark theme, like real paper.
-const PAPER: Partial<Record<NoteColor, [front: string, back: string]>> = {
-  orange: ["#FFE08A", "#EFCB6A"],
-  green: ["#BFE8C8", "#A3D6AF"],
-  red: ["#F9C4BF", "#EBA9A3"],
-  blue: ["#BFDCF7", "#A2C7EA"],
-};
-const paperOf = (n: Note) => PAPER[n.color ?? "orange"] ?? PAPER.orange!;
-const WIDTH: Record<Sticky["size"], number> = { s: 0.11, m: 0.3, l: 0.44 }; // of the page's width
+// Shared with "Share PDF" (lib/pdf-share.ts), which draws stickies the same way.
+const PAPER = STICKY_PAPER;
+const paperOf = stickyPaper;
+const WIDTH = STICKY_WIDTH;
 const TYPE_ICON = { note: NoteAddIcon, flag: FlagIcon, question: HelpIcon };
 
 function StickyNote({ note, pageW, pageH, onEdit }: { note: Note; pageW: number; pageH: number; onEdit: (n: Note) => void }) {

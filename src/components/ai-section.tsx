@@ -1,20 +1,25 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useToast } from "./toast";
+import { useAccount } from "./account-provider";
 import { AI_ENGINE, AI_LANGS, aiLang, aiSetUp, aiTurnedOn, setAiLang, setAiTurnedOn, type AiLang } from "@/lib/ai";
 import { useT } from "@/lib/i18n";
 
 const SWITCH =
   "h-7 w-12 shrink-0 cursor-pointer appearance-none rounded-full bg-rule transition-colors before:block before:size-6 before:translate-x-0.5 before:rounded-full before:bg-white before:shadow before:transition-transform checked:bg-music checked:before:translate-x-[22px] disabled:cursor-not-allowed disabled:opacity-50";
 
-// Settings → Stack AI: one switch for every AI feature.
+// Settings → Stack AI: one switch for every AI feature. Stack AI is for
+// signed-in people, so signed out the switch is greyed out with a Sign in button.
 export function AiSection() {
   const t = useT();
   const toast = useToast();
   const [on, setOn] = useState<boolean | null>(null);
   const [setUp, setSetUp] = useState(true);
   const [lang, setLang] = useState<AiLang>("en");
+  const { user, ready } = useAccount();
+  const locked = setUp && ready && !user;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -30,7 +35,9 @@ export function AiSection() {
         <span className="flex flex-col">
           <span className="text-[15px] font-semibold">Stack AI</span>
           <span className="text-[13px] text-muted">
-            {on
+            {locked
+              ? t("Sign in to turn on Stack AI: free up to a daily limit.")
+              : on
               ? t("Summaries, Explain, PDF questions, Ask your Stack and Tidy note. Asks before sending anything.")
               : t("Off: no AI buttons anywhere, and nothing is sent.")}
           </span>
@@ -39,8 +46,8 @@ export function AiSection() {
           type="checkbox"
           role="switch"
           aria-label="Stack AI"
-          checked={on}
-          disabled={!setUp}
+          checked={on && !locked}
+          disabled={!setUp || locked}
           onChange={(e) => {
             setAiTurnedOn(e.target.checked);
             setOn(e.target.checked);
@@ -49,7 +56,12 @@ export function AiSection() {
           className={SWITCH}
         />
       </label>
-      {on && setUp && (
+      {locked && (
+        <Link href="/account" className="flex h-11 items-center justify-center rounded-full bg-ink text-[14px] font-semibold text-on-ink">
+          {t("Sign in")}
+        </Link>
+      )}
+      {on && setUp && !locked && (
         <label className="flex items-center justify-between gap-4">
           <span className="flex flex-col">
             <span className="text-[15px] font-semibold">{t("AI language")}</span>

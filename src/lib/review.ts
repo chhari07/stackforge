@@ -100,7 +100,19 @@ export function reviewStreak() {
   return s.last === dayKey() || s.last === dayKey(Date.now() - DAY) ? s.count : 0;
 }
 
-// For the morning digest: the highlight most likely to come up next.
+// For the daily highlights notification: what the review will hold at `at`.
+// Today keeps the set already picked (minus the ones done); a later day is
+// what's due by then, so a highlight made today shows up tomorrow.
+export function reviewAt(notes: Note[], at: number): Note[] {
+  const set = read<DaySet>(SET_KEY);
+  if (set?.day === dayKey(at)) {
+    const byId = new Map(notes.map((n) => [n.id, n]));
+    return set.ids.filter((id) => !set.done.includes(id)).map((id) => byId.get(id)).filter((n): n is Note => !!n);
+  }
+  return dueHighlights(notes, at).slice(0, PER_DAY);
+}
+
+// For the widget: the highlight most likely to come up next.
 export async function nextHighlight(): Promise<Note | null> {
   const notes = await getNotes();
   return dueHighlights(notes, Date.now() + DAY)[0] ?? null;

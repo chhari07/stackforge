@@ -8,6 +8,7 @@ import { FocusProvider } from "@/components/focus-provider";
 import { AccountProvider } from "@/components/account-provider";
 import { FirstRun } from "@/components/first-run";
 import { StatusScrim } from "@/components/status-scrim";
+import { FitDisplay } from "@/components/fit-display";
 import { THEME_BOOT } from "@/lib/theme-boot";
 import "./globals.css";
 
@@ -64,7 +65,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NativeBoot />
             <FirstRun />
             <StatusScrim />
-            {/* One layout for phones and tablets: the column fills the screen. */}
+            <FitDisplay />
+            {/* One layout for phones and tablets: pages pad by --gutter, which centres a 760px column on wide screens. */}
             <div className="relative min-h-dvh w-full bg-paper pt-[env(safe-area-inset-top)]">
               {children}
             </div>

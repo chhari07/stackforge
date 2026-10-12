@@ -164,6 +164,14 @@ export async function getArticle(id: string, tools: HtmlTools, anyLink = false):
 }
 
 // Rules shared by both sanitisers.
+// Text a site hides for screen readers ("list of 3 items", "end of list" on
+// Al Jazeera) that Readability would otherwise keep. Run before Readability.
+const HIDDEN =
+  '.screen-reader-text, .sr-only, .visually-hidden, .visuallyhidden, .a11y-hidden, .u-visually-hidden';
+export function stripHidden(doc: { querySelectorAll(s: string): ArrayLike<{ remove(): void }> }) {
+  Array.from(doc.querySelectorAll(HIDDEN)).forEach((el) => el.remove());
+}
+
 export const ALLOWED_TAGS = [
   "p", "h2", "h3", "h4", "blockquote", "ul", "ol", "li", "pre", "code",
   "em", "strong", "b", "i", "a", "img", "figure", "figcaption", "br", "hr",

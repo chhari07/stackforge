@@ -54,7 +54,7 @@ function Focus() {
   const back = () => (canGoBack() ? router.back() : router.push("/"));
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16">
+    <main className="min-h-dvh px-(--gutter) pt-5 pb-16">
       <div className="flex h-8 items-center justify-between">
         <button aria-label={t("Back")} onClick={back} className="-ml-2.5 flex size-11 items-center justify-center">
           <BackIcon size={22} />
@@ -137,7 +137,7 @@ function Setup() {
       </p>
 
       <h2 className="label mt-7 text-[11px] font-medium">01 — {tt("What are you reading?")}</h2>
-      <div role="radiogroup" aria-label={tt("What to focus on")} className="rail -mx-5 mt-3 gap-3 px-5">
+      <div role="radiogroup" aria-label={tt("What to focus on")} className="rail bleed mt-3 gap-3">
         {options.map((t) => {
           const on = sameTarget(t, target);
           return (

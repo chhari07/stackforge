@@ -7,7 +7,7 @@ import { PolicyBack } from "./policy-back";
 // to. No tab bar: people arrive here from a browser, not from inside Stack.
 export function PolicyPage({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16">
+    <main className="min-h-dvh px-(--gutter) pt-5 pb-16">
       <div className="mx-auto max-w-[680px]">
         <div className="flex h-11 items-center gap-1">
           <PolicyBack />

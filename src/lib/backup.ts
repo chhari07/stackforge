@@ -17,7 +17,7 @@ type BackupPlugin = {
 };
 const Native = registerPlugin<BackupPlugin>("Backup");
 
-const LISTS = ["notes", "saved", "pdfs", "playlists", "focus", "feeds"] as const satisfies readonly Collection[];
+const LISTS = ["notes", "saved", "pdfs", "playlists", "focus", "feeds", "channels"] as const satisfies readonly Collection[];
 // Settings worth keeping. Sign-in tokens and running timers are left out.
 const LOCAL = [
   "stack.theme",
@@ -32,6 +32,7 @@ const LOCAL = [
   "stack.news-alerts",
   "stack.news-prefs",
   "stack.ai.off",
+  "stack.live.wifi",
 ];
 
 type Item = { id: string } & Record<string, unknown>;

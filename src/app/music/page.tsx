@@ -42,7 +42,7 @@ export default function Music() {
   const onPhone = source === "phone" && local.available;
 
   return (
-    <main className="overflow-x-hidden px-5 pt-5 pb-[180px]">
+    <main className="overflow-x-hidden px-(--gutter) pt-5 pb-[180px]">
       <div className="flex h-8 items-center justify-between">
         <Logo size={26} className="-ml-1" />
         <div role="tablist" aria-label={tt("Music source")} className="flex rounded-full border border-ink/15 p-0.5">

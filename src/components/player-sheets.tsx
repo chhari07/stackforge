@@ -85,7 +85,7 @@ export function QueueSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const [now, ...next] = items ?? [];
   return (
     <Sheet open={open} onClose={onClose} title="Up next">
-      <div className="-mx-5 max-h-[60vh] overflow-y-auto px-5">
+      <div className="bleed max-h-[60vh] overflow-y-auto">
         {now && (
           <>
             <p className="label text-[10px] text-music-text">{tt("Now playing")}</p>

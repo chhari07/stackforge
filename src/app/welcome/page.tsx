@@ -59,7 +59,7 @@ export default function Welcome() {
   const afterProfile = () => (configured && !user ? setStep("account") : finish());
 
   return (
-    <main className="screen flex flex-col px-5 pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)]">
+    <main className="screen flex flex-col px-(--gutter) pt-5 pb-[calc(max(env(safe-area-inset-bottom),20px)+28px)]">
       <div className="mx-auto flex w-full max-w-[520px] grow flex-col">
         <Logo size={34} animate className="-ml-1" />
 
@@ -135,7 +135,7 @@ export default function Welcome() {
           <>
             <h1 className="mt-6 font-serif text-[34px] leading-[1.1] italic">{t("Keep your notes safe on every device?")}</h1>
             <p className="mt-4 text-[15px] leading-relaxed text-muted">
-              {t("Stack works fully without an account. Sign in to back up your highlights and notes and have them on your other devices.")}
+              {t("Stack works without an account. Sign in for Stack AI, and to back up your highlights and notes and have them on your other devices.")}
             </p>
             <div className="mt-6">
               <SignInPanel />

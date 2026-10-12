@@ -1,12 +1,83 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useRef, useState, type ReactNode } from "react";
-import { AI_ENGINE, AiError, aiConsented, setAiConsent, type Answer, type Cite } from "@/lib/ai";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AI_ENGINE, AiError, aiAvailable, aiConsented, setAiConsent, type Answer, type Cite } from "@/lib/ai";
 import { Sheet } from "./sheet";
-import { SparkleIcon } from "./stack-icons";
+import { LockIcon, SparkleIcon } from "./stack-icons";
+import { useAccount } from "./account-provider";
+import { SignInPanel } from "./sign-in";
 import { useT } from "@/lib/i18n";
 import { Rich } from "./rich";
+
+// Stack AI is for signed-in people (it runs on Stack's server, with a daily
+// limit per account). The one check every AI button uses:
+// - "on": set up, turned on in Settings, and signed in;
+// - "locked": set up and turned on, but signed out: the big entry points
+//   (Summarize, Ask this PDF) show a lock that opens the sign-in sheet; the
+//   rest (Explain, Ask your Stack, Tidy) stay hidden;
+// - "off": not set up in this build, or turned off in Settings: no AI anywhere.
+export type AiState = "on" | "locked" | "off";
+export function useAiState(): AiState {
+  const { user, ready } = useAccount();
+  // Settings live in localStorage: read after mount, so server and client HTML match.
+  const [usable, setUsable] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setUsable(aiAvailable()), []);
+  if (!usable || !ready) return "off";
+  return user ? "on" : "locked";
+}
+
+/**
+ * `requireSignIn(action)`: runs `action` when signed in; otherwise opens the
+ * "Stack AI needs an account" sheet, and runs `action` right after the person
+ * signs in there, so they don't have to find the button again.
+ */
+export function useAiSignIn() {
+  const t = useT();
+  const { user } = useAccount();
+  const [open, setOpen] = useState(false);
+  const pending = useRef<(() => void) | null>(null);
+  const requireSignIn = useCallback(
+    (action: () => void) => {
+      if (user) return action();
+      pending.current = action;
+      setOpen(true);
+    },
+    [user],
+  );
+  useEffect(() => {
+    if (!user || !pending.current) return;
+    const action = pending.current;
+    pending.current = null;
+    setOpen(false);
+    action();
+  }, [user]);
+  const sheet = (
+    <Sheet
+      open={open}
+      onClose={() => {
+        pending.current = null;
+        setOpen(false);
+      }}
+      title="Stack AI needs an account"
+    >
+      <p className="-mt-1 text-[15px] leading-relaxed">
+        {t("Summaries, Explain, PDF questions and more, free up to a daily limit.")}
+      </p>
+      <p className="-mt-2 text-[13px] leading-relaxed text-muted">
+        {t("Your notes, PDFs and reading still work without an account.")}
+      </p>
+      <SignInPanel />
+    </Sheet>
+  );
+  return [requireSignIn, sheet] as const;
+}
+
+/** A small lock on a locked AI button. */
+export function AiLock({ size = 12 }: { size?: number }) {
+  return <LockIcon size={size} aria-hidden />;
+}
 
 // Asks once per kind of AI feature before anything is sent to Claude.
 export function useAiConsent() {

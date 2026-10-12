@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 
 const DISMISSED = "stack.notify-prompt-dismissed";
 
-// One-time card on Today (Android app): offer the daily digest and ask for
+// One-time card on Today (Android app): offer the daily highlights and ask for
 // the notification permission in context, not at launch.
 export function NotifyPrompt() {
   const native = useIsNative();
@@ -36,9 +36,9 @@ export function NotifyPrompt() {
     <div className="mt-[22px] flex flex-col gap-3 rounded-2xl bg-ink p-4 text-on-ink">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="label text-[10px] text-on-ink/65">{t("Daily digest")}</span>
+          <span className="label text-[10px] text-on-ink/65">{t("Daily highlights")}</span>
           <span className="text-[16px] leading-snug font-semibold">
-            {t("One story. One highlight. Every morning at 9.")}
+            {t("Your highlights, back every morning at 9. So they stick.")}
           </span>
         </div>
         <button aria-label={t("Not now")} onClick={dismiss} className="-mt-2 -mr-2 flex size-11 shrink-0 items-center justify-center">
@@ -51,7 +51,7 @@ export function NotifyPrompt() {
           dismiss();
           toast(
             ok
-              ? { text: t("Daily digest on · change the time in Settings"), href: "/settings", action: t("Settings") }
+              ? { text: t("Daily highlights on · change the time in Settings"), href: "/settings", action: t("Settings") }
               : { text: t("Notifications blocked. You can allow them in Settings.") },
           );
         }}

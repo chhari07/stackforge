@@ -6,7 +6,9 @@ import { TabBar } from "@/components/tab-bar";
 import { TopBar } from "@/components/top-bar";
 import { Chips, Sheet } from "@/components/sheet";
 import { useToast } from "@/components/toast";
-import { DownloadIcon } from "@/components/stack-icons";
+import { DownloadIcon, UploadIcon } from "@/components/stack-icons";
+import { ImportSheet } from "@/components/import-sheet";
+import { NotionSheet } from "@/components/notion-sheet";
 import { ShareIcon } from "@/components/icons";
 import { notesToMarkdown, saveMarkdown, shareMarkdown } from "@/lib/export-md";
 import { NoteCard } from "@/components/note-card";
@@ -34,7 +36,7 @@ const matches = (n: Note, f: Filter) =>
 // Masonry: 2 columns on phones, 3–4 on tablets.
 function Grid({ notes }: { notes: Note[] }) {
   return (
-    <div className="mt-2.5 columns-2 gap-3 sm:columns-3 lg:columns-4">
+    <div className="mt-2.5 columns-2 gap-3 sm:columns-3">
       {notes.map((n) => (
         <div key={n.id} className="mb-3 break-inside-avoid">
           <NoteCard note={n} />
@@ -50,6 +52,8 @@ export default function Notes() {
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState(""); // "" shows every tag
   const [exporting, setExporting] = useState(false);
+  const [notion, setNotion] = useState(false);
+  const [importing, setImporting] = useState(false);
   const toast = useToast();
   const t = useT();
 
@@ -77,16 +81,23 @@ export default function Notes() {
   const sourcesToday = new Set(today.map((n) => n.sourceTitle).filter(Boolean)).size;
 
   return (
-    <main className="px-5 pt-1 pb-[180px]">
+    <main className="px-(--gutter) pt-1 pb-[180px]">
       <TopBar />
       <div className="flex h-8 items-center justify-end">
         <div className="flex items-center gap-1">
           <span className="label text-[10px]">
             {t("{n} notes · {s} sources today", { n: notes.length, s: sourcesToday })}
           </span>
+          <button
+            aria-label={t("Import highlights from Kindle or Readwise")}
+            onClick={() => setImporting(true)}
+            className="-mr-1 flex size-11 items-center justify-center"
+          >
+            <UploadIcon size={20} />
+          </button>
           {notes.length > 0 && (
             <button
-              aria-label={t("Export notes as Markdown")}
+              aria-label={t("Export notes")}
               onClick={() => setExporting(true)}
               className="-mr-2.5 flex size-11 items-center justify-center"
             >
@@ -95,7 +106,7 @@ export default function Notes() {
           )}
         </div>
       </div>
-      <h1 className="mt-2 font-serif text-[92px] leading-[0.95] font-medium tracking-[-0.02em]">
+      <h1 className="fit mt-2 font-serif text-[92px] leading-[0.95] font-medium tracking-[-0.02em]">
         {t("Notes")}
       </h1>
 
@@ -137,6 +148,9 @@ export default function Notes() {
           >
             {t("Try it on a sample article")}
           </Link>
+          <button onClick={() => setImporting(true)} className="label mx-auto mt-1 h-10 text-[10px] underline">
+            {t("Or import from Kindle or Readwise")}
+          </button>
         </div>
       )}
       {ready && notes.length > 0 && shown.length === 0 && (
@@ -153,7 +167,7 @@ export default function Notes() {
       {others.length > 0 && <Grid notes={others} />}
 
       {/* New list; new note is the "+" in the tab bar */}
-      <div className="fixed right-5 bottom-[calc(var(--above-tabs)+6px)] z-30 flex items-center gap-3">
+      <div className="fixed right-(--gutter) bottom-[calc(var(--above-tabs)+6px)] z-30 flex items-center gap-3">
         <Link
           href="/notes/edit?list=1"
           aria-label={t("New list")}
@@ -169,25 +183,33 @@ export default function Notes() {
         notes={shown}
         all={shown.length === notes.length}
         onDone={(text) => toast({ text })}
+        onNotion={() => {
+          setExporting(false);
+          setNotion(true);
+        }}
       />
+      <NotionSheet open={notion} onClose={() => setNotion(false)} notes={shown} onDone={(text) => toast({ text })} />
+      <ImportSheet open={importing} onClose={() => setImporting(false)} />
       <TabBar add={{ label: "New note", href: "/notes/edit" }} />
     </main>
   );
 }
 
-// Export as Markdown: a .md file, or straight into another app.
+// Export: a Markdown file, straight into another app, or into Notion.
 function ExportSheet({
   open,
   onClose,
   notes,
   all,
   onDone,
+  onNotion,
 }: {
   open: boolean;
   onClose: () => void;
   notes: Note[];
   all: boolean;
   onDone: (text: string) => void;
+  onNotion: () => void;
 }) {
   const t = useT();
   const row = "flex h-14 items-center gap-3 rounded-xl px-1 text-left text-[15px]";
@@ -195,9 +217,9 @@ function ExportSheet({
     ? t(notes.length === 1 ? "All {n} note" : "All {n} notes", { n: notes.length })
     : t(notes.length === 1 ? "{n} note (the ones shown now)" : "{n} notes (the ones shown now)", { n: notes.length });
   return (
-    <Sheet open={open} onClose={onClose} title="Export as Markdown">
+    <Sheet open={open} onClose={onClose} title="Export notes">
       <p className="text-[14px] leading-relaxed text-muted">
-        {what}. {t("Highlights are grouped by article or PDF, with a link to the original. Works with Obsidian, Notion, Logseq and any text editor.")}
+        {what}. {t("Highlights are grouped by article, PDF or book, with a link to the original. Markdown works with Obsidian, Logseq and any text editor.")}
       </p>
       <div className="flex flex-col">
         <button
@@ -219,6 +241,12 @@ function ExportSheet({
           className={row}
         >
           <ShareIcon size={20} /> {t("Share to another app")}
+        </button>
+        <button onClick={onNotion} className={row}>
+          <span aria-hidden className="flex size-5 items-center justify-center rounded-[4px] border-[1.5px] border-current text-[11px] font-bold">
+            N
+          </span>{" "}
+          {t("Send to Notion")}
         </button>
       </div>
     </Sheet>

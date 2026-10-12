@@ -3,11 +3,12 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import sanitizeHtml from "sanitize-html";
-import { absolute, ALLOWED_TAGS, getArticle, isStoryId, type HtmlTools } from "@/lib/article";
+import { absolute, ALLOWED_TAGS, getArticle, isStoryId, stripHidden, type HtmlTools } from "@/lib/article";
 
 const tools: HtmlTools = {
   readable(page) {
     const { document } = parseHTML(page);
+    stripHidden(document);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsed = new Readability(document as any).parse();
     if (!parsed?.content || (parsed.textContent ?? "").trim().length < 400) return null;

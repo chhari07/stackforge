@@ -4,14 +4,16 @@
 // native HTTP (CapacitorHttp) makes these fetches without browser CORS limits.
 import { Readability } from "@mozilla/readability";
 import DOMPurify from "dompurify";
-import { absolute, ALLOWED_TAGS, getArticle, type HtmlTools } from "./article";
+import { absolute, ALLOWED_TAGS, getArticle, stripHidden, type HtmlTools } from "./article";
 
 // DOMParser documents are inert: no scripts run and no images load.
 const parse = (html: string) => new DOMParser().parseFromString(html, "text/html");
 
 const tools: HtmlTools = {
   readable(page) {
-    const parsed = new Readability(parse(page)).parse();
+    const doc = parse(page);
+    stripHidden(doc);
+    const parsed = new Readability(doc).parse();
     if (!parsed?.content || (parsed.textContent ?? "").trim().length < 400) return null;
     return {
       html: parsed.content,

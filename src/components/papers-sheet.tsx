@@ -46,7 +46,7 @@ export function PapersSheet({ open, onClose }: { open: boolean; onClose: () => v
   const t = useT();
   return (
     <Sheet open={open} onClose={onClose} title="Today’s paper">
-      <div className="-mx-5 flex max-h-[65dvh] flex-col gap-5 overflow-y-auto px-5">
+      <div className="bleed flex max-h-[65dvh] flex-col gap-5 overflow-y-auto">
         {GROUPS.map((g) => (
           <section key={g.title} className="flex flex-col gap-1.5">
             <h3 className="label text-[10px] text-muted">{t(g.title)}</h3>

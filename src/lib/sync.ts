@@ -25,7 +25,7 @@ import {
   type Collection,
 } from "./sync-state";
 
-const COLLECTIONS: Collection[] = ["notes", "saved", "pdfs", "playlists", "focus", "profile", "feeds"];
+const COLLECTIONS: Collection[] = ["notes", "saved", "pdfs", "playlists", "focus", "profile", "feeds", "channels"];
 type Row = { collection: Collection; key: string; id: string; data: Record<string, unknown> | null; deleted: boolean };
 type Item = { id: string } & Record<string, unknown>;
 

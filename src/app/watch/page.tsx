@@ -12,6 +12,9 @@ import { isVideoId, type Story } from "@/lib/news";
 import { QuoteCardSheet } from "@/components/quote-card-sheet";
 import { storyCard } from "@/lib/quote-card";
 import { useT } from "@/lib/i18n";
+import { ReadAbout } from "@/components/live";
+import { useFocus } from "@/components/focus-provider";
+import { onMobileData, wifiOnly } from "@/lib/channels";
 
 export default function Page() {
   // useSearchParams needs a Suspense boundary.
@@ -22,10 +25,13 @@ export default function Page() {
   );
 }
 
-// A news video from the Video topic, played in YouTube's privacy-enhanced player.
+// A news video (or a live channel, with live=1) played in YouTube's
+// privacy-enhanced player, with Stack's articles about it underneath.
 function Watch() {
   const tt = useT();
-  const raw = useSearchParams().get("v") ?? "";
+  const params = useSearchParams();
+  const raw = params.get("v") ?? "";
+  const live = params.get("live") === "1";
   const v = isVideoId(raw) ? raw : "";
   const id = `yt-${v}`;
   const router = useRouter();
@@ -52,6 +58,15 @@ function Watch() {
     }
   }, [now]);
 
+  // Held back until the person says so: live news during a focus session, and
+  // any video on mobile data when "Wi-Fi only" is on (Settings → Live news).
+  const { session } = useFocus();
+  const [allowed, setAllowed] = useState(false);
+  const [mobile, setMobile] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMobile(wifiOnly() && onMobileData()), []);
+  const hold = allowed ? null : live && session ? "focus" : mobile ? "data" : null;
+
   const fromLibrary = saved.find((a) => a.id === id);
   const title = story?.title ?? fromLibrary?.title ?? tt("News video");
   const source = story?.source ?? fromLibrary?.source ?? "YouTube";
@@ -77,7 +92,16 @@ function Watch() {
           <span className="label truncate text-[11px]">{source}</span>
         </div>
         <div className="mx-auto aspect-video w-full max-w-[960px] bg-black">
-          {v ? (
+          {v && hold ? (
+            <div className="flex size-full flex-col items-center justify-center gap-3 px-6 text-center text-white">
+              <p className="text-[14px] leading-relaxed text-white/80">
+                {hold === "focus" ? tt("You’re in a focus session. Live news can wait.") : tt("You’re on mobile data, and videos are set to Wi-Fi only.")}
+              </p>
+              <button onClick={() => setAllowed(true)} className="label h-10 rounded-full bg-white px-4 text-[10px] text-black">
+                {tt("Play anyway")}
+              </button>
+            </div>
+          ) : v ? (
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${v}?autoplay=1&playsinline=1&rel=0`}
               title={title}
@@ -93,12 +117,12 @@ function Watch() {
       </div>
 
       <div className="mx-auto max-w-[760px] px-5 pt-5">
-        <span className="label rounded-full bg-news px-2.5 py-1 text-[10px] text-white">
+        <span className={`label rounded-full px-2.5 py-1 text-[10px] text-white ${live ? "bg-music" : "bg-news"}`}>
           {source}
-          {story ? ` · ${ago(story.createdAt)}` : ""}
+          {live ? ` · ${tt("Live")}` : story ? ` · ${ago(story.createdAt)}` : ""}
         </span>
         <h1 className="mt-3 text-[22px] leading-[1.2] font-bold">{title}</h1>
-        {story && (
+        {story && !live && (
           <time dateTime={story.createdAt} className="label mt-2 flex items-center gap-1.5 text-[10px] text-muted">
             <ClockIcon size={13} />
             {newsTime(story.createdAt)}
@@ -133,6 +157,7 @@ function Watch() {
         {story?.summary && (
           <p className="mt-5 text-[15px] leading-[1.6] whitespace-pre-line text-muted">{story.summary}</p>
         )}
+        {v && title !== tt("News video") && <ReadAbout title={title} />}
         <p className="mt-6 text-[12px] leading-relaxed text-muted">
           {tt("If the video doesn’t play here, the channel may only allow it on YouTube. Use Open in YouTube.")}
         </p>

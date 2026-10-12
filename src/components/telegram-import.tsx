@@ -259,7 +259,7 @@ export function TelegramImport() {
       </button>
 
       <Sheet open={open} onClose={() => !importing && setOpen(false)} title="Import from Telegram">
-        <div className="-mx-5 max-h-[70vh] overflow-y-auto px-5">
+        <div className="bleed max-h-[70vh] overflow-y-auto">
           <ConnectionArt state={link} botName={botHandle} />
 
           {!bot && (

@@ -17,6 +17,7 @@ const Files = registerPlugin<FilesPlugin>("Backup");
 
 // Where a note's source lives on the web, if anywhere.
 export function sourceUrl(n: Note): string | undefined {
+  if (n.sourceUrl) return n.sourceUrl;
   const id = n.articleId;
   if (!id) return undefined;
   const hn = id.match(/^hn-(\d+)$/);
@@ -35,31 +36,46 @@ const quote = (s: string) =>
 
 function noteBody(n: Note) {
   const out: string[] = [];
-  if (n.quote) out.push(quote(n.quote) + (n.page ? ` (${n.sourceLabel === "EPUB" ? "ch." : "p."} ${n.page})` : ""));
+  const where = n.page ? `${n.sourceLabel === "EPUB" ? "ch." : "p."} ${n.page}` : n.loc ? `loc. ${n.loc}` : "";
+  if (n.quote) out.push(quote(n.quote) + (where ? ` (${where})` : ""));
   if (n.body?.trim()) out.push(n.body.trim());
   if (n.checklist?.length) out.push(n.checklist.map((c) => `- [${c.done ? "x" : " "}] ${c.text}`).join("\n"));
   if (n.tags?.length) out.push(n.tags.map((t) => `#${t.replace(/\s+/g, "-")}`).join(" "));
   return out.join("\n\n");
 }
 
-export function notesToMarkdown(notes: Note[], now = Date.now()) {
-  const lines = [`# Stack notes`, "", `Exported ${day(now)} · ${notes.length} note${notes.length === 1 ? "" : "s"}`, ""];
+// Which article, PDF or imported book a note belongs to; undefined for your own notes.
+export function sourceKey(n: Note): string | undefined {
+  if (!n.sourceTitle) return undefined;
+  if (n.pdfId) return `pdf:${n.pdfId}`;
+  if (n.articleId) return `a:${n.articleId}`;
+  if (n.importKey) return `book:${n.sourceTitle.toLowerCase()}`;
+  return undefined;
+}
 
-  // Highlights and notes from articles and PDFs, one section per source.
+/** Notes grouped by where they're from (oldest first), and your own notes. */
+export function groupBySource(notes: Note[]) {
   const bySource = new Map<string, Note[]>();
   const own: Note[] = [];
   for (const n of [...notes].sort((a, b) => a.createdAt - b.createdAt)) {
-    if (n.sourceTitle && (n.articleId || n.pdfId)) {
-      const key = n.pdfId ? `pdf:${n.pdfId}` : `a:${n.articleId}`;
-      bySource.set(key, [...(bySource.get(key) ?? []), n]);
-    } else own.push(n);
+    const key = sourceKey(n);
+    if (key) bySource.set(key, [...(bySource.get(key) ?? []), n]);
+    else own.push(n);
   }
+  return { bySource, own };
+}
+
+export function notesToMarkdown(notes: Note[], now = Date.now()) {
+  const lines = [`# Stack notes`, "", `Exported ${day(now)} · ${notes.length} note${notes.length === 1 ? "" : "s"}`, ""];
+
+  // Highlights and notes from articles, PDFs and books, one section per source.
+  const { bySource, own } = groupBySource(notes);
 
   for (const group of bySource.values()) {
     const first = group[0];
     const url = sourceUrl(first);
     lines.push(`## ${first.sourceTitle}`, "");
-    const meta = [first.sourceLabel, url ? `[Original](${url})` : first.pdfId ? "PDF" : null].filter(Boolean);
+    const meta = [first.author, first.sourceLabel, url ? `[Original](${url})` : first.pdfId && first.sourceLabel !== "PDF" ? "PDF" : null].filter(Boolean);
     if (meta.length) lines.push(`*${meta.join(" · ")}*`, "");
     for (const n of group) {
       lines.push(noteBody(n), "");

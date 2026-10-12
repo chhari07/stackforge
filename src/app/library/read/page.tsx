@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist/legacy/build/pdf.mjs";
-import { ChevronLeft, ChevronRight, ClockIcon, NoteIcon, PauseIcon, PlayIcon, SearchIcon } from "@/components/icons";
+import { ChevronLeft, ChevronRight, ClockIcon, NoteIcon, PauseIcon, PlayIcon, SearchIcon, ShareIcon } from "@/components/icons";
 import { FindSheet, type FindSource } from "@/components/book-find";
 import { useAiExplain } from "@/components/ai-explain";
 import { SelectionToolbar } from "@/components/selection-toolbar";
@@ -23,6 +23,7 @@ import { openPdf, pdfOutline, pdfPageText, pdfjs } from "@/lib/pdf";
 import { markPageRead, useReadingTimer } from "@/lib/reading";
 import { ListenButton } from "@/components/listen-button";
 import { paintHighlights } from "@/lib/highlights";
+import { sharePdf } from "@/lib/pdf-share";
 import { clock } from "@/lib/format";
 import { ContrastIcon, NoteAddIcon } from "@/components/stack-icons";
 import { BookmarkIcon } from "@/components/icons";
@@ -87,6 +88,7 @@ function PdfReader() {
   const [editing, setEditing] = useState<Note | null>(null); // the sticky being changed
   const [showStickies, setShowStickies] = useState(true);
   const [drawing, setDrawing] = useState(false); // handwriting on the page (components/ink.tsx)
+  const [exporting, setExporting] = useState(false); // making the PDF for "Share PDF"
   const [pen, setPen] = usePen();
 
   // This page's handwriting, saved with the PDF (meta.ink, by page number).
@@ -360,6 +362,23 @@ function PdfReader() {
     toast({ text: t("“{word}” saved to My words", { word: w }), href: "/notes" });
   };
 
+  // The whole PDF with its highlights, handwriting and sticky notes on it (lib/pdf-share.ts).
+  const shareWithNotes = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const found = await getPdf(id);
+      if (!found) throw new Error("PDF missing");
+      const { how, marked } = await sharePdf(found.meta, found.blob, notes);
+      if (!marked) toast({ text: t("This PDF is locked, so it went without your notes") });
+      else if (how === "saved") toast({ text: t("PDF saved with your notes") });
+    } catch {
+      toast({ text: t("Couldn't make the PDF. Try again.") });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const listed = pageNotes.filter((n) => n.body && !n.sticky && !n.word); // stickies are on the page already
   const marked = !!meta?.bookmarks?.some((b) => b.page === page);
 
@@ -501,6 +520,16 @@ function PdfReader() {
           className="label flex h-11 items-center gap-1 rounded-full border border-ink/15 px-4 text-[10px] disabled:opacity-30"
         >
           {t("Next")} <ChevronRight size={14} />
+        </button>
+      </div>
+
+      <div className="mt-3 flex justify-center px-5">
+        <button
+          onClick={shareWithNotes}
+          disabled={!meta || exporting}
+          className="label flex h-11 items-center gap-2 rounded-full border border-ink/15 px-4 text-[10px] disabled:opacity-40"
+        >
+          <ShareIcon size={14} /> {exporting ? t("Making the PDF…") : t("Share PDF with your notes")}
         </button>
       </div>
 

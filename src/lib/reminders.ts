@@ -1,12 +1,13 @@
 "use client";
 
-// The daily digest notification (Android app only). It's a local notification
-// scheduled on the phone: no push server, nothing leaves the device.
+// The daily highlights notification (Android app only): each morning, the
+// highlights in that day's review. Local notifications scheduled on the
+// phone: no push server, nothing leaves the device.
 import { LocalNotifications } from "@capacitor/local-notifications";
-import { getNotes, getPdfs } from "./db";
+import { getNotes, getPdfs, type Note, type PdfMeta } from "./db";
 import { isNative } from "./platform";
 import { loadNews } from "./platform";
-import { nextHighlight } from "./review";
+import { reviewAt } from "./review";
 import { dateLocale, tr } from "./i18n";
 
 const KEY = "stack.reminder";
@@ -40,48 +41,80 @@ export async function askForNotifications() {
   return status.display === "granted";
 }
 
-// What the digest says: today's top story and the PDF in progress.
-async function digestText() {
-  const [stories, pdfs, highlight] = await Promise.all([
-    loadNews("top").catch(() => []),
-    getPdfs(),
-    nextHighlight().catch(() => null),
-  ]);
-  const top = stories[0];
-  const reading = [...pdfs].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))[0];
-  const quote = highlight?.quote
-    ? highlight.quote.length > 110
-      ? `${highlight.quote.slice(0, 110)}…`
-      : highlight.quote
-    : "";
-  const lines = [
-    top ? tr("Top story: {title}", { title: top.title }) : tr("Fresh stories from Hacker News and dev.to"),
-    reading ? tr("Continue “{title}” at p. {n}", { title: reading.title, n: reading.lastPage }) : "",
-    quote ? tr("Remember: “{quote}”", { quote }) : "",
-  ].filter(Boolean);
-  // With a highlight waiting, tapping opens the daily review.
-  return { body: lines.join("\n"), href: quote ? "/review" : top ? `/read?id=${top.id}` : "/news" };
+// What one morning's notification says. Highlights come first: the ones in
+// that day's review, so the notification is the review's front door. With
+// none due, it's the top story and the book in progress.
+type Digest = { title: string; body: string; href: string };
+type News = Awaited<ReturnType<typeof loadNews>>[number];
+
+const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n).trimEnd()}…` : s);
+
+function digestText(due: Note[], reading: PdfMeta | undefined, top: News | undefined): Digest {
+  const book = reading ? tr("Continue “{title}” at p. {n}", { title: reading.title, n: reading.lastPage }) : "";
+  if (due.length) {
+    const quotes = due.map((n) => `“${clip(n.quote!.replace(/\s+/g, " ").trim(), 90)}”`);
+    return {
+      title: tr(due.length === 1 ? "1 highlight to remember" : "{n} highlights to remember", { n: due.length }),
+      body: [...quotes, book].filter(Boolean).join("\n"),
+      href: "/review",
+    };
+  }
+  const lines = [top ? tr("Top story: {title}", { title: top.title }) : "", book].filter(Boolean);
+  return {
+    title: tr("Your reading day"),
+    body: lines.length ? lines.join("\n") : tr("Highlight a line today and it comes back tomorrow."),
+    href: top ? `/read?id=${top.id}` : reading ? `/library/read?id=${reading.id}` : "/news",
+  };
 }
 
-// (Re)schedules the daily digest. Called when settings change and each time
-// the app opens, so the text stays close to what's current.
-export async function scheduleDigest(r = getReminder()) {
-  await LocalNotifications.cancel({ notifications: [{ id: DIGEST_ID }] }).catch(() => {});
+// The notification text is fixed when it's scheduled, so the next month is
+// scheduled one day at a time, each with that day's own highlights. (A
+// repeating notification can't do this, and Android repeats an `at` schedule
+// by its distance from now, not daily.)
+const DAYS = 30;
+const dayId = (d: number) => DIGEST_ID + 100 + d; // 1101…1130 (1002 is the focus timer)
+let lastTop: News | undefined;
+
+async function digestPlan(r: Reminder, withNews: boolean) {
+  const [notes, pdfs, stories] = await Promise.all([
+    getNotes(),
+    getPdfs(),
+    withNews ? loadNews("top").catch(() => []) : Promise.resolve(lastTop ? [lastTop] : []),
+  ]);
+  if (withNews) lastTop = stories[0];
+  const reading = [...pdfs].sort((a, b) => (b.lastOpenedAt ?? 0) - (a.lastOpenedAt ?? 0))[0];
+  const plan: { at: Date; digest: Digest }[] = [];
+  for (let d = 0; d < DAYS; d++) {
+    const at = new Date();
+    at.setDate(at.getDate() + d);
+    at.setHours(r.hour, r.minute, 0, 0);
+    if (at.getTime() <= Date.now()) continue;
+    // Today's news is only news today.
+    plan.push({ at, digest: digestText(reviewAt(notes, at.getTime()), reading, plan.length ? undefined : stories[0]) });
+  }
+  return plan;
+}
+
+// (Re)schedules the daily notifications. Called when settings change, each
+// time the app opens and a moment after anything is saved, so the text
+// matches what's due. `withNews: false` skips fetching the top story.
+export async function scheduleDigest(r = getReminder(), { withNews = true } = {}) {
+  const ids = [DIGEST_ID, ...Array.from({ length: DAYS + 1 }, (_, d) => dayId(d))]; // + the old weekly repeat
+  await LocalNotifications.cancel({ notifications: ids.map((id) => ({ id })) }).catch(() => {});
   if (!r.on || !(await notificationsAllowed())) return;
-  const { body, href } = await digestText();
+  const plan = await digestPlan(r, withNews);
+  const notify = (id: number, d: Digest, schedule: object) => ({
+    id,
+    title: d.title,
+    body: d.body,
+    largeBody: d.body,
+    largeIcon: NOTIFY_LOGO,
+    schedule: { allowWhileIdle: true, ...schedule },
+    isExactNotification: false,
+    extra: { href: d.href },
+  });
   await LocalNotifications.schedule({
-    notifications: [
-      {
-        id: DIGEST_ID,
-        title: tr("Your tech day"),
-        body,
-        largeBody: body,
-        largeIcon: NOTIFY_LOGO,
-        schedule: { on: { hour: r.hour, minute: r.minute }, allowWhileIdle: true },
-        isExactNotification: false,
-        extra: { href },
-      },
-    ],
+    notifications: plan.map((p, i) => notify(dayId(i), p.digest, { at: p.at })),
   });
 }
 
@@ -97,18 +130,20 @@ export async function setReminder(r: Reminder) {
 
 export async function sendTestNotification() {
   if (!(await notificationsAllowed()) && !(await askForNotifications())) return false;
-  const { body, href } = await digestText();
+  // Shows what the next one will say.
+  const [next] = await digestPlan({ ...getReminder(), hour: 23, minute: 59 }, true);
+  const d = next?.digest ?? { title: tr("Your reading day"), body: tr("Open Stack for today’s review."), href: "/review" };
   await LocalNotifications.schedule({
     notifications: [
       {
         id: Math.floor(Math.random() * 100000) + 2000,
-        title: tr("Your tech day"),
-        body,
-        largeBody: body,
+        title: d.title,
+        body: d.body,
+        largeBody: d.body,
         largeIcon: NOTIFY_LOGO,
         // No schedule = show right away. Never ask for the exact-alarm permission.
         isExactNotification: false,
-        extra: { href },
+        extra: { href: d.href },
       },
     ],
   });

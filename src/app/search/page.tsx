@@ -7,7 +7,7 @@ import { Chips } from "@/components/sheet";
 import { BackIcon, CloseIcon, NoteIcon, SearchIcon } from "@/components/icons";
 import { FilePdfIcon, HighlighterIcon, HistoryIcon, NewspaperIcon, PlaylistIcon } from "@/components/stack-icons";
 import { AiAsk } from "@/components/ai-ask";
-import { aiAvailable } from "@/lib/ai";
+import { useAiState } from "@/components/ai-kit";
 import { subscribe } from "@/lib/db";
 import { canGoBack } from "@/lib/nav";
 import { clearSearches, recentSearches, rememberSearch, searchAll, terms, type Hit, type Kind } from "@/lib/search";
@@ -26,6 +26,7 @@ const kindOf = (k: Kind) => KINDS.find((x) => x.value === k)!;
 
 export default function Search() {
   const tt = useT();
+  const ai = useAiState();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
@@ -76,7 +77,7 @@ export default function Search() {
   };
 
   return (
-    <main className="min-h-dvh px-5 pt-5 pb-16">
+    <main className="min-h-dvh px-(--gutter) pt-5 pb-16">
       <div className="mx-auto max-w-[680px]">
         <div className="flex items-center gap-2">
           <button aria-label={tt("Back")} onClick={back} className="-ml-2.5 flex size-11 shrink-0 items-center justify-center">
@@ -157,7 +158,7 @@ export default function Search() {
             {tt("Nothing found for “{q}”.", { q: q.trim() })}
             <br />
             <span className="text-[14px]">
-              {aiAvailable() && q.trim().length >= 3 ? tt("Try “Ask your Stack” above, or fewer words.") : tt("Try fewer words.")}
+              {ai === "on" && q.trim().length >= 3 ? tt("Try “Ask your Stack” above, or fewer words.") : tt("Try fewer words.")}
             </span>
           </p>
         )}

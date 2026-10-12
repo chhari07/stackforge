@@ -1,0 +1,306 @@
+<!doctype html>
+<!--
+  Stack visitors: the owner's private dashboard. Open it in a browser (it's a
+  plain file, nothing to install). It asks public.visit_stats() in
+  supabase/schema.sql for totals; the password is the one stored (hashed) in
+  public.owner_settings. Only counts come back, never device ids.
+  The Desktop copy has the project's URL and publishable key filled in below.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack Visitors</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2; --surface: #ffffff; --line: #e4e3df; --grid: #ecebe7;
+    --text: #1a1a19; --text-2: #55554f; --muted: #85857d;
+    --guest: #2a78d6; --signed: #eb6834; --accent: #0a95ff; --bad: #c8322f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e0e0d; --surface: #1a1a19; --line: #2c2c2a; --grid: #262624;
+      --text: #f0efec; --text-2: #c3c2b7; --muted: #8d8c84;
+      --guest: #3987e5; --signed: #d95926; --bad: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  button, select, input { font: inherit; color: inherit; }
+  button, select { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  input[type=password] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+  #login { max-width: 380px; margin: 12vh auto 0; display: grid; gap: 12px; }
+  #login label.check { display: flex; gap: 8px; align-items: center; color: var(--text-2); font-size: 14px; }
+  .err { color: var(--bad); font-size: 14px; min-height: 1.2em; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 18px 0; }
+  .tile .label { color: var(--text-2); font-size: 13px; }
+  .tile .num { font-size: 32px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tile .note { color: var(--muted); font-size: 12px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chart-head h2, .split h2 { font-size: 15px; margin: 0; }
+  .legend { display: flex; gap: 14px; color: var(--text-2); font-size: 13px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .chart { position: relative; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .hit { fill: transparent; cursor: default; }
+  .hit:hover { fill: var(--grid); fill-opacity: .6; }
+  #tip { position: absolute; pointer-events: none; background: var(--text); color: var(--bg); border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap; display: none; transform: translate(-50%, -100%); }
+  #tip b { font-weight: 650; }
+  #tip i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
+  .rows { margin-top: 10px; display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 90px 1fr 44px; gap: 10px; align-items: center; font-size: 14px; }
+  .row .bar { height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; }
+  .row .n { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 10px; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-2); font-weight: 600; }
+  .empty { color: var(--muted); font-size: 14px; padding: 30px 0; text-align: center; }
+  footer { color: var(--muted); font-size: 12px; margin-top: 18px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <form id="login" class="card" hidden>
+    <h1>Stack <span>visitors</span></h1>
+    <div class="sub">Private dashboard. Totals only — no names, emails or device ids.</div>
+    <input id="pass" type="password" placeholder="Dashboard password" autocomplete="current-password" required>
+    <label class="check"><input id="remember" type="checkbox" checked> Remember on this computer</label>
+    <button class="primary" type="submit">Open</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+
+  <section id="dash" hidden>
+    <header>
+      <div>
+        <h1>Stack <span>visitors</span></h1>
+        <div class="sub" id="asof"></div>
+      </div>
+      <div class="controls">
+        <select id="range" aria-label="Time range">
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
+        <button id="refresh" type="button">Refresh</button>
+        <button id="logout" type="button">Lock</button>
+      </div>
+    </header>
+
+    <div class="tiles">
+      <div class="card tile"><div class="label">Today</div><div class="num" id="tToday">–</div><div class="note" id="tTodayNote"></div></div>
+      <div class="card tile"><div class="label">Last 7 days</div><div class="num" id="tWeek">–</div><div class="note">unique devices</div></div>
+      <div class="card tile"><div class="label">Last 30 days</div><div class="num" id="tMonth">–</div><div class="note">unique devices</div></div>
+      <div class="card tile"><div class="label">All time</div><div class="num" id="tEver">–</div><div class="note">devices counted</div></div>
+      <div class="card tile"><div class="label">Accounts</div><div class="num" id="tAccounts">–</div><div class="note">signed up</div></div>
+    </div>
+
+    <div class="card">
+      <div class="chart-head">
+        <h2>Devices per day</h2>
+        <div class="legend">
+          <span><i style="background:var(--guest)"></i>Without login</span>
+          <span><i style="background:var(--signed)"></i>Signed in</span>
+          <button id="tableBtn" type="button">Table</button>
+        </div>
+      </div>
+      <div class="chart" id="chart"><div id="tip"></div></div>
+      <div id="tableWrap" hidden></div>
+    </div>
+
+    <div class="split">
+      <div class="card"><h2>App or website</h2><div class="rows" id="platforms"></div></div>
+      <div class="card"><h2>App versions</h2><div class="rows" id="versions"></div></div>
+    </div>
+    <footer>Days are UTC. Each device counts once per day. Builds before the visitor count was added aren't counted.</footer>
+  </section>
+</main>
+
+<script>
+const SUPABASE_URL = "__SUPABASE_URL__";
+const SUPABASE_KEY = "__SUPABASE_PUBLISHABLE_KEY__";
+const PASS_KEY = "stack.visitors.pass";
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Number(n || 0).toLocaleString();
+const store = {
+  get() { try { return localStorage.getItem(PASS_KEY) || sessionStorage.getItem(PASS_KEY); } catch { return null; } },
+  set(p, keep) { try { (keep ? localStorage : sessionStorage).setItem(PASS_KEY, p); } catch {} },
+  clear() { try { localStorage.removeItem(PASS_KEY); sessionStorage.removeItem(PASS_KEY); } catch {} },
+};
+let pass = null;
+
+async function fetchStats(p, days) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/visit_stats`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ pass: p, days }),
+  });
+  if (!res.ok) throw new Error(`Server said ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return res.json(); // null when the password is wrong
+}
+
+function showLogin(msg = "") {
+  $("dash").hidden = true;
+  $("login").hidden = false;
+  $("loginErr").textContent = msg;
+  $("pass").focus();
+}
+
+async function load() {
+  const days = +$("range").value;
+  $("asof").textContent = "Loading…";
+  try {
+    const s = await fetchStats(pass, days);
+    if (!s) { store.clear(); pass = null; return showLogin("Wrong password."); }
+    $("login").hidden = true;
+    $("dash").hidden = false;
+    render(s);
+  } catch (e) {
+    if (!$("dash").hidden) $("asof").textContent = e.message;
+    else showLogin(e.message);
+  }
+}
+
+function render(s) {
+  const today = s.daily.find((d) => d.day === s.today) || { guests: 0, signed_in: 0, new: 0 };
+  $("asof").textContent = `Updated ${new Date().toLocaleString()}`;
+  $("tToday").textContent = fmt(s.active.today);
+  $("tTodayNote").textContent = `${fmt(today.guests)} without login · ${fmt(today.signed_in)} signed in`;
+  $("tWeek").textContent = fmt(s.active.week);
+  $("tMonth").textContent = fmt(s.active.month);
+  $("tEver").textContent = fmt(s.devices_ever);
+  $("tAccounts").textContent = fmt(s.accounts?.total ?? s.accounts);
+  drawChart(s.daily);
+  drawTable(s.daily);
+  bars($("platforms"), s.platforms, { android: "Android app", web: "Website" });
+  bars($("versions"), s.versions, { "": "unknown" });
+}
+
+function bars(el, obj, names) {
+  const rows = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
+  if (!rows.length) { el.innerHTML = `<div class="empty">No visits yet</div>`; return; }
+  const max = Math.max(...rows.map((r) => r[1]));
+  el.innerHTML = rows.map(([k, n]) =>
+    `<div class="row"><span>${esc(names[k] ?? k)}</span><div class="bar" style="width:${(n / max) * 100}%"></div><span class="n">${fmt(n)}</span></div>`
+  ).join("");
+}
+
+function niceMax(v) {
+  if (v <= 4) return 4;
+  const p = 10 ** Math.floor(Math.log10(v));
+  for (const m of [1, 2, 4, 6, 8, 10]) if (m * p >= v) return m * p;
+}
+
+function drawChart(daily) {
+  const chart = $("chart");
+  chart.querySelector("svg")?.remove();
+  const total = daily.reduce((t, d) => t + d.guests + d.signed_in, 0);
+  chart.querySelector(".empty")?.remove();
+  if (!total) {
+    chart.insertAdjacentHTML("beforeend", `<div class="empty">No visits in this range yet. They appear after people open the new build.</div>`);
+    return;
+  }
+  const W = 920, H = 260, L = 34, R = 6, T = 10, B = 26;
+  const pw = W - L - R, ph = H - T - B;
+  const max = niceMax(Math.max(...daily.map((d) => d.guests + d.signed_in)));
+  const slot = pw / daily.length, bw = Math.max(2, Math.min(28, slot - 4));
+  const y = (v) => T + ph - (v / max) * ph;
+  const NS = "http://www.w3.org/2000/svg";
+  let g = "";
+  for (let i = 0; i <= 4; i++) {
+    const v = (max / 4) * i, yy = y(v);
+    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${L - 8}" y="${yy + 4}" text-anchor="end">${Number.isInteger(v) ? v : v.toFixed(1)}</text>`;
+  }
+  const every = Math.ceil(daily.length / 8);
+  daily.forEach((d, i) => {
+    const x = L + i * slot + (slot - bw) / 2;
+    const gh = (d.guests / max) * ph, sh = (d.signed_in / max) * ph;
+    const gap = gh && sh ? 2 : 0;
+    // Guests sit on the baseline; signed-in on top, with a 2px gap; the top end is rounded.
+    if (gh) g += seg(x, y(d.guests), bw, gh, !sh, "var(--guest)");
+    if (sh) g += seg(x, y(d.guests + d.signed_in), bw, sh - gap, true, "var(--signed)");
+    if (i % every === 0 ? daily.length - 1 - i >= every / 2 || i === daily.length - 1 : i === daily.length - 1)
+      g += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${short(d.day)}</text>`;
+    g += `<rect class="hit" data-i="${i}" x="${L + i * slot}" y="${T}" width="${slot}" height="${ph}" rx="4"/>`;
+  });
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Devices per day, without login and signed in");
+  svg.innerHTML = g;
+  chart.prepend(svg);
+
+  const tip = $("tip");
+  svg.addEventListener("mousemove", (e) => {
+    const i = e.target.dataset?.i;
+    if (i == null) { tip.style.display = "none"; return; }
+    const d = daily[i];
+    tip.innerHTML = `<b>${long(d.day)}</b><br><i style="background:var(--guest)"></i>Without login ${fmt(d.guests)}<br>` +
+      `<i style="background:var(--signed)"></i>Signed in ${fmt(d.signed_in)}<br>New devices ${fmt(d.new)}`;
+    const box = chart.getBoundingClientRect();
+    const r = e.target.getBoundingClientRect();
+    tip.style.left = `${Math.min(Math.max(r.left - box.left + r.width / 2, 80), box.width - 80)}px`;
+    tip.style.top = `${r.top - box.top + 8}px`;
+    tip.style.display = "block";
+  });
+  svg.addEventListener("mouseleave", () => (tip.style.display = "none"));
+}
+
+function seg(x, top, w, h, rounded, fill) {
+  if (h <= 0) return "";
+  const r = rounded ? Math.min(4, w / 2, h) : 0;
+  return `<path d="M${x},${top + h} V${top + r} Q${x},${top} ${x + r},${top} H${x + w - r} Q${x + w},${top} ${x + w},${top + r} V${top + h} Z" fill="${fill}"/>`;
+}
+
+function drawTable(daily) {
+  $("tableWrap").innerHTML = `<table><thead><tr><th>Day</th><th>Without login</th><th>Signed in</th><th>Total</th><th>New devices</th></tr></thead><tbody>${
+    daily.slice().reverse().map((d) =>
+      `<tr><td>${long(d.day)}</td><td>${fmt(d.guests)}</td><td>${fmt(d.signed_in)}</td><td>${fmt(d.guests + d.signed_in)}</td><td>${fmt(d.new)}</td></tr>`
+    ).join("")}</tbody></table>`;
+}
+
+const asDate = (s) => new Date(`${s}T00:00:00Z`);
+const short = (s) => asDate(s).toLocaleDateString(undefined, { day: "numeric", month: "short", timeZone: "UTC" });
+const long = (s) => asDate(s).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+$("login").addEventListener("submit", (e) => {
+  e.preventDefault();
+  pass = $("pass").value;
+  store.set(pass, $("remember").checked);
+  $("pass").value = "";
+  load();
+});
+$("range").addEventListener("change", load);
+$("refresh").addEventListener("click", load);
+$("logout").addEventListener("click", () => { store.clear(); pass = null; showLogin(); });
+$("tableBtn").addEventListener("click", () => {
+  const show = $("tableWrap").hidden;
+  $("tableWrap").hidden = !show;
+  $("chart").hidden = show;
+  $("tableBtn").textContent = show ? "Chart" : "Table";
+});
+
+if (SUPABASE_URL.startsWith("__")) showLogin("Fill in SUPABASE_URL and SUPABASE_KEY at the bottom of this file.");
+else if ((pass = store.get())) load();
+else showLogin();
+</script>
+</body>
+</html>

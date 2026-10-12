@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { addNote } from "@/lib/db";
-import { AI_LANGS, aiAvailable, aiLang, answerText, runAi, type AiLang, type Answer } from "@/lib/ai";
-import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
+import { AI_LANGS, aiLang, answerText, runAi, type AiLang, type Answer } from "@/lib/ai";
+import { AiErrorNote, AiLabel, AiLock, AnswerView, useAiConsent, useAiSignIn, useAiState } from "./ai-kit";
 import { SparkleIcon } from "./stack-icons";
 import { useToast } from "./toast";
 import { useT } from "@/lib/i18n";
@@ -21,8 +21,10 @@ export function AiSummary({ id, title, html, source }: { id: string; title: stri
   const toast = useToast();
   const stop = useRef<AbortController | null>(null);
   const [lang, setLang] = useState<AiLang | null>(null);
+  const ai = useAiState();
+  const [requireSignIn, signInSheet] = useAiSignIn();
 
-  if (!aiAvailable()) return null;
+  if (ai === "off") return null;
   // The other language to offer after a summary: Hindi, or back to your AI language (or English).
   const other: AiLang = lang !== "hi" ? "hi" : aiLang() === "hi" ? "en" : aiLang();
 
@@ -63,12 +65,14 @@ export function AiSummary({ id, title, html, source }: { id: string; title: stri
       {state === "idle" ? (
         <div className="mb-6 flex gap-2">
           <button
-            onClick={() => run()}
-            className="flex h-11 items-center gap-2 rounded-full border border-ink/15 px-4 text-[14px] font-semibold"
+            onClick={() => requireSignIn(() => run())}
+            aria-label={ai === "locked" ? t("Summarize (sign in to use Stack AI)") : undefined}
+            className={`flex h-11 items-center gap-2 rounded-full border border-ink/15 px-4 text-[14px] font-semibold ${ai === "locked" ? "text-muted" : ""}`}
           >
             <SparkleIcon size={17} /> {t("Summarize")}
+            {ai === "locked" && <AiLock />}
           </button>
-          {aiLang() !== "hi" && (
+          {aiLang() !== "hi" && ai === "on" && (
             <button
               onClick={() => run("hi")}
               aria-label={t("Summarize in Hindi")}
@@ -118,6 +122,7 @@ export function AiSummary({ id, title, html, source }: { id: string; title: stri
         </div>
       )}
       {consentSheet}
+      {signInSheet}
     </>
   );
 }

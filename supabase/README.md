@@ -156,3 +156,12 @@ Accounts and data don't move by themselves. People sign in again (a Google
 account gets a new Stack account in Supabase), and what's on their device is
 uploaded to the new account on that first sign-in, so nothing local is lost.
 Data that only existed in the old Firestore stays there until you delete it.
+
+## Visitor count (anonymous)
+
+The app tells `public.visit()` once a day that this device opened Stack: a
+random device id, app or website, the version and whether someone is signed
+in. Nothing personal. To see the totals, set a dashboard password (the
+`owner_settings` lines at the end of `schema.sql`) and open
+[`visitors.html`](visitors.html) in a browser after filling in the project URL
+and publishable key at the bottom of it.

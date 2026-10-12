@@ -27,13 +27,18 @@ export const colorOf = (n: Pick<Note, "color" | "kind">): NoteColor =>
 export const colorCls = (c: NoteColor) =>
   COLORS.find((x) => x.value === c)?.cls ?? COLORS[0].cls;
 
-// Where in its book a note is from: "p. 12" in a PDF, "ch. 3" in an EPUB.
-export const pageLabel = (n: Pick<Note, "page" | "sourceLabel">) =>
-  n.page ? tr(n.sourceLabel === "EPUB" ? "ch. {n}" : "p. {n}", { n: n.page }) : "";
+// Where in its book a note is from: "p. 12" in a PDF, "ch. 3" in an EPUB,
+// "loc. 345" for a Kindle highlight with no page number.
+export const pageLabel = (n: Pick<Note, "page" | "sourceLabel" | "loc">) =>
+  n.page ? tr(n.sourceLabel === "EPUB" ? "ch. {n}" : "p. {n}", { n: n.page }) : n.loc ? tr("loc. {n}", { n: n.loc }) : "";
+
+// Imported highlights say where they came from: "Kindle · p. 23", "Readwise".
+const imported = (n: Note) => [n.sourceLabel, pageLabel(n)].filter(Boolean).join(" · ");
 
 const SOURCE: Record<Note["kind"], ((n: Note) => string) | null> = {
-  article: () => tr("Article"),
-  pdf: (n) => (n.sourceLabel === "EPUB" ? `${tr("Book")} · ${pageLabel(n)}` : `PDF · ${pageLabel(n)}`),
+  article: (n) => (n.importKey ? imported(n) : tr("Article")),
+  pdf: (n) =>
+    n.importKey ? imported(n) : n.sourceLabel === "EPUB" ? `${tr("Book")} · ${pageLabel(n)}` : `PDF · ${pageLabel(n)}`,
   music: () => tr("Music"),
   idea: null,
 };

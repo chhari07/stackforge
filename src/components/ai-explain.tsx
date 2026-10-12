@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { addNote, type NoteKind } from "@/lib/db";
-import { aiAvailable, answerText, runAi, type Answer } from "@/lib/ai";
-import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
+import { answerText, runAi, type Answer } from "@/lib/ai";
+import { AiErrorNote, AiLabel, AnswerView, useAiConsent, useAiState } from "./ai-kit";
 import { Sheet } from "./sheet";
 import { useToast } from "./toast";
 import { useT } from "@/lib/i18n";
@@ -22,6 +22,7 @@ export function useAiExplain(where: Where) {
   const [confirm, consentSheet] = useAiConsent();
   const stop = useRef<AbortController | null>(null);
   const toast = useToast();
+  const ai = useAiState();
 
   const explain = async (text: string, context?: string) => {
     if (!(await confirm("explain", t("the line you selected and the text around it")))) return;
@@ -92,5 +93,5 @@ export function useAiExplain(where: Where) {
     </>
   );
 
-  return [aiAvailable() ? explain : undefined, sheet] as const;
+  return [ai === "on" ? explain : undefined, sheet] as const;
 }

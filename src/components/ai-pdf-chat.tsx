@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getPdf } from "@/lib/db";
-import { aiAvailable, answerText, blobBase64, runAi, type Answer } from "@/lib/ai";
-import { AiErrorNote, AiLabel, AnswerView, useAiConsent } from "./ai-kit";
+import { answerText, blobBase64, runAi, type Answer } from "@/lib/ai";
+import { AiErrorNote, AiLabel, AiLock, AnswerView, useAiConsent, useAiSignIn, useAiState } from "./ai-kit";
 import { Sheet } from "./sheet";
 import { SparkleIcon } from "./stack-icons";
 import { useT } from "@/lib/i18n";
@@ -23,6 +23,8 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
   const [confirm, consentSheet] = useAiConsent();
   const pdf = useRef<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const ai = useAiState();
+  const [requireSignIn, signInSheet] = useAiSignIn();
 
   // Braces matter: newer browsers return a Promise from scrollIntoView, and an
   // effect may only return a cleanup function.
@@ -30,7 +32,7 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
     end.current?.scrollIntoView({ block: "end" });
   }, [turns]);
 
-  if (!aiAvailable()) return null;
+  if (ai === "off") return null;
 
   const ask = async (raw: string) => {
     const question = raw.replace("this page", `page ${page}`).trim();
@@ -57,9 +59,19 @@ export function AiPdfButton({ id, title, page, onPage }: { id: string; title: st
 
   return (
     <>
-      <button aria-label={tt("Ask this PDF")} onClick={() => setOpen(true)} className="flex size-11 items-center justify-center">
+      <button
+        aria-label={ai === "locked" ? tt("Ask this PDF (sign in to use Stack AI)") : tt("Ask this PDF")}
+        onClick={() => requireSignIn(() => setOpen(true))}
+        className={`relative flex size-11 items-center justify-center ${ai === "locked" ? "text-muted" : ""}`}
+      >
         <SparkleIcon size={21} />
+        {ai === "locked" && (
+          <span className="absolute right-1 bottom-1.5 rounded-full bg-paper p-px">
+            <AiLock size={11} />
+          </span>
+        )}
       </button>
+      {signInSheet}
       <Sheet open={open} onClose={() => setOpen(false)} title="Ask this PDF">
         <div className="-mt-2 flex max-h-[55dvh] flex-col gap-4 overflow-y-auto">
           {turns.length === 0 && (

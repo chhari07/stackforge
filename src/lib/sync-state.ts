@@ -5,7 +5,7 @@
 // them. Kept separate from sync.ts so the storage layer doesn't load Supabase.
 import { get, update } from "idb-keyval";
 
-export type Collection = "notes" | "saved" | "pdfs" | "playlists" | "focus" | "profile" | "feeds";
+export type Collection = "notes" | "saved" | "pdfs" | "playlists" | "focus" | "profile" | "feeds" | "channels";
 
 // v: bumped on every change, so a change made during an upload isn't cleared.
 export type Change = { op: "put" | "del"; v: number };

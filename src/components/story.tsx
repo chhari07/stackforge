@@ -52,7 +52,7 @@ export function HeroStory({
       <Link
         href={readHref(story)}
         onClick={() => rememberStory(story)}
-        style={{ height }}
+        style={{ minHeight: height }}
         className="relative flex shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-soft p-[18px] text-white"
       >
         {img && (
@@ -61,14 +61,17 @@ export function HeroStory({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         {story.video && <PlayBadge />}
-        <span className="label absolute top-4 left-[18px] rounded-full bg-news px-2 py-1 text-[10px]">
-          {story.source} · {ago(story.createdAt)}
-        </span>
-        {!img && story.domain && (
-          <span className={`label absolute top-4 text-[10px] text-[#8C8A84] ${onShare ? "right-[58px]" : "right-[18px]"}`}>
-            {story.domain}
+        {/* One row, so a long source (or its Hindi "ago") truncates instead of running under the domain.
+            In the flow, not over the picture: at a large phone font size the card grows taller
+            instead of the headline running up over it. */}
+        <div className={`relative -mt-0.5 mb-auto flex min-w-0 items-center gap-2 pb-3 ${onShare ? "mr-10" : ""}`}>
+          <span className="label max-w-full shrink-0 truncate rounded-full bg-news px-2 py-1 text-[10px]">
+            {story.source} · {ago(story.createdAt)}
           </span>
-        )}
+          {!img && story.domain && (
+            <span className="label ml-auto min-w-0 truncate text-[10px] text-[#8C8A84]">{story.domain}</span>
+          )}
+        </div>
         <span className="relative line-clamp-3 text-[20px] leading-[1.22] font-bold">{story.title}</span>
         <time dateTime={story.createdAt} className="label relative mt-2 text-[10px] text-white/85">
           {newsTime(story.createdAt)}
@@ -101,7 +104,7 @@ export function StoryCard({ story }: { story: Story }) {
     <Link
       href={readHref(story)}
       onClick={() => rememberStory(story)}
-      className="relative flex h-[168px] w-[236px] flex-col justify-end overflow-hidden rounded-2xl bg-soft p-3.5 text-white"
+      className="relative flex min-h-[168px] w-[236px] flex-col justify-end overflow-hidden rounded-2xl bg-soft p-3.5 text-white"
     >
       {img && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -115,7 +118,7 @@ export function StoryCard({ story }: { story: Story }) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
       {story.video && <PlayBadge size={38} />}
-      <span className="label absolute top-3 left-3.5 max-w-[88%] truncate rounded-full bg-black/45 px-2 py-1 text-[9px]">
+      <span className="label relative -mt-0.5 mb-auto max-w-[88%] self-start truncate rounded-full bg-black/45 px-2 py-1 text-[9px]">
         {story.source} · {newsTime(story.createdAt)}
       </span>
       <span className="relative line-clamp-3 text-[15px] leading-[1.25] font-bold">{story.title}</span>
