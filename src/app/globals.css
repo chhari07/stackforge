@@ -6,7 +6,7 @@
   --color-desk: #e4e1da;
   --color-ink: #111111;
   --color-on-ink: #ffffff; /* text on bg-ink */
-  --color-card: #ffffff;
+  --color-card: rgb(255 255 255 / 0.62); /* see-through: cards are glass (.bg-card below) */
   --color-prose: #22211f;
   --color-soft: #1d1d1b;
   --color-muted: #6b6862;
@@ -35,8 +35,36 @@
 
 :root {
   color-scheme: light;
-  /* Just above the floating tab bar (it sits higher on phones with a gesture bar) */
-  --above-tabs: calc(70px + max(env(safe-area-inset-bottom), 12px));
+  /* Just above the floating tab bar and the open tab's curved name over it
+     (it sits higher on phones with a gesture bar) */
+  --above-tabs: calc(110px + max(env(safe-area-inset-bottom), 12px)); /* + room for the tab name capsule */
+  /* Side margin of a screen. Phones: 20px. Tablets: wider, so the content
+     sits in a centred 760px column instead of stretching edge to edge. */
+  --gutter: 20px;
+
+  /* Glass: frosted, see-through surfaces over a soft coloured backdrop. */
+  --glass: rgb(255 255 255 / 0.55);
+  --glass-strong: rgb(255 255 255 / 0.74);
+  --glass-edge: rgb(255 255 255 / 0.8);
+  --glass-shine: rgb(255 255 255 / 0.55);
+  --glass-shadow: 0 10px 30px rgb(17 17 17 / 0.1);
+  --aurora:
+    radial-gradient(42% 32% at 8% 4%, rgb(10 138 58 / 0.16), transparent 70%),
+    radial-gradient(40% 30% at 98% 18%, rgb(78 158 230 / 0.2), transparent 70%),
+    radial-gradient(44% 34% at 88% 78%, rgb(242 162 70 / 0.2), transparent 70%),
+    radial-gradient(40% 30% at 4% 92%, rgb(214 47 38 / 0.12), transparent 70%);
+}
+@media (min-width: 640px) {
+  :root {
+    --gutter: max(32px, calc((100vw - 760px) / 2));
+  }
+}
+
+/* Runs to the screen edges inside a padded page (top bar, swipe rows),
+   with the content still lined up with the column. */
+.bleed {
+  margin-inline: calc(-1 * var(--gutter));
+  padding-inline: var(--gutter);
 }
 
 /* Dark theme: Settings → Appearance sets data-theme; "system" follows the phone. */
@@ -47,7 +75,7 @@
   --color-desk: #050505;
   --color-ink: #f1efe9;
   --color-on-ink: #141413;
-  --color-card: #1f1f1d;
+  --color-card: rgb(48 48 45 / 0.5);
   --color-soft: #262624;
   --color-muted: #a39f97;
   --color-line: rgb(241 239 233 / 0.12);
@@ -63,6 +91,16 @@
   --color-pdf-deep: #f6c88a;
   --color-blue-tint: #183454;
   --color-blue-deep: #9cc8f2;
+  --glass: rgb(40 40 37 / 0.5);
+  --glass-strong: rgb(30 30 28 / 0.72);
+  --glass-edge: rgb(255 255 255 / 0.12);
+  --glass-shine: rgb(255 255 255 / 0.08);
+  --glass-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  --aurora:
+    radial-gradient(42% 32% at 8% 4%, rgb(10 138 58 / 0.34), transparent 70%),
+    radial-gradient(40% 30% at 98% 18%, rgb(78 158 230 / 0.3), transparent 70%),
+    radial-gradient(44% 34% at 88% 78%, rgb(242 162 70 / 0.26), transparent 70%),
+    radial-gradient(40% 30% at 4% 92%, rgb(214 47 38 / 0.26), transparent 70%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -72,7 +110,7 @@
   --color-desk: #050505;
   --color-ink: #f1efe9;
   --color-on-ink: #141413;
-  --color-card: #1f1f1d;
+  --color-card: rgb(48 48 45 / 0.5);
   --color-soft: #262624;
   --color-muted: #a39f97;
   --color-line: rgb(241 239 233 / 0.12);
@@ -88,18 +126,37 @@
   --color-pdf-deep: #f6c88a;
   --color-blue-tint: #183454;
   --color-blue-deep: #9cc8f2;
+    --glass: rgb(40 40 37 / 0.5);
+    --glass-strong: rgb(30 30 28 / 0.72);
+    --glass-edge: rgb(255 255 255 / 0.12);
+    --glass-shine: rgb(255 255 255 / 0.08);
+    --glass-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+    --aurora:
+      radial-gradient(42% 32% at 8% 4%, rgb(10 138 58 / 0.34), transparent 70%),
+      radial-gradient(40% 30% at 98% 18%, rgb(78 158 230 / 0.3), transparent 70%),
+      radial-gradient(44% 34% at 88% 78%, rgb(242 162 70 / 0.26), transparent 70%),
+      radial-gradient(40% 30% at 4% 92%, rgb(214 47 38 / 0.26), transparent 70%);
   }
 }
 
 html {
-  background: var(--color-paper);
+  /* The soft colour behind the glass, fixed while the page scrolls. */
+  background: var(--aurora), var(--color-paper);
+  background-attachment: fixed;
+  min-height: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* On html too: on a phone, body's clip alone still lets anything too wide
+     (a heading at a large phone font size) widen the page, and then the tab
+     bar and mini player centre on that wider page, half off the screen. */
+  overflow-x: clip;
 }
 
 body {
-  background: var(--color-paper);
+  background: transparent;
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* Nothing may make the page swipe sideways (a heading too wide for the screen). */
+  overflow-x: clip;
 }
 
 /* Small uppercase mono labels, the Saviom-style "metadata" voice */
@@ -123,6 +180,11 @@ body {
   font-stretch: 75%;
   letter-spacing: -0.04em;
   line-height: 0.8;
+  /* Already sized to the screen width: the phone's font-size setting would push
+     them off the edge. Body text still follows it. FitDisplay shrinks any
+     heading that is still too wide (long words, Hindi in a wider font). */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 /* Smooth scrolling: glide to in-page jumps, and no Android overscroll
@@ -142,6 +204,9 @@ html {
   scroll-snap-type: x mandatory;
   scroll-padding-inline: 20px;
   scrollbar-width: none;
+}
+.rail.bleed {
+  scroll-padding-inline: var(--gutter);
 }
 .rail::-webkit-scrollbar {
   display: none;
@@ -691,4 +756,57 @@ a:active > .gear {
 :lang(hi) .display {
   letter-spacing: 0;
   line-height: 1.15;
+}
+
+/* The open tab's name capsule (components/tab-bar.tsx) rises in when the tab changes. */
+.tab-name {
+  animation: tab-name-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  letter-spacing: 0.12em;
+}
+/* Spaced-out Devanagari breaks its joined letters apart. */
+:lang(hi) .tab-name {
+  letter-spacing: 0;
+}
+@keyframes tab-name-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px); /* the centring is the separate `translate` property */
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-name {
+    animation: none;
+  }
+}
+
+/* ---- Glass ---- */
+/* Cards: frosted panes (bg-card is see-through, see --color-card). */
+.bg-card {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  /* A thin bright edge, as an outline so it never replaces a card's own shadow. */
+  outline: 1px solid var(--glass-edge);
+  outline-offset: -1px;
+}
+/* Floating glass: tab bar, top bar, sheets, toasts, menus, buttons over pictures. */
+.glass,
+.glass-strong {
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-shine);
+}
+.glass {
+  background: var(--glass);
+}
+.glass-strong {
+  background: var(--glass-strong);
+}
+/* The top bar turns to glass once the page scrolls under it. */
+.glass-bar {
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  background: linear-gradient(to bottom, var(--glass-strong), var(--glass));
 }

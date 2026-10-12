@@ -7,12 +7,12 @@ import { GearIcon, SearchIcon } from "./icons";
 import { useT } from "@/lib/i18n";
 
 // The same top bar on every tab: logo (back to Today), search, account and
-// settings. It sticks under the status bar while the page scrolls. `className`
-// sets the background to match the page (Library uses bg-paper-2).
-export function TopBar({ animate = false, className = "bg-paper" }: { animate?: boolean; className?: string }) {
+// settings. It sticks under the status bar while the page scrolls, as frosted
+// glass the page shows through.
+export function TopBar({ animate = false, className = "glass-bar" }: { animate?: boolean; className?: string }) {
   const t = useT();
   return (
-    <div className={`sticky top-[env(safe-area-inset-top)] z-30 -mx-5 flex h-14 shrink-0 items-center justify-between px-5 ${className}`}>
+    <div className={`sticky top-[env(safe-area-inset-top)] z-30 bleed flex h-14 shrink-0 items-center justify-between ${className}`}>
       <Link href="/" aria-label={t("Today")} className="-ml-1.5 flex h-11 items-center">
         <Logo size={30} animate={animate} />
       </Link>

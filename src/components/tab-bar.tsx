@@ -21,9 +21,10 @@ const isActive = (path: string, href: string) => (href === "/" ? path === "/" : 
 // What "+" adds on this screen: a link, or something the screen does itself.
 export type TabAdd = { label: string; href?: string; onClick?: () => void };
 
-// Phones: a floating pill of icons on the main screens, the open tab in a
-// circle. The pill stays centred; a screen that has something to add gets a
-// "+" circle beside it. Tablets use the same bar.
+// Phones: a floating glass pill of icons on the main screens, the open tab in a
+// circle with its name in a small capsule above the pill. The pill stays
+// centred; a screen that has something to add gets a "+" circle beside it.
+// Tablets use the same bar.
 export function TabBar({ add }: { add?: TabAdd }) {
   const path = usePathname();
   const t = useT();
@@ -33,7 +34,7 @@ export function TabBar({ add }: { add?: TabAdd }) {
   return (
     <nav
       aria-label="Main"
-      className="fixed bottom-[max(env(safe-area-inset-bottom),12px)] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full bg-ink p-1.5 shadow-[0_10px_28px_rgba(0,0,0,.28)]"
+      className="glass-strong fixed bottom-[max(env(safe-area-inset-bottom),12px)] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5"
     >
       {PILL.map(({ href, label, Icon }) => {
         const active = isActive(path, href);
@@ -43,9 +44,10 @@ export function TabBar({ add }: { add?: TabAdd }) {
             href={href}
             aria-label={t(label)}
             aria-current={active ? "page" : undefined}
-            className={`${circle} ${active ? "bg-on-ink text-ink" : "text-on-ink/60"}`}
+            className={`${circle} relative ${active ? "bg-ink text-on-ink" : "text-ink/55"}`}
           >
             <Icon />
+            {active && <TabName key={href} text={t(label)} />}
           </Link>
         );
       })}
@@ -60,5 +62,18 @@ export function TabBar({ add }: { add?: TabAdd }) {
           </button>
         ))}
     </nav>
+  );
+}
+
+// The open tab's name in a small glass capsule, well above the pill (clear of
+// the bar's edge), so it never sits on the icons. It rises in when the tab opens.
+function TabName({ text }: { text: string }) {
+  return (
+    <span
+      aria-hidden
+      className="tab-name glass label pointer-events-none absolute bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2 rounded-full px-2.5 py-1 text-[9px] font-medium whitespace-nowrap text-ink"
+    >
+      {text}
+    </span>
   );
 }

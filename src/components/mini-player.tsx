@@ -15,7 +15,7 @@ export function MiniPlayer({ showTime = false }: { showTime?: boolean }) {
   const now = useNowPlaying();
 
   const shell =
-    "fixed inset-x-6 bottom-[calc(var(--above-tabs)+6px)] z-30 mx-auto flex h-[46px] max-w-[420px] items-center gap-2.5 overflow-hidden rounded-full bg-card pr-1.5 pl-3 shadow-[0_8px_24px_rgba(0,0,0,.12)]";
+    "fixed inset-x-6 bottom-[calc(var(--above-tabs)+6px)] z-30 mx-auto flex h-[46px] max-w-[420px] items-center gap-2.5 overflow-hidden rounded-full glass pr-1.5 pl-3";
   const square = "size-[22px] shrink-0 overflow-hidden rounded-[5px] bg-music";
 
   if (!now) {

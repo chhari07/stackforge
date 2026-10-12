@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TabBar } from "@/components/tab-bar";
 import { TopBar } from "@/components/top-bar";
-import { Chips } from "@/components/sheet";
+import { TopicBar } from "@/components/topic-bar";
 import { HeroStory, StoryRow, StorySkeleton } from "@/components/story";
 import { NewsCards } from "@/components/news-cards";
 import { QuoteCardSheet } from "@/components/quote-card-sheet";
@@ -17,7 +17,7 @@ import { addPref } from "@/lib/news-prefs";
 import { NewsPrefsSheet } from "@/components/news-prefs-sheet";
 import { isTopic, TOPICS } from "@/lib/news";
 import { dayStamp, time12 } from "@/lib/format";
-import { getProfile } from "@/lib/profile";
+import { getProfile, READING_FOR } from "@/lib/profile";
 import { useStore } from "@/lib/use-store";
 import { CardsIcon, FilterIcon, ListViewIcon, NewspaperIcon, StarIcon } from "@/components/stack-icons";
 import { PapersSheet } from "@/components/papers-sheet";
@@ -26,6 +26,7 @@ import { FeedsSheet } from "@/components/feeds-sheet";
 import { RssIcon } from "@/components/stack-icons";
 import { getFeeds } from "@/lib/feeds";
 import { useT, useUiLang } from "@/lib/i18n";
+import { TrendingRow, VideoSection } from "@/components/live";
 
 const TOPIC_KEY = "stack.news-topic";
 const VIEW_KEY = "stack.news-view";
@@ -98,6 +99,17 @@ export default function News() {
     ? [topics[0], { value: "following" as const, label: "Following", icon: <StarIcon size={14} /> }, ...topics.slice(1)]
     : topics;
   const inFollowing = following && follows.length > 0;
+  // In view: Top, Following, three of your interests (or what you read for),
+  // and the open topic. The rest go in "More".
+  const picked = (profile.interests?.length ? profile.interests : READING_FOR.find((r) => r.value === profile.readingFor)?.topics) ?? [
+    "india",
+    "world",
+    "tech",
+  ];
+  const current = inFollowing ? "following" : topic;
+  const pinned = new Set<string>(["top", "following", ...picked.filter((x) => x !== "top").slice(0, 3), current]);
+  const shownChips = chips.filter((c) => pinned.has(c.value));
+  const moreChips = chips.filter((c) => !pinned.has(c.value));
   useEffect(() => {
     // The last followed word was removed: back to the topic.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -141,16 +153,14 @@ export default function News() {
   const heroes = query ? [] : stories.slice(0, 3);
   const rest = query ? stories : stories.slice(3);
 
-  const cards = view === "cards";
+  // Video is its own page: live channels, search, your channels, then videos.
+  const isVideo = topic === "video" && !inFollowing && !searching;
+  const cards = view === "cards" && !isVideo;
 
   return (
     <main
       ref={page}
-      className={
-        cards
-          ? "flex h-[calc(100dvh-env(safe-area-inset-top))] flex-col px-5 pt-1 pb-[calc(var(--above-tabs)-10px)]"
-          : "px-5 pt-1 pb-[120px]"
-      }
+      className={cards ? "px-(--gutter) pt-1 pb-[calc(var(--above-tabs)-10px)]" : "px-(--gutter) pt-1 pb-[120px]"}
     >
       <TopBar />
       <div className="flex h-11 shrink-0 items-center justify-between">
@@ -166,12 +176,8 @@ export default function News() {
           </button>
           <span className="label text-[12px] font-medium">{t("News")}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div
-            role="tablist"
-            aria-label={t("Layout")}
-            className="flex rounded-full border border-ink/15 p-0.5"
-          >
+        <div className="glass flex items-center gap-0.5 rounded-full p-1">
+          <div role="tablist" hidden={isVideo} aria-label={t("Layout")} className="flex rounded-full bg-ink/8 p-0.5">
             {(["cards", "list"] as View[]).map((v) => (
               <button
                 key={v}
@@ -179,25 +185,17 @@ export default function News() {
                 aria-selected={view === v}
                 onClick={() => setView(v)}
                 aria-label={v === "cards" ? t("Cards") : t("List")}
-                className={`flex h-7 w-9 items-center justify-center rounded-full ${view === v ? "bg-ink text-on-ink" : ""}`}
+                className={`flex h-8 w-10 items-center justify-center rounded-full ${view === v ? "bg-ink text-on-ink" : ""}`}
               >
                 {v === "cards" ? <CardsIcon size={16} /> : <ListViewIcon size={16} />}
               </button>
             ))}
           </div>
-          <button
-            aria-label={t("Today’s paper")}
-            onClick={() => setPapers(true)}
-            className="flex size-11 items-center justify-center"
-          >
-            <NewspaperIcon size={20} />
+          <button aria-label={t("Today’s paper")} onClick={() => setPapers(true)} className="flex h-9 w-10 items-center justify-center rounded-full">
+            <NewspaperIcon size={19} />
           </button>
-          <button
-            aria-label={t("Your news: follow and mute")}
-            onClick={() => setTuning(true)}
-            className="flex size-11 items-center justify-center"
-          >
-            <FilterIcon size={20} />
+          <button aria-label={t("Your news: follow and mute")} onClick={() => setTuning(true)} className="flex h-9 w-10 items-center justify-center rounded-full">
+            <FilterIcon size={19} />
           </button>
           <button
             aria-label={searching ? t("Close search") : t("Search")}
@@ -205,9 +203,9 @@ export default function News() {
               setSearching((s) => !s);
               setQuery("");
             }}
-            className="-mr-2 flex size-11 items-center justify-center"
+            className="flex h-9 w-10 items-center justify-center rounded-full"
           >
-            {searching ? <CloseIcon size={22} /> : <SearchIcon size={22} />}
+            {searching ? <CloseIcon size={20} /> : <SearchIcon size={20} />}
           </button>
         </div>
       </div>
@@ -236,11 +234,11 @@ export default function News() {
           )}
         </label>
       ) : cards ? (
-        <div className="mt-1.5 flex shrink-0 items-end justify-between">
-          <h1 className="display text-[40px] leading-[0.9] tracking-[-0.03em]">
+        <div className="mt-1.5 flex shrink-0 items-end justify-between gap-3">
+          <h1 className="display min-w-0 text-[40px] leading-[0.9] tracking-[-0.03em]">
             {t("{word} TODAY", { word })}
           </h1>
-          <span className="label text-right text-[10px] leading-normal">
+          <span className="label shrink-0 text-right text-[10px] leading-normal">
             {stamp ? `${stamp.day} ${stamp.date}` : ""}
             {feed.updatedAt && (
               <span className={`block ${feed.offline ? "text-music-text" : "text-muted"}`}>
@@ -250,15 +248,15 @@ export default function News() {
           </span>
         </div>
       ) : (
-        <div className="mt-2.5 flex items-end justify-between">
+        <div className="mt-2.5 flex items-end justify-between gap-3">
           <h1
-            className={`display leading-[0.85] tracking-[-0.03em] ${word.length > 7 ? "text-[46px]" : "text-[64px]"}`}
+            className={`display min-w-0 leading-[0.85] tracking-[-0.03em] ${word.length > 7 ? "text-[46px]" : "text-[64px]"}`}
           >
             {hindi ? t("TODAY") : word}
             <br />
             {hindi ? word : t("TODAY")}
           </h1>
-          <span className="label text-right text-[10px] leading-normal">
+          <span className="label shrink-0 text-right text-[10px] leading-normal">
             {stamp?.day}
             <br />
             {stamp?.date}
@@ -272,16 +270,18 @@ export default function News() {
       )}
 
       <div className={cards ? "mt-3 mb-3 shrink-0" : "mt-4"}>
-        <Chips
-          label={t("Topic")}
-          options={chips}
-          value={inFollowing ? "following" : topic}
+        <TopicBar
+          shown={shownChips}
+          more={moreChips}
+          value={current}
           onChange={(v) => {
             setFollowing(v === "following");
             if (v !== "following") setTopic(v);
           }}
         />
       </div>
+
+      {!searching && <TrendingRow className={cards ? "-mt-1 mb-3 shrink-0" : "mt-3"} />}
 
       {topic === "mine" && !inFollowing && feeds.length > 0 && (
         <div className={`flex items-center justify-between ${cards ? "-mt-1 mb-2 shrink-0" : "mt-3"}`}>
@@ -316,10 +316,7 @@ export default function News() {
       {cards && (
         <>
           {feed.status === "loading" && (
-            <div
-              aria-hidden
-              className="grow animate-pulse rounded-3xl bg-rule"
-            />
+            <div aria-hidden className="h-[calc(100dvh-env(safe-area-inset-top)-var(--above-tabs)-24px)] animate-pulse rounded-3xl bg-rule" />
           )}
           {feed.status === "error" && (
             <p className="py-10 text-center text-[14px] text-muted">
@@ -335,8 +332,10 @@ export default function News() {
         </>
       )}
 
-      {!cards && heroes.length > 0 && (
-        <div className="no-scrollbar -mx-5 mt-[18px] flex snap-x snap-mandatory gap-3 overflow-x-auto px-5">
+      {isVideo && <VideoSection />}
+
+      {!cards && !isVideo && heroes.length > 0 && (
+        <div className="no-scrollbar bleed mt-[18px] flex snap-x snap-mandatory gap-3 overflow-x-auto">
           {heroes.map((s) => (
             <div key={s.id} className="relative w-[82%] shrink-0 snap-start">
               <HeroStory story={s} onShare={setSharing} />
@@ -345,7 +344,7 @@ export default function News() {
         </div>
       )}
 
-      {!cards && (
+      {!cards && !isVideo && (
         <>
           <div className="mt-[22px] flex items-baseline justify-between">
             <h2 className="text-[19px] font-bold">

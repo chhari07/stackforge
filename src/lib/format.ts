@@ -27,7 +27,8 @@ export function time12(ts: number | string) {
 // "Good morning" before noon, "Good afternoon" until 5 pm, then "Good evening".
 export function greeting(d = new Date()) {
   const h = d.getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  // After midnight it's still evening (until 5), matching Today's "quiet evening".
+  return h >= 5 && h < 12 ? "Good morning" : h >= 12 && h < 17 ? "Good afternoon" : "Good evening";
 }
 
 export function dayStamp(d = new Date()) {

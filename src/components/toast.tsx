@@ -28,8 +28,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--above-tabs)+10px)] z-50 mx-auto w-full max-w-[480px] px-4"
       >
         {toast && (
-          <div className="pointer-events-auto flex h-14 items-center gap-3 rounded-full bg-ink pl-[18px] pr-2 text-on-ink shadow-[0_10px_30px_rgba(0,0,0,.25)]">
-            <CheckIcon size={18} className="shrink-0 text-[#6FD196]" />
+          <div className="pointer-events-auto flex h-14 items-center gap-3 rounded-full glass-strong pl-[18px] pr-2 text-ink">
+            <CheckIcon size={18} className="shrink-0 text-news-text" />
             <span className="grow truncate text-[13px]">{toast.text}</span>
             {toast.onAction && (
               <button
@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   toast.onAction?.();
                   setToast(null);
                 }}
-                className="label flex h-10 items-center rounded-full bg-paper px-3.5 text-[10px] text-ink"
+                className="label flex h-10 items-center rounded-full bg-ink px-3.5 text-[10px] text-on-ink"
               >
                 {toast.action ?? "Undo"}
               </button>
@@ -45,7 +45,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             {toast.href && (
               <Link
                 href={toast.href}
-                className="label flex h-10 items-center rounded-full bg-paper px-3.5 text-[10px] text-ink"
+                className="label flex h-10 items-center rounded-full bg-ink px-3.5 text-[10px] text-on-ink"
               >
                 {toast.action ?? "Open"}
               </Link>

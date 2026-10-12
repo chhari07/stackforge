@@ -8,7 +8,7 @@ import { useStore } from "@/lib/use-store";
 import { safeImage, type Story } from "@/lib/use-news";
 import { PlayBadge, rememberStory, storyHref } from "./story";
 import { useToast } from "./toast";
-import { downloadArticle } from "@/lib/offline";
+import { keepOffline } from "@/lib/news-alerts";
 import { BookmarkIcon, ClockIcon, ShareIcon } from "./icons";
 import { QuoteCardSheet } from "./quote-card-sheet";
 import { storyCard } from "@/lib/quote-card";
@@ -18,6 +18,9 @@ const TINTS = ["#2F4B3A", "#54473A", "#2C3E57", "#4A2F3A", "#3A3A37"];
 const HINT_KEY = "stack.cards-hint-seen";
 
 // One story per full-height card; swipe up for the next (Inshorts-style).
+// The cards scroll with the page itself (one scroll, not a box inside it), so a
+// swipe anywhere moves the page: the header goes up and away, then each swipe
+// snaps to the next card.
 export function NewsCards({ stories }: { stories: Story[] }) {
   const t = useT();
   const toast = useToast();
@@ -25,21 +28,64 @@ export function NewsCards({ stories }: { stories: Story[] }) {
   const [index, setIndex] = useState(0);
   const [hint, setHint] = useState(false);
   const [sharing, setSharing] = useState<Story | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+
+  // The page snaps card by card while card view is open.
+  useEffect(() => {
+    // Snaps: the very top of the page (the header), then each card just below the top bar.
+    const root = document.documentElement;
+    root.style.scrollSnapType = "y mandatory";
+
+    // Opening card view starts at the top (the header), not part-way down.
+    const frame = requestAnimationFrame(() => window.scrollTo({ top: 0 }));
+    return () => {
+      cancelAnimationFrame(frame);
+      root.style.scrollSnapType = "";
+
+    };
+  }, []);
+
+  // One card per swipe: a fast fling can carry the page past a card (Android
+  // WebView doesn't always honour snap-stop), so when a scroll comes to rest
+  // more than one card away, it settles on the next one instead.
+  useEffect(() => {
+    let resting = -1; // -1 = the header
+    const at = (y: number) => {
+      const cards = [...(list.current?.children ?? [])] as HTMLElement[];
+      const marks = [0, ...cards.map((c) => c.getBoundingClientRect().top + window.scrollY - parseFloat(getComputedStyle(c).scrollMarginTop))];
+      let best = 0;
+      marks.forEach((m, i) => Math.abs(m - y) < Math.abs(marks[best] - y) && (best = i));
+      return { index: best - 1, marks };
+    };
+    const onEnd = () => {
+      const { index, marks } = at(window.scrollY);
+      if (Math.abs(index - resting) > 1) {
+        const next = resting + Math.sign(index - resting);
+        resting = next;
+        window.scrollTo({ top: marks[next + 1], behavior: "smooth" });
+        return;
+      }
+      resting = index;
+    };
+    window.addEventListener("scrollend", onEnd);
+    return () => window.removeEventListener("scrollend", onEnd);
+  }, [stories]);
 
   // Which card is on screen, for the "3 / 40" counter.
   useEffect(() => {
-    const el = scroller.current;
-    if (!el) return;
-    const onScroll = () =>
-      setIndex(Math.round(el.scrollTop / Math.max(1, el.clientHeight)));
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    const onScroll = () => {
+      const first = list.current?.firstElementChild as HTMLElement | null;
+      if (!first) return;
+      const top = first.getBoundingClientRect().top;
+      setIndex(Math.max(0, Math.round(-top / Math.max(1, first.offsetHeight))));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // New topic or search: back to the first card.
+  // New topic or search: back to the top.
   useEffect(() => {
-    scroller.current?.scrollTo({ top: 0 });
+    if (window.scrollY > 0) window.scrollTo({ top: 0 });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIndex(0);
   }, [stories]);
@@ -61,12 +107,10 @@ export function NewsCards({ stories }: { stories: Story[] }) {
   }, [index, hint]);
 
   return (
-    <div className="relative min-h-0 grow">
-      <div
-        ref={scroller}
-        className="no-scrollbar h-full snap-y snap-mandatory overflow-y-auto overscroll-contain"
-        aria-label={t("News cards, swipe up for the next story")}
-      >
+    <div>
+      {/* The page's first snap: its very top, so a swipe down from the first card shows the header again. */}
+      <span aria-hidden className="pointer-events-none absolute top-0 left-0 h-px w-px snap-start" />
+      <div ref={list} aria-label={t("News cards, swipe up for the next story")}>
         {stories.map((s, i) => {
           const img = safeImage(s.image);
           const isSaved = saved.some((a) => a.id === s.id);
@@ -78,7 +122,7 @@ export function NewsCards({ stories }: { stories: Story[] }) {
           return (
             <article
               key={s.id}
-              className="h-full snap-start snap-always pb-3"
+              className="h-[calc(100dvh-env(safe-area-inset-top)-3.5rem-var(--above-tabs)+24px)] snap-start snap-always scroll-mt-[calc(env(safe-area-inset-top)+3.5rem+6px)] pb-3"
               aria-label={s.title}
             >
               <div className="card-snap flex h-full flex-col overflow-hidden rounded-3xl bg-card shadow-[0_10px_30px_rgba(0,0,0,.08)]">
@@ -151,6 +195,10 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                           title: s.title,
                           source: s.source,
                           image: img,
+                          topic: s.topic,
+                          summary: s.summary,
+                          url: s.url,
+                          readMinutes: s.readMinutes,
                         });
                         toast(
                           now
@@ -161,7 +209,7 @@ export function NewsCards({ stories }: { stories: Story[] }) {
                             : { text: t("Removed from saved") },
                         );
                         // Keep a copy to read offline.
-                        if (now) downloadArticle(s.id).catch(() => {});
+                        if (now) keepOffline(s.id);
                       }}
                       className="flex size-11 shrink-0 items-center justify-center rounded-full border border-ink/15"
                     >
@@ -185,7 +233,7 @@ export function NewsCards({ stories }: { stories: Story[] }) {
       {hint && stories.length > 1 && (
         <div
           aria-hidden
-          className="label pointer-events-none absolute inset-x-0 bottom-20 mx-auto w-fit animate-bounce rounded-full bg-ink px-4 py-2 text-[10px] text-on-ink shadow-lg"
+          className="label pointer-events-none fixed inset-x-0 bottom-[calc(var(--above-tabs)+64px)] z-30 mx-auto w-fit animate-bounce rounded-full bg-ink px-4 py-2 text-[10px] text-on-ink shadow-lg"
         >
           {t("↑ Swipe up for the next story")}
         </div>
