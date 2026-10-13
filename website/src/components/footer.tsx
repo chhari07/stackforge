@@ -13,7 +13,6 @@ export function Footer() {
         <nav className="label flex flex-wrap gap-5 text-xs text-muted">
           <Link href="/privacy" className="hover:text-ink">Privacy</Link>
           <a href={`mailto:${SITE.email}`} className="hover:text-ink">{SITE.email}</a>
-          <a href={SITE.github} rel="noopener noreferrer" target="_blank" className="hover:text-ink">GitHub</a>
         </nav>
       </div>
     </footer>

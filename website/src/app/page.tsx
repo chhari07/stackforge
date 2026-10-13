@@ -138,7 +138,7 @@ const FAQ = [
     q: "How do I install the APK?",
     a: "Open the download link on your Android phone, tap the download icon in Google Drive, then open the file. If Android asks, allow your browser or Files app to install unknown apps, then tap Install. When Stack reaches the Play Store, it will update from there.",
   },
-  { q: "Is it free?", a: "Yes. Stack is free and open source. Testers will also get Stack Plus free for a year when it arrives." },
+  { q: "Is it free?", a: "Yes. Stack is free to use. Testers will also get Stack Plus free for a year when it arrives." },
   { q: "Do I need an account?", a: "No. Stack works fully offline on your phone. Signing in is only for syncing between devices." },
   {
     q: "Can Stack read to me?",
@@ -276,7 +276,7 @@ function Hero() {
           </div>
 
           <ul className="rise label mt-8 flex flex-wrap gap-2 text-[11px] [animation-delay:1200ms]">
-            {["Free", "Open source", "Works offline", "No ads", "हिंदी में भी"].map((t, i) => (
+            {["Free", "Works offline", "No ads", "Made in India", "हिंदी में भी"].map((t, i) => (
               <li key={t} className={`rounded-full px-3.5 py-2 ${i === 0 ? "bg-ink text-on-ink" : "border border-ink/15 text-ink"}`}>
                 {t}
               </li>
@@ -588,7 +588,7 @@ function LocalFirst() {
     { t: "Works offline, no account", b: "Notes, highlights, PDFs and saved articles live on your phone, readable without a connection. Sign in only if you want sync." },
     { t: "No ads, no trackers", b: "We don’t sell or share your data, and never will." },
     { t: "AI only when you ask", b: "Stack AI is optional, asks before any text leaves your phone, and turns off completely in Settings." },
-    { t: "Open source", b: `Built in the open by ${SITE.maker}, made in India.` },
+    { t: "Made in India", b: "Designed and built in Gurgaon by an independent developer." },
   ];
   return (
     <section className="bg-ink text-on-ink">
