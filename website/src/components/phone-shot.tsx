@@ -5,8 +5,9 @@ import { getImageProps } from "next/image";
 export function PhoneShot({
   light,
   dark,
-  width = 1080,
-  height = 2400,
+  // The UI 2.0 screenshots (Pixel 9a, scaled down). Older shots pass their own size.
+  width = 600,
+  height = 1346,
   alt,
   priority = false,
   className = "",

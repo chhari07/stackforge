@@ -14,7 +14,8 @@ export const TABS = [
   { id: "news", label: "News", Icon: NewsIcon },
 ] as const;
 
-// The pill and the rail are the app's bar, lying down and standing up.
+// The pill and the rail are the app's glass bar (UI 2.0), lying down and
+// standing up: frosted, with the open tab in a dark circle.
 const PILL = TABS;
 
 export type TabId = (typeof TABS)[number]["id"];
@@ -50,7 +51,7 @@ export function TabNav({ layout }: { layout: "rail" | "pill" }) {
     return (
       <nav
         aria-label="App tabs"
-        className={`fixed bottom-[max(env(safe-area-inset-bottom),14px)] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full bg-ink p-1.5 shadow-[0_10px_28px_rgba(0,0,0,.28)] transition duration-300 ${
+        className={`glass-strong fixed bottom-[max(env(safe-area-inset-bottom),14px)] left-1/2 z-40 flex -translate-x-1/2 gap-1 rounded-full p-1.5 transition duration-300 ${
           shown ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-24 opacity-0"
         }`}
       >
@@ -63,11 +64,12 @@ export function TabNav({ layout }: { layout: "rail" | "pill" }) {
               aria-label={label}
               aria-current={on ? "true" : undefined}
               tabIndex={shown ? undefined : -1}
-              className={`flex size-[min(48px,12.2vw)] items-center justify-center rounded-full transition-colors ${
-                on ? "bg-on-ink text-ink" : "text-on-ink/60 hover:text-on-ink"
+              className={`relative flex size-[min(48px,12.2vw)] items-center justify-center rounded-full transition-colors ${
+                on ? "bg-ink text-on-ink" : "text-ink/55 hover:text-ink"
               }`}
             >
               <Icon />
+              {on && <TabName key={id} text={label} side="top" />}
             </a>
           );
         })}
@@ -75,12 +77,11 @@ export function TabNav({ layout }: { layout: "rail" | "pill" }) {
     );
   }
 
-  // Tablets and computers: the app's own bar, standing up: a dark pill of
-  // icons with the open tab in a light circle.
+  // Tablets and computers: the app's own bar, standing up.
   return (
     <nav
       aria-label="App tabs"
-      className="mx-auto flex w-fit flex-col items-center gap-1 rounded-full bg-ink p-1.5 shadow-[0_10px_28px_rgba(0,0,0,.28)]"
+      className="glass-strong mx-auto flex w-fit flex-col items-center gap-1 rounded-full p-1.5"
     >
       {TABS.map(({ id, label, Icon }) => {
         const on = active === id;
@@ -91,14 +92,32 @@ export function TabNav({ layout }: { layout: "rail" | "pill" }) {
             aria-label={label}
             title={label}
             aria-current={on ? "true" : undefined}
-            className={`flex size-12 items-center justify-center rounded-full transition-colors ${
-              on ? "bg-on-ink text-ink" : "text-on-ink/60 hover:text-on-ink"
+            className={`relative flex size-12 items-center justify-center rounded-full transition-colors ${
+              on ? "bg-ink text-on-ink" : "text-ink/55 hover:text-ink"
             }`}
           >
             <Icon />
+            {on && <TabName key={id} text={label} side="right" />}
           </a>
         );
       })}
     </nav>
+  );
+}
+
+// The open tab's name in a small glass capsule, as in the app
+// (stack/src/components/tab-bar.tsx): above the pill, beside the rail.
+function TabName({ text, side }: { text: string; side: "top" | "right" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`tab-name glass label pointer-events-none absolute rounded-full px-2.5 py-1 text-[9px] font-medium whitespace-nowrap text-ink ${
+        side === "top"
+          ? "bottom-[calc(100%+16px)] left-1/2 -translate-x-1/2"
+          : "tab-name-side left-[calc(100%+16px)] top-1/2 -translate-y-1/2"
+      }`}
+    >
+      {text}
+    </span>
   );
 }

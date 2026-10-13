@@ -8,9 +8,12 @@ import { SITE } from "@/lib/site";
 // One page, in the same order people meet things in the app, so nothing on
 // the site is new to them when they open Stack:
 // welcome (hero) → first minute (the app's own onboarding) → the five tabs,
-// in tab-bar order, with real screens → Hindi and Indian news → focus and
+// in tab-bar order, with real screens → alerts → Hindi and Indian news → focus and
 // music → local first → join → questions.
 // Names and button labels are the app's own words.
+
+// Screens that didn't change in UI 2.0 keep their older, larger captures.
+const OLD_SIZE = { width: 1080, height: 2400 };
 
 // Staggered load delays, as classes so no inline styles are needed.
 const LETTER_DELAYS = ["[animation-delay:350ms]", "[animation-delay:420ms]", "[animation-delay:490ms]", "[animation-delay:560ms]", "[animation-delay:630ms]"];
@@ -45,18 +48,18 @@ const TOUR: {
   {
     id: "today",
     title: "TODAY",
-    lead: "Every day starts with what you highlighted, then what you’re reading, then the news.",
+    lead: "Today changes with your day. Morning, afternoon or evening, it shows the one thing worth doing right now.",
     points: [
-      "Daily review first: “3 things you highlighted”",
-      "Pick up where you left off: the PDFs and books you have open",
-      "A focus card to start a timer or Pomodoro",
+      "Right now: one card with the next step, like your review, a focus session or a wind-down read",
+      "Your day: a timeline from the morning review to the evening wind-down",
+      "Quick actions: Add PDF, Note, Focus and Save link, one tap each",
+      "Saved for later, your reading, what you kept today and news for you, in that order",
       "This week: time read, articles finished and PDF pages, a bar for each day",
-      "Reading for exams or work? Your reading comes before the news",
     ],
     text: "text-music-text",
     dot: "bg-music",
     heading: "display",
-    shot: { light: "/screens/today-light.png", dark: "/screens/today-dark.png", alt: "The Today tab with the daily review card, the focus card, this week and the PDFs in progress" },
+    shot: { light: "/screens/today-light.jpg", dark: "/screens/today-dark.jpg", alt: "The Today tab: an evening greeting, the Right now card with Start focus, Your day timeline and quick actions" },
   },
   {
     id: "library",
@@ -65,14 +68,14 @@ const TOUR: {
     points: [
       "PDFs and EPUB books, with highlights, sticky notes, handwriting and reading time left",
       "Share from Chrome, WhatsApp or Files: a “Saved to Stack” card pops up",
+      "Saved news in folders: by topic, or folders you make yourself",
       "Import PDFs from Telegram: forward them to your bot, then pick which to add",
-      "Every PDF on your phone, found for you, ready to add",
       "Listen: articles and PDFs read aloud, with the same controls as music",
     ],
     text: "text-pdf-deep",
     dot: "bg-pdf",
     heading: "serif",
-    shot: { light: "/screens/library-light.png", dark: "/screens/library-dark.png", alt: "The Library tab with coloured shelves of PDFs and Import from Telegram" },
+    shot: { light: "/screens/library-light.jpg", dark: "/screens/library-dark.jpg", alt: "The Library tab with coloured shelves of PDFs and Import from Telegram" },
   },
   {
     id: "review",
@@ -82,13 +85,14 @@ const TOUR: {
       "Three a day, picked from what you highlighted",
       "“Got it” pushes it out: 3 days, then longer each time. “Show again soon” brings it back tomorrow",
       "Words you looked up with Meaning come back too, with “Show meaning”",
+      "A daily alert with that day’s highlights, so the review finds you",
       "Open where you read it, or share it as a card",
       "A streak for each day you finish the review",
     ],
     text: "text-news-text",
     dot: "bg-news",
     heading: "display",
-    shot: { light: "/screens/review-light.png", dark: "/screens/review-dark.png", alt: "The Review tab showing a highlight to recall, with Got it and Show again soon" },
+    shot: { light: "/screens/review.jpg", alt: "The Review tab showing a highlight to recall, with Got it and Show again soon" },
   },
   {
     id: "notes",
@@ -98,28 +102,30 @@ const TOUR: {
       "Each highlight shows its source: the article, or the PDF and page",
       "Titles, checklists, colours, tags, pins and reminders",
       "One search across notes, highlights, articles and PDFs",
-      "Export to Markdown for Obsidian, Notion or any editor",
+      "Bring your Kindle highlights (My Clippings) and Readwise with you",
+      "Send notes to your own Notion page, or export to Markdown for Obsidian or any editor",
     ],
     text: "text-ink",
     dot: "bg-ink",
     heading: "serif",
-    shot: { light: "/screens/notes-light.png", dark: "/screens/notes-dark.png", alt: "The Notes tab showing saved article highlights" },
+    shot: { light: "/screens/notes.jpg", alt: "The Notes tab with PDF and article highlights in a grid" },
   },
   {
     id: "news",
     title: "NEWS",
     lead: "12 topics from trusted sources, video news, and any site or RSS feed you add under My feeds.",
     points: [
-      "Flash cards or a list, with the date and time on every story",
+      "A topic bar: Top, Following, your interests, and More for the rest",
+      "A list, or full-screen cards that snap one story at a time",
       "Read any story in Hindi, or in 19 more languages, with one tap",
       "Today’s paper: free official sources, from PIB and DD News to Hindi e-papers",
       "Save a story to read it in a clean reader mode, even offline",
-      "Breaking-news alerts for the topics you pick, at most one an hour",
+      "Alerts for the topics you pick, with Read and Save for later right in the notification",
     ],
     text: "text-news-text",
     dot: "bg-news",
     heading: "display",
-    shot: { light: "/screens/news-light.png", dark: "/screens/news-dark.png", alt: "The News tab with today’s posts" },
+    shot: { light: "/screens/news-light.jpg", dark: "/screens/news-dark.jpg", alt: "The News tab: News Today with the topic bar, trending tags and today’s posts" },
   },
 ];
 
@@ -140,7 +146,11 @@ const FAQ = [
   },
   {
     q: "Can I get my notes out?",
-    a: "Anytime. Export your notes and highlights to Markdown (each with a link to where you read it), or save a full backup file from Settings.",
+    a: "Anytime. Export your notes and highlights to Markdown (each with a link to where you read it), send them to your own Notion page, or save a full backup file from Settings.",
+  },
+  {
+    q: "Can I bring my Kindle or Readwise highlights?",
+    a: "Yes. In Notes, tap the import button and pick your Kindle “My Clippings.txt” file, a Readwise CSV export, or connect Readwise with your own token (in the Android app). They come back in your review like any other highlight.",
   },
   {
     q: "Is Stack in Hindi?",
@@ -179,7 +189,7 @@ export default function Home() {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur">
+      <header className="glass-bar sticky top-0 z-40 border-b border-line">
         {/* Reading progress: fills as you scroll down the story */}
         <div className="progress absolute inset-x-0 bottom-[-1px] h-[2px] origin-left bg-ink" aria-hidden="true" />
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -198,6 +208,7 @@ export default function Home() {
         <Problem />
         <FirstMinute />
         <Tour />
+        <EvenWhenClosed />
         <ForIndia />
         <FocusMusic />
         <LocalFirst />
@@ -222,7 +233,7 @@ function Hero() {
 
       <div className="mx-auto grid min-h-[calc(100dvh-4rem)] max-w-6xl items-center gap-14 px-4 py-14 sm:px-6 md:grid-cols-[1.15fr_1fr] md:py-10">
         <div>
-          <p className="rise label inline-flex items-center gap-2 rounded-full border border-rule bg-card/60 px-3 py-1.5 text-xs text-muted">
+          <p className="rise glass label inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-muted">
             <span className="relative flex size-2" aria-hidden="true">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-news opacity-60 motion-reduce:animate-none" />
               <span className="relative inline-flex size-2 rounded-full bg-news" />
@@ -276,9 +287,9 @@ function Hero() {
         {/* The phone with little cards from the app floating around it */}
         <div className="relative mx-auto w-full max-w-[290px] py-10 sm:max-w-[310px]">
           <PhoneShot
-            light="/screens/today-light.png"
-            dark="/screens/today-dark.png"
-            alt="Stack's Today screen with the top story, PDFs in progress and recent notes"
+            light="/screens/today-light.jpg"
+            dark="/screens/today-dark.jpg"
+            alt="Stack's Today screen: Right now, Your day and quick actions"
             priority
             className="phone-in"
           />
@@ -286,7 +297,7 @@ function Hero() {
           {/* A highlight, as the app's note cards show it (stack/src/components/note-card.tsx) */}
           <div
             aria-hidden="true"
-            className="float absolute -left-16 top-[14%] w-60 rounded-[14px] bg-card px-4 py-3.5 shadow-[0_18px_40px_rgb(0_0_0/0.14)] [animation-delay:1400ms,2.9s] max-sm:-left-6 max-sm:w-52"
+            className="glass-strong float absolute -left-16 top-[14%] w-60 rounded-[18px] px-4 py-3.5 [animation-delay:1400ms,2.9s] max-sm:-left-6 max-sm:w-52"
           >
             <span className="label inline-block rounded-full border border-ink/15 px-2 py-0.5 text-[9px] text-pdf-deep">Highlight · PDF p. 1</span>
             <p className="mt-2 font-serif text-[17px] italic leading-snug">
@@ -305,7 +316,7 @@ function Hero() {
           {/* The app's music bar (stack/src/components/mini-player.tsx): a slim pill */}
           <div
             aria-hidden="true"
-            className="float absolute -right-14 bottom-[12%] flex h-[46px] w-60 items-center gap-2.5 rounded-full bg-card pr-1.5 pl-3 shadow-[0_18px_40px_rgb(0_0_0/0.16)] [animation-delay:1900ms,3.5s] max-sm:-right-4 max-sm:w-52"
+            className="glass-strong float absolute -right-14 bottom-[12%] flex h-[46px] w-60 items-center gap-2.5 rounded-full pr-1.5 pl-3 [animation-delay:1900ms,3.5s] max-sm:-right-4 max-sm:w-52"
           >
             <span className="size-[22px] shrink-0 rounded-[5px] bg-music" />
             <span className="min-w-0 grow truncate text-[13px] font-semibold">Deep Work</span>
@@ -331,7 +342,7 @@ function Hero() {
 
 function Problem() {
   return (
-    <section id="problem" className="scroll-mt-16 border-y border-line bg-paper-2">
+    <section id="problem" className="scroll-mt-16 border-y border-line bg-paper-2/55">
       <div className="reveal mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
         <p className="label text-xs text-muted">The problem</p>
         <p className="mt-5 font-serif text-3xl italic leading-snug sm:text-5xl">
@@ -359,7 +370,7 @@ function FirstMinute() {
           </p>
         </div>
         <div className="reveal-phone mx-auto w-full max-w-[220px]">
-          <PhoneShot light="/screens/welcome-light.png" dark="/screens/welcome-dark.png" alt="Stack’s first screen: Stack makes you remember what you read, with the first of three cards, Save from any app" />
+          <PhoneShot light="/screens/welcome-light.png" dark="/screens/welcome-dark.png" {...OLD_SIZE} alt="Stack’s first screen: Stack makes you remember what you read, with the first of three cards, Save from any app" />
         </div>
       </div>
       <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -382,7 +393,7 @@ function FirstMinute() {
 
 function Tour() {
   return (
-    <section id="tour" aria-labelledby="tour-title" className="border-y border-line bg-paper-2">
+    <section id="tour" aria-labelledby="tour-title" className="border-y border-line bg-paper-2/55">
       <div className="mx-auto max-w-6xl px-4 pt-20 sm:px-6 sm:pt-28">
         <div className="reveal">
           <p className="label text-xs text-muted">Inside the app</p>
@@ -440,13 +451,56 @@ function Tour() {
   );
 }
 
+// The two notifications: the review and the news reach you without opening
+// the app. Saved news from an alert lands in Library → Saved news.
+function EvenWhenClosed() {
+  const points = [
+    { dot: "bg-news", t: "Your highlights, every day", b: "One alert a day with that day’s highlights. Read them on the lock screen, or tap to start the review." },
+    { dot: "bg-blue", t: "News you can keep", b: "Alerts for the topics you follow show the headline and a short summary, with Read and Save for later as buttons." },
+    { dot: "bg-pdf", t: "Saved news, sorted", b: "Anything you save from an alert, or share to Stack, lands in Library → Saved news, in folders by topic or your own." },
+  ];
+  return (
+    <section id="alerts" className="scroll-mt-16 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+      <div className="grid items-center gap-12 md:grid-cols-[1fr_auto]">
+        <div className="reveal">
+          <p className="label text-xs text-muted">Even when Stack is closed</p>
+          <h2 className="display mt-3 text-6xl sm:text-8xl">IT COMES TO YOU</h2>
+          <p className="mt-5 max-w-xl text-lg text-prose">
+            You don’t have to remember to open Stack. What you highlighted and what you follow come to your
+            notifications, and one tap keeps it.
+          </p>
+          <ul className="mt-8 grid max-w-lg gap-3">
+            {points.map((p) => (
+              <li key={p.t} className="rounded-2xl bg-card p-5 shadow-[0_8px_24px_rgba(0,0,0,.05)]">
+                <h3 className="flex items-center gap-3 text-lg font-bold">
+                  <span className={`size-2 shrink-0 rounded-full ${p.dot}`} aria-hidden="true" />
+                  {p.t}
+                </h3>
+                <p className="mt-1 text-prose">{p.b}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex justify-center gap-5">
+          <div className="reveal-phone w-[200px] sm:w-[220px]">
+            <PhoneShot light="/screens/alert.jpg" alt="A Stack news alert in the notification shade, with Read and Save for later" />
+          </div>
+          <div className="reveal-phone hidden w-[200px] translate-y-10 sm:block sm:w-[220px]">
+            <PhoneShot light="/screens/saved-news.jpg" alt="Library → Saved news, with folders for All, Shared to Stack and AI news" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Made for India: the whole app in Hindi, any story translated, and today's
 // paper from official free sources. Screens from the app in Hindi.
 function ForIndia() {
-  const shots = [
-    { light: "/screens/hindi-light.png", dark: "/screens/hindi-dark.png", alt: "Stack’s Today screen in Hindi", label: "Settings → Language → हिंदी" },
-    { light: "/screens/translate-light.png", dark: "/screens/translate-dark.png", alt: "A news story translated into Hindi in the reader", label: "Read in: हिंदी" },
-    { light: "/screens/paper-light.png", dark: "/screens/paper-dark.png", alt: "The Today’s paper sheet with PIB, News On AIR, DD News and Hindi e-papers", label: "News → Today’s paper" },
+  const shots: { light: string; dark?: string; old?: boolean; alt: string; label: string }[] = [
+    { light: "/screens/hindi.jpg", alt: "Stack’s Today screen in Hindi: शुभ संध्या, the Right now card and Your day", label: "Settings → Language → हिंदी" },
+    { light: "/screens/translate-light.png", dark: "/screens/translate-dark.png", old: true, alt: "A news story translated into Hindi in the reader", label: "Read in: हिंदी" },
+    { light: "/screens/paper-light.png", dark: "/screens/paper-dark.png", old: true, alt: "The Today’s paper sheet with PIB, News On AIR, DD News and Hindi e-papers", label: "News → Today’s paper" },
   ];
   return (
     <section id="india" className="scroll-mt-16 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
@@ -480,7 +534,7 @@ function ForIndia() {
       <div className="mt-14 grid gap-10 sm:grid-cols-3">
         {shots.map((s) => (
           <figure key={s.light} className="reveal-phone mx-auto w-full max-w-[240px]">
-            <PhoneShot light={s.light} dark={s.dark} alt={s.alt} />
+            <PhoneShot light={s.light} dark={s.dark} alt={s.alt} {...(s.old ? OLD_SIZE : {})} />
             <figcaption className="label mt-4 text-center text-[11px] text-muted">{s.label}</figcaption>
           </figure>
         ))}
@@ -492,7 +546,7 @@ function ForIndia() {
 // Music isn't a tab any more: it plays behind your reading and your focus sessions.
 function FocusMusic() {
   return (
-    <section id="focus" className="scroll-mt-16 border-y border-line bg-paper-2">
+    <section id="focus" className="scroll-mt-16 border-y border-line bg-paper-2/55">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 sm:py-28 md:grid-cols-[1fr_auto]">
         <div className="reveal">
           <p className="label text-xs text-muted">While you read</p>
@@ -518,10 +572,10 @@ function FocusMusic() {
         </div>
         <div className="flex justify-center gap-5">
           <div className="reveal-phone w-[200px] sm:w-[220px]">
-            <PhoneShot light="/screens/focus-light.png" dark="/screens/focus-dark.png" alt="The Focus screen: pick what to read, how long, and music" />
+            <PhoneShot light="/screens/focus.jpg" alt="The Focus screen: pick what to read, how long, and music" />
           </div>
           <div className="reveal-phone hidden w-[200px] translate-y-10 sm:block sm:w-[220px]">
-            <PhoneShot light="/screens/music-light.png" dark="/screens/music-dark.png" alt="The Music screen with free music online" />
+            <PhoneShot light="/screens/music.jpg" alt="The Music screen with songs on this phone and playlists" />
           </div>
         </div>
       </div>
@@ -589,7 +643,7 @@ function Join() {
             Download Stack (APK) <span aria-hidden="true">↓</span>
           </a>
         </div>
-        <div className="mt-4 rounded-2xl bg-paper-2 p-6">
+        <div className="glass mt-4 rounded-2xl p-6">
           <p className="label text-[11px] font-medium">What happens next</p>
           <ol className="mt-4 grid gap-3">
             {[
@@ -615,7 +669,7 @@ function Join() {
 
 function Questions() {
   return (
-    <section id="faq" className="border-t border-line bg-paper-2">
+    <section id="faq" className="border-t border-line bg-paper-2/55">
       <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 sm:py-28">
         <div className="reveal">
           <p className="label text-xs text-muted">Questions</p>

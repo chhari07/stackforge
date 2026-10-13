@@ -7,7 +7,7 @@
   --color-desk: #e4e1da;
   --color-ink: #111111;
   --color-on-ink: #ffffff;
-  --color-card: #ffffff;
+  --color-card: rgb(255 255 255 / 0.62); /* see-through: cards are glass, as in the app */
   --color-prose: #22211f;
   --color-muted: #6b6862;
   --color-line: rgb(17 17 17 / 0.1);
@@ -33,6 +33,18 @@
 
 :root {
   color-scheme: light;
+  /* Glass, as in the app (UI 2.0): frosted, see-through surfaces over a soft
+     coloured backdrop made of the four app colours. */
+  --glass: rgb(255 255 255 / 0.55);
+  --glass-strong: rgb(255 255 255 / 0.74);
+  --glass-edge: rgb(255 255 255 / 0.8);
+  --glass-shine: rgb(255 255 255 / 0.55);
+  --glass-shadow: 0 10px 30px rgb(17 17 17 / 0.1);
+  --aurora:
+    radial-gradient(42% 32% at 8% 4%, rgb(10 138 58 / 0.16), transparent 70%),
+    radial-gradient(40% 30% at 98% 18%, rgb(78 158 230 / 0.2), transparent 70%),
+    radial-gradient(44% 34% at 88% 78%, rgb(242 162 70 / 0.2), transparent 70%),
+    radial-gradient(40% 30% at 4% 92%, rgb(214 47 38 / 0.12), transparent 70%);
 }
 
 /* The site follows the phone or computer's own light/dark setting. */
@@ -44,7 +56,7 @@
     --color-desk: #050505;
     --color-ink: #f1efe9;
     --color-on-ink: #141413;
-    --color-card: #1f1f1d;
+    --color-card: rgb(48 48 45 / 0.5);
     --color-muted: #a39f97;
     --color-line: rgb(241 239 233 / 0.12);
     --color-rule: #34332f;
@@ -57,18 +69,82 @@
     --color-pdf-deep: #f6c88a;
     --color-blue-tint: #183454;
     --color-blue-deep: #9cc8f2;
+    --glass: rgb(40 40 37 / 0.5);
+    --glass-strong: rgb(30 30 28 / 0.72);
+    --glass-edge: rgb(255 255 255 / 0.12);
+    --glass-shine: rgb(255 255 255 / 0.08);
+    --glass-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+    --aurora:
+      radial-gradient(42% 32% at 8% 4%, rgb(10 138 58 / 0.34), transparent 70%),
+      radial-gradient(40% 30% at 98% 18%, rgb(78 158 230 / 0.3), transparent 70%),
+      radial-gradient(44% 34% at 88% 78%, rgb(242 162 70 / 0.26), transparent 70%),
+      radial-gradient(40% 30% at 4% 92%, rgb(214 47 38 / 0.26), transparent 70%);
   }
 }
 
 html {
-  background: var(--color-paper);
+  /* The soft colour behind the glass, fixed while the page scrolls. */
+  background: var(--aurora), var(--color-paper);
+  background-attachment: fixed;
   scroll-behavior: smooth;
 }
 
 body {
-  background: var(--color-paper);
+  background: transparent;
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* ---- Glass (same recipe as the app's globals.css) ---- */
+/* Cards: frosted panes (bg-card is see-through, see --color-card). */
+.bg-card {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  outline: 1px solid var(--glass-edge);
+  outline-offset: -1px;
+}
+/* Floating glass: header, tab bar, the little cards around the phone. */
+.glass,
+.glass-strong {
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 var(--glass-shine);
+}
+.glass {
+  background: var(--glass);
+}
+.glass-strong {
+  background: var(--glass-strong);
+}
+.glass-bar {
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  background: linear-gradient(to bottom, var(--glass-strong), var(--glass));
+}
+
+/* The open tab's name capsule (components/tab-nav.tsx) rises in when the tab
+   changes; beside the rail it slides in from the bar instead. */
+.tab-name {
+  animation: tab-name-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  letter-spacing: 0.12em;
+}
+.tab-name-side {
+  animation-name: tab-name-side-in;
+}
+@keyframes tab-name-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px); /* the centring is the separate `translate` property */
+  }
+}
+@keyframes tab-name-side-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
 }
 
 /* Small uppercase mono labels, the app's "metadata" voice */
@@ -270,7 +346,8 @@ body {
   .float,
   .cue,
   .reveal,
-  .reveal-phone {
+  .reveal-phone,
+  .tab-name {
     animation: none;
   }
   .phone-in {
