@@ -42,6 +42,12 @@ function change(fn: (day: Day) => boolean | void, now = Date.now()) {
   emit();
 }
 
+/** What was read on the day that contains `t`: article ids and "<pdfId>:<page>" pages (lib/recall.ts). */
+export function readingOn(t: number): { ms: number; articles: string[]; pages: string[] } | null {
+  const d = read()[dayKey(t)];
+  return d ? { ms: d.ms, articles: d.articles, pages: d.pages } : null;
+}
+
 export const addReadingTime = (ms: number) => ms > 0 && change((d) => void (d.ms += ms));
 
 export const markArticleRead = (id: string) =>

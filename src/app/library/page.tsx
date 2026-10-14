@@ -18,6 +18,7 @@ import { TelegramImport } from "@/components/telegram-import";
 import { getOfflineIndex } from "@/lib/offline";
 import { SavedNews } from "@/components/saved-news";
 import { useT } from "@/lib/i18n";
+import { LibraryDays } from "@/components/recall";
 
 // Translucent acrylic shelves from the Books reference, one colour per shelf.
 const SHELVES = [
@@ -121,6 +122,8 @@ export default function Library() {
           {t(pdfs.length === 1 ? "{n} book" : "{n} books", { n: pdfs.length })} · {t("{n} saved articles", { n: saved.length })}
         </span>
       </div>
+
+      <LibraryDays />
 
       {pdfs.length > 0 && (
         <div className="mt-3 flex justify-end">

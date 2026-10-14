@@ -10,6 +10,7 @@ import { dayStamp, greeting } from "@/lib/format";
 import { getProfile } from "@/lib/profile";
 import { NotifyPrompt } from "@/components/notify-prompt";
 import { WeekCard } from "@/components/week-card";
+import { TodaysRecall } from "@/components/recall";
 import { NowCard, nowLine, useNow } from "@/components/now-card";
 import {
   HomeHeader,
@@ -27,6 +28,7 @@ import { useT } from "@/lib/i18n";
 //  1 greeting, a line for this moment and status chips
 //  2 Right now: the one thing that matters most at this moment (components/now-card.tsx)
 //  3 Your day: what's done, what's now, what's later
+//  3b Today's recall: everything read today and the lines kept, there all day (components/recall.tsx)
 //  4 quick actions · 5 saved for later · 6 your reading · 7 kept today
 //  8 news for you (moves up into Right now on news mornings) · 9 this week · 10 sign-off
 // Only the top changes with the moment; the order below stays the same, so it's easy to learn.
@@ -67,6 +69,7 @@ export default function Today() {
       />
       <NowCard lead={lead} stories={news.stories} />
       <YourDay lead={lead} hour={stamp?.hour ?? 12} />
+      <TodaysRecall />
       <QuickActions />
       <NotifyPrompt />
       <SavedForLater skip={skipSaved} />
