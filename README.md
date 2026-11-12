@@ -120,3 +120,8 @@ website/          soft-launch landing page and tester sign-up (its own Next.js p
 ```
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for what's next.
+
+---
+
+Built solo by [Aman Kumar Chhari](https://amankumarchhari.vercel.app) (SOLOX): product, design, Android app, sync and AI layer. [Live app](https://stack-henna-delta.vercel.app) · [Case study](https://amankumarchhari.vercel.app/work/stack) (failover and load-test results)
+
