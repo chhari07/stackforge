@@ -227,6 +227,28 @@ if (!manifest.includes(".StackWidget")) {
     </application>`,
   );
 }
+// Notes widget (NotesWidget + NotesWidgetService, which draws its rows).
+if (!manifest.includes('.NotesWidget"')) {
+  manifest = manifest.replace(
+    "</application>",
+    `    <receiver
+            android:name=".NotesWidget"
+            android:exported="false"
+            android:label="@string/stack_notes_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/stack_notes_widget_info" />
+        </receiver>
+        <service
+            android:name=".NotesWidgetService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+    </application>`,
+  );
+}
 // "Save for later" on a breaking-news alert (NewsSaveReceiver).
 if (!manifest.includes(".NewsSaveReceiver")) {
   manifest = manifest.replace(

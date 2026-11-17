@@ -31,15 +31,38 @@ public class WidgetPlugin extends Plugin {
         call.resolve();
     }
 
-    /** Asks the home screen to add the widget (Android 8+, if the launcher allows it). */
+    /** { notes: a JSON list of { kind, text, quote, source, at, href } } */
+    @PluginMethod
+    public void setNotes(PluginCall call) {
+        Context ctx = getContext();
+        ctx.getSharedPreferences(NotesWidget.PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString("notes", call.getString("notes", "[]"))
+            .apply();
+        NotesWidget.refresh(ctx);
+        call.resolve();
+    }
+
+    /** Asks the home screen to add the today widget. */
     @PluginMethod
     public void pin(PluginCall call) {
+        askToPin(call, StackWidget.class);
+    }
+
+    /** Asks the home screen to add the notes widget. */
+    @PluginMethod
+    public void pinNotes(PluginCall call) {
+        askToPin(call, NotesWidget.class);
+    }
+
+    /** Android 8+, if the launcher allows it. */
+    private void askToPin(PluginCall call, Class<?> widget) {
         JSObject ret = new JSObject();
         boolean asked = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AppWidgetManager mgr = AppWidgetManager.getInstance(getContext());
             if (mgr.isRequestPinAppWidgetSupported()) {
-                asked = mgr.requestPinAppWidget(new ComponentName(getContext(), StackWidget.class), null, null);
+                asked = mgr.requestPinAppWidget(new ComponentName(getContext(), widget), null, null);
             }
         }
         ret.put("asked", asked);

@@ -23,7 +23,7 @@ import { getTheme, setTheme, type Theme } from "@/lib/theme";
 import { AppSettings } from "@/lib/app-settings";
 import { BackupSection } from "@/components/backup-section";
 import { NewsAlertsSection } from "@/components/news-alerts-section";
-import { addWidget } from "@/lib/widget";
+import { addNotesWidget, addWidget } from "@/lib/widget";
 import { AiSection } from "@/components/ai-section";
 import { PrivacyRow } from "@/components/privacy-row";
 import { setUiLang, UI_LANGS, useT, useUiLang } from "@/lib/i18n";
@@ -422,6 +422,16 @@ export default function Settings() {
                 className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
               >
                 {t("Add to home screen")}
+              </button>
+              <p className="text-[14px] leading-relaxed">{t("Your pinned and latest notes, on your home screen.")}</p>
+              <button
+                onClick={async () => {
+                  const asked = await addNotesWidget().catch(() => false);
+                  if (!asked) toast({ text: t("Hold an empty spot on your home screen, tap Widgets, then pick Stack") });
+                }}
+                className="h-11 rounded-full border border-ink/15 text-[14px] font-semibold"
+              >
+                {t("Add notes widget")}
               </button>
             </>
           )}

@@ -32,6 +32,13 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Rebuilt after Android killed the app: getIntent() is the link it was
+        // first opened with, already handled. A new link arrives by onNewIntent,
+        // so reading the old one as the launch URL would send the user to the wrong screen.
+        if (savedInstanceState != null && getIntent().getData() != null
+            && "com.chhari.stack".equals(getIntent().getData().getScheme())) {
+            setIntent(new Intent(Intent.ACTION_MAIN));
+        }
         // The animated Stack logo on the paper background (styles.xml), then the
         // tagline under it; kept up until the web app is ready so there's no
         // blank flash (about 2–4 s).

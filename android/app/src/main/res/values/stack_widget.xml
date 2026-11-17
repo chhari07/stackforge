@@ -3,6 +3,10 @@
 <resources>
     <string name="stack_widget_label">Stack: today</string>
     <string name="stack_widget_description">Today\'s highlight, your streak and the book you\'re reading.</string>
+    <string name="stack_notes_widget_label">Stack: notes</string>
+    <string name="stack_notes_widget_description">Your pinned and latest notes, with a button for a new one.</string>
+    <string name="stack_notes_widget_empty">Open Stack to see your notes here.</string>
+    <string name="stack_notes_widget_add">New note</string>
     <color name="stack_widget_bg">#F7F5F0</color>
     <color name="stack_widget_row">#FFFFFF</color>
     <color name="stack_widget_ink">#111111</color>

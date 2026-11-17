@@ -396,6 +396,8 @@ export const HI: Record<string, string> = {
   "Hindustan e-paper": "हिन्दुस्तान ई-पेपर",
   "Hold an empty spot on your home screen, tap Widgets, then pick Stack": "होम स्क्रीन पर खाली जगह दबाकर रखें, Widgets दबाएँ, फिर Stack चुनें",
   "Home screen widget": "होम स्क्रीन विजेट",
+  "Your pinned and latest notes, on your home screen.": "आपके पिन किए और नए नोट्स, होम स्क्रीन पर।",
+  "Add notes widget": "नोट्स विजेट जोड़ें",
   "How long?": "कितनी देर?",
   "How to write": "कैसे लिखें",
   "Idea machine": "विचारों की मशीन",
