@@ -2,7 +2,7 @@
 
 **Video:** `~/Desktop/Stack_Demo_Video.mp4` (49 s, 1080×1920 vertical, captions burned in, silent)
 **Cover:** `~/Desktop/Stack_Demo_Cover.png` (the "Highlight a line" frame)
-Copies of both: `~/Desktop/StackForge/products/stack/marketing/`
+Copies of both: `~/Desktop/projects/StackForge/products/stack/marketing/`
 
 What the video shows, in order: hook → splash with the tagline → save a Wikipedia article from
 Chrome → highlight a line → Explain (Stack AI) → Notes → the daily Recall card → end card.
@@ -121,7 +121,7 @@ subreddit's rules and flair (often "Dev Promo" / self-promotion days) first.
 ## Reddit image gallery (12 images)
 
 **Images:** `~/Desktop/Stack_Reddit_Images/` (1080×1350, 4:5, numbered in posting order)
-Copies: `~/Desktop/StackForge/products/stack/marketing/reddit-images/`
+Copies: `~/Desktop/projects/StackForge/products/stack/marketing/reddit-images/`
 
 Use the gallery where a subreddit doesn't allow video, or as a second post a week after the video
 (different subreddit, different text). Reddit allows up to 20 images and a caption on each.
